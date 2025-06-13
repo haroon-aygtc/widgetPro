@@ -14,6 +14,7 @@ import {
   Search,
   HelpCircle,
   LogOut,
+  Code,
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -48,6 +49,11 @@ const AdminLayout = () => {
       path: "/admin/analytics",
       label: "Analytics",
       icon: LineChart,
+    },
+    {
+      path: "/admin/embed",
+      label: "Embed Code",
+      icon: Code,
     },
     {
       path: "/admin/settings",
@@ -134,6 +140,7 @@ const AdminLayout = () => {
                 {location.pathname === "/admin/knowledge-base" &&
                   "Knowledge Base"}
                 {location.pathname === "/admin/analytics" && "Analytics"}
+                {location.pathname === "/admin/embed" && "Embed Code"}
                 {location.pathname === "/admin/settings" && "Settings"}
               </h2>
             </div>

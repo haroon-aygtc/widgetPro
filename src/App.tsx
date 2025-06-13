@@ -1,4 +1,8 @@
 import { Suspense } from "react";
+
+function GlobalLoading() {
+  return null;
+}
 import { useRoutes, Routes, Route } from "react-router-dom";
 import LandingPage from "./components/LandingPage";
 import Login from "./components/auth/Login";
@@ -10,6 +14,7 @@ import KnowledgeBaseConfig from "./components/dashboard/KnowledgeBaseConfig";
 import WidgetConfiguration from "./components/dashboard/WidgetConfiguration";
 import AnalyticsDashboard from "./components/dashboard/AnalyticsDashboard";
 import SettingsPage from "./components/dashboard/SettingsPage";
+import EmbedCode from "./components/dashboard/EmbedCode";
 import routes from "tempo-routes";
 
 function App() {
@@ -26,6 +31,7 @@ function App() {
             <Route path="ai-models" element={<AIModelConfig />} />
             <Route path="knowledge-base" element={<KnowledgeBaseConfig />} />
             <Route path="analytics" element={<AnalyticsDashboard />} />
+            <Route path="embed" element={<EmbedCode />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>
