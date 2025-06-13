@@ -63,20 +63,6 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
 
   return (
     <div className="flex-1 overflow-auto">
-      {/* Header */}
-      <header className="border-b bg-card p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">
-              Knowledge Base Configuration
-            </h2>
-            <p className="text-muted-foreground">
-              Enhance AI responses with custom knowledge sources
-            </p>
-          </div>
-        </div>
-      </header>
-
       <div className="bg-background w-full p-6 rounded-lg">
         <Tabs
           defaultValue="documents"

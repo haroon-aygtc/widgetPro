@@ -188,21 +188,6 @@ const WidgetConfiguration = ({ widgetId }: WidgetConfigurationProps = {}) => {
 
   return (
     <div className="flex-1 overflow-auto">
-      {/* Header */}
-      <header className="border-b bg-card p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Widget Configuration
-            </h1>
-            <p className="text-muted-foreground">
-              Customize your AI chat widget appearance and behavior
-            </p>
-          </div>
-          <Button onClick={handleSave}>Save Changes</Button>
-        </div>
-      </header>
-
       <div className="flex flex-col lg:flex-row gap-6 w-full bg-background p-6">
         <div className="flex-1 space-y-6">
           <Tabs

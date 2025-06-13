@@ -78,25 +78,6 @@ const Dashboard = () => {
 
   return (
     <div className="flex-1 overflow-auto">
-      {/* Header */}
-      <header className="border-b bg-card p-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Button>
-            <Button size="sm" asChild>
-              <Link to="/admin/widgets">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                New Widget
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </header>
-
       {/* Dashboard Content */}
       <div className="p-6">
         {/* Stats Overview */}

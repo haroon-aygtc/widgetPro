@@ -221,34 +221,15 @@ function App() {
   };
 
   return (
-    <div className="space-y-6 bg-background">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">
-            Embed Code Generator
-          </h2>
-          <p className="text-muted-foreground">
-            Generate and customize embed code for:{" "}
-            <strong>{widgetConfig.name}</strong>
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Widget ID: {widgetId}
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button onClick={openTestPage} variant="outline">
-            <TestTube className="h-4 w-4 mr-2" />
-            Test Widget
-          </Button>
-          <Button onClick={copyToClipboard}>
-            {copied ? (
-              <Check className="h-4 w-4 mr-2" />
-            ) : (
-              <Copy className="h-4 w-4 mr-2" />
-            )}
-            {copied ? "Copied!" : "Copy Code"}
-          </Button>
-        </div>
+    <div className="space-y-6 bg-background p-6">
+      <div className="mb-6">
+        <p className="text-muted-foreground">
+          Generate and customize embed code for:{" "}
+          <strong>{widgetConfig.name}</strong>
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Widget ID: {widgetId}
+        </p>
       </div>
 
       <Tabs defaultValue="generator" className="w-full">

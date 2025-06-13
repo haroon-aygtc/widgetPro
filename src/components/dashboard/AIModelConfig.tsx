@@ -171,20 +171,6 @@ const AIModelConfig = ({
 
   return (
     <div className="flex-1 overflow-auto">
-      {/* Header */}
-      <header className="border-b bg-card p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              AI Model Configuration
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Connect and configure AI providers to power your chat widgets.
-            </p>
-          </div>
-        </div>
-      </header>
-
       <div className="bg-background w-full p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6">
