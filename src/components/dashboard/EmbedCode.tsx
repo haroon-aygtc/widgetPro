@@ -85,6 +85,8 @@ const EmbedCode = ({
     switch (embedMethod) {
       case "script":
         return `<!-- ChatWidget Pro Embed Code -->
+<!-- Widget: ${widgetConfig.name} (ID: ${widgetId}) -->
+<!-- Generated: ${new Date().toLocaleString()} -->
 <script>
   window.ChatWidgetConfig = ${configString};
 </script>
@@ -111,6 +113,8 @@ ${customCSS}
         ).toString()}`;
 
         return `<!-- ChatWidget Pro iFrame Embed -->
+<!-- Widget: ${widgetConfig.name} (ID: ${widgetId}) -->
+<!-- Generated: ${new Date().toLocaleString()} -->
 <iframe 
   src="${iframeUrl}"
   width="${widgetConfig.width}"
@@ -122,7 +126,10 @@ ${customCSS}
 </iframe>`;
 
       case "npm":
-        return `// Install the ChatWidget Pro package
+        return `// ChatWidget Pro React Component
+// Widget: ${widgetConfig.name} (ID: ${widgetId})
+// Generated: ${new Date().toLocaleString()}
+// Install the ChatWidget Pro package
 // npm install @chatwidget-pro/react
 
 import { ChatWidget } from '@chatwidget-pro/react';
@@ -221,7 +228,11 @@ function App() {
             Embed Code Generator
           </h2>
           <p className="text-muted-foreground">
-            Generate and customize embed code for your chat widget
+            Generate and customize embed code for:{" "}
+            <strong>{widgetConfig.name}</strong>
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Widget ID: {widgetId}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -354,7 +365,8 @@ function App() {
                     </Button>
                   </CardTitle>
                   <CardDescription>
-                    Copy this code and paste it into your website
+                    Embed code for widget: <strong>{widgetConfig.name}</strong>{" "}
+                    (ID: {widgetId})
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
