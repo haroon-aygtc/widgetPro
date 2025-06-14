@@ -186,39 +186,105 @@ function useToast() {
   };
 }
 
-// Helper function to create toast variants with color feedback
-function createToast(variant: string, className?: string) {
-  return (props: Toast) => toast({ ...props, variant, className });
+// Centralized toast utility functions to eliminate redundancy
+type ToastVariant = "default" | "destructive" | "success" | "warning" | "info";
+
+interface ToastOptions extends Omit<Toast, "variant"> {
+  variant?: ToastVariant;
 }
 
-// Export toast variants with color feedback
-const toastSuccess = (props: Toast) =>
-  toast({
-    ...props,
-    className:
-      "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-200",
-  });
+// Standardized toast creators with consistent messaging patterns
+const createStandardizedToast = (variant: ToastVariant) => {
+  return (options: ToastOptions) => {
+    return toast({
+      ...options,
+      variant,
+    });
+  };
+};
 
-const toastError = (props: Toast) =>
-  toast({
-    ...props,
-    variant: "destructive",
-    className:
-      "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200",
-  });
+// Export standardized toast variants
+const toastSuccess = createStandardizedToast("success");
+const toastError = createStandardizedToast("destructive");
+const toastWarning = createStandardizedToast("warning");
+const toastInfo = createStandardizedToast("info");
 
-const toastWarning = (props: Toast) =>
-  toast({
-    ...props,
-    className:
-      "border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200",
-  });
+// Common toast message patterns to reduce duplication
+const toastMessages = {
+  success: {
+    saved: { title: "Success", description: "Changes saved successfully" },
+    created: { title: "Created", description: "Item created successfully" },
+    updated: { title: "Updated", description: "Item updated successfully" },
+    deleted: { title: "Deleted", description: "Item deleted successfully" },
+  },
+  error: {
+    generic: {
+      title: "Error",
+      description: "Something went wrong. Please try again.",
+    },
+    network: {
+      title: "Network Error",
+      description: "Please check your connection and try again.",
+    },
+    validation: {
+      title: "Validation Error",
+      description: "Please check your input and try again.",
+    },
+    unauthorized: {
+      title: "Unauthorized",
+      description: "You don't have permission to perform this action.",
+    },
+  },
+  warning: {
+    unsaved: {
+      title: "Unsaved Changes",
+      description: "You have unsaved changes that will be lost.",
+    },
+    limit: {
+      title: "Limit Reached",
+      description: "You've reached the maximum limit.",
+    },
+  },
+  info: {
+    loading: {
+      title: "Processing",
+      description: "Please wait while we process your request.",
+    },
+    updated: { title: "Updated", description: "Content has been updated." },
+  },
+};
 
-const toastInfo = (props: Toast) =>
-  toast({
-    ...props,
-    className:
-      "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200",
-  });
+// Quick access functions for common toast patterns
+const showSuccessToast = (
+  type: keyof typeof toastMessages.success = "saved",
+) => {
+  return toastSuccess(toastMessages.success[type]);
+};
 
-export { useToast, toast, toastSuccess, toastError, toastWarning, toastInfo };
+const showErrorToast = (type: keyof typeof toastMessages.error = "generic") => {
+  return toastError(toastMessages.error[type]);
+};
+
+const showWarningToast = (
+  type: keyof typeof toastMessages.warning = "unsaved",
+) => {
+  return toastWarning(toastMessages.warning[type]);
+};
+
+const showInfoToast = (type: keyof typeof toastMessages.info = "loading") => {
+  return toastInfo(toastMessages.info[type]);
+};
+
+export {
+  useToast,
+  toast,
+  toastSuccess,
+  toastError,
+  toastWarning,
+  toastInfo,
+  toastMessages,
+  showSuccessToast,
+  showErrorToast,
+  showWarningToast,
+  showInfoToast,
+};
