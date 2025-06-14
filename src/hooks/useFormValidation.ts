@@ -120,7 +120,7 @@ export const formValidationPatterns = {
       if (!patterns.number.test(value)) missing.push("number");
       
       if (missing.length > 0) {
-        return `Password must contain at least one ${missing.join(", ")}";
+        return `Password must contain at least one ${missing.join(", ")}`;
       }
       
       return "";
