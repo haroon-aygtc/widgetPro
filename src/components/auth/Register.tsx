@@ -18,6 +18,11 @@ import {
   toastError,
   toastWarning,
 } from "@/components/ui/use-toast";
+import {
+  useFormValidation,
+  formValidationPatterns,
+} from "@/hooks/useFormValidation";
+import { registerSchema } from "@/lib/validation";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -31,29 +36,39 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  const {
+    errors,
+    validateForm,
+    validateField,
+    setFieldTouched,
+    getFieldError,
+  } = useFormValidation(registerSchema, {
+    validateOnChange: true,
+    validateOnBlur: true,
+  });
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    validateField(name, value);
+  };
+
+  const handleBlur = (fieldName: string) => {
+    setFieldTouched(fieldName, true);
+  };
+
+  const getPasswordStrength = () => {
+    return formValidationPatterns.password.getStrength(formData.password);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      toastWarning({
-        title: "Password Mismatch",
-        description: "Passwords do not match. Please check and try again.",
-      });
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toastWarning({
-        title: "Weak Password",
-        description: "Password must be at least 6 characters long.",
+    const validation = await validateForm(formData);
+    if (!validation.success) {
+      toastError({
+        title: "Validation Error",
+        description: "Please fix the errors in the form",
       });
       return;
     }

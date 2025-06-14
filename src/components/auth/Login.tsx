@@ -14,16 +14,47 @@ import { Separator } from "@/components/ui/separator";
 import { MessageSquare, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import ErrorBoundary from "@/components/ui/error-boundary";
 import { toastSuccess, toastError } from "@/components/ui/use-toast";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { loginSchema } from "@/lib/validation";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  const {
+    errors,
+    validateForm,
+    validateField,
+    setFieldTouched,
+    getFieldError,
+  } = useFormValidation(loginSchema, {
+    validateOnChange: true,
+    validateOnBlur: true,
+  });
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    validateField(field, value);
+  };
+
+  const handleInputBlur = (field: string) => {
+    setFieldTouched(field, true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = await validateForm(formData);
+    if (!validation.success) {
+      toastError({
+        title: "Validation Error",
+        description: "Please fix the errors in the form",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -96,11 +127,21 @@ const Login = () => {
                       id="email"
                       type="email"
                       placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 h-11 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600"
+                      value={formData.email}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
+                      onBlur={() => handleInputBlur("email")}
+                      className={`pl-10 h-11 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 ${
+                        getFieldError("email") ? "border-red-500" : ""
+                      }`}
                       required
                     />
+                    {getFieldError("email") && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {getFieldError("email")}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -114,11 +155,21 @@ const Login = () => {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 h-11 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600"
+                      value={formData.password}
+                      onChange={(e) =>
+                        handleInputChange("password", e.target.value)
+                      }
+                      onBlur={() => handleInputBlur("password")}
+                      className={`pl-10 pr-10 h-11 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 ${
+                        getFieldError("password") ? "border-red-500" : ""
+                      }`}
                       required
                     />
+                    {getFieldError("password") && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {getFieldError("password")}
+                      </p>
+                    )}
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
