@@ -221,293 +221,335 @@ function App() {
   };
 
   return (
-    <div className="space-y-6 bg-background p-6">
-      <div className="mb-6">
-        <p className="text-muted-foreground">
-          Generate and customize embed code for:{" "}
-          <strong>{widgetConfig.name}</strong>
-        </p>
-        <p className="text-sm text-muted-foreground mt-1">
-          Widget ID: {widgetId}
-        </p>
-      </div>
+    <div className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-violet-50/20 dark:to-violet-950/20">
+      {/* Header */}
+      <header className="border-b bg-card/80 backdrop-blur-xl p-6 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+              Embed Code Generator
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Generate and customize embed code for:{" "}
+              <strong>{widgetConfig.name}</strong>
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Widget ID: {widgetId}
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button onClick={openTestPage} variant="outline">
+              <TestTube className="h-4 w-4 mr-2" />
+              Test Widget
+            </Button>
+            <Button onClick={copyToClipboard}>
+              {copied ? (
+                <Check className="h-4 w-4 mr-2" />
+              ) : (
+                <Copy className="h-4 w-4 mr-2" />
+              )}
+              {copied ? "Copied!" : "Copy Code"}
+            </Button>
+          </div>
+        </div>
+      </header>
 
-      <Tabs defaultValue="generator" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="generator">Code Generator</TabsTrigger>
-          <TabsTrigger value="testing">Testing Environment</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced Options</TabsTrigger>
-        </TabsList>
+      <div className="p-6">
+        <div className="space-y-6">
+          <Tabs defaultValue="generator" className="w-full">
+            <TabsList className="mb-6">
+              <TabsTrigger
+                value="generator"
+                className="flex items-center gap-2"
+              >
+                <Code className="h-4 w-4" />
+                Code Generator
+              </TabsTrigger>
+              <TabsTrigger value="testing" className="flex items-center gap-2">
+                <TestTube className="h-4 w-4" />
+                Testing Environment
+              </TabsTrigger>
+              <TabsTrigger value="advanced" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Advanced Options
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="generator" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <Card>
+            <TabsContent value="generator" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <Card className="bg-gradient-to-br from-card to-card/80">
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Settings className="h-5 w-5 mr-2" />
+                        Embed Configuration
+                      </CardTitle>
+                      <CardDescription>
+                        Customize how your widget will be embedded
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="embed-method">Embed Method</Label>
+                        <Select
+                          value={embedMethod}
+                          onValueChange={(value: "script" | "iframe" | "npm") =>
+                            setEmbedMethod(value)
+                          }
+                        >
+                          <SelectTrigger id="embed-method">
+                            <SelectValue placeholder="Select embed method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="script">
+                              JavaScript (Recommended)
+                            </SelectItem>
+                            <SelectItem value="iframe">iFrame</SelectItem>
+                            <SelectItem value="npm">
+                              NPM Package (React)
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="custom-domain">Custom Domain</Label>
+                        <Input
+                          id="custom-domain"
+                          value={customDomain}
+                          onChange={(e) => setCustomDomain(e.target.value)}
+                          placeholder="chatwidget.pro"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="enable-analytics">
+                            Enable Analytics
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Track widget interactions and performance
+                          </p>
+                        </div>
+                        <Switch
+                          id="enable-analytics"
+                          checked={enableAnalytics}
+                          onCheckedChange={setEnableAnalytics}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="enable-custom-css">Custom CSS</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Add custom styling to your widget
+                          </p>
+                        </div>
+                        <Switch
+                          id="enable-custom-css"
+                          checked={enableCustomCSS}
+                          onCheckedChange={setEnableCustomCSS}
+                        />
+                      </div>
+
+                      {enableCustomCSS && (
+                        <div className="space-y-2">
+                          <Label htmlFor="custom-css">Custom CSS Code</Label>
+                          <Textarea
+                            id="custom-css"
+                            value={customCSS}
+                            onChange={(e) => setCustomCSS(e.target.value)}
+                            placeholder="/* Add your custom CSS here */\n.chat-widget {\n  /* Custom styles */\n}"
+                            rows={6}
+                          />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="space-y-6">
+                  <Card className="bg-gradient-to-br from-card to-card/80">
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <Code className="h-5 w-5 mr-2" />
+                          Generated Code
+                        </div>
+                        <Button onClick={copyToClipboard} size="sm">
+                          {copied ? (
+                            <Check className="h-4 w-4 mr-2" />
+                          ) : (
+                            <Copy className="h-4 w-4 mr-2" />
+                          )}
+                          {copied ? "Copied!" : "Copy"}
+                        </Button>
+                      </CardTitle>
+                      <CardDescription>
+                        Embed code for widget:{" "}
+                        <strong>{widgetConfig.name}</strong> (ID: {widgetId})
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="relative">
+                        <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto max-h-96 overflow-y-auto">
+                          <code>{generateEmbedCode()}</code>
+                        </pre>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gradient-to-br from-card to-card/80">
+                    <CardHeader>
+                      <CardTitle>Installation Instructions</CardTitle>
+                      <CardDescription>
+                        Follow these steps to add the widget to your website
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {embedMethod === "script" && (
+                          <ol className="list-decimal list-inside space-y-2 text-sm">
+                            <li>Copy the generated code above</li>
+                            <li>
+                              Paste it before the closing{" "}
+                              <code>&lt;/body&gt;</code> tag on your website
+                            </li>
+                            <li>Save your changes and refresh your website</li>
+                            <li>
+                              The chat widget should now appear on your website
+                            </li>
+                          </ol>
+                        )}
+                        {embedMethod === "iframe" && (
+                          <ol className="list-decimal list-inside space-y-2 text-sm">
+                            <li>Copy the generated iframe code above</li>
+                            <li>
+                              Paste it anywhere in your HTML where you want the
+                              widget to appear
+                            </li>
+                            <li>Adjust the positioning styles if needed</li>
+                            <li>Save your changes and refresh your website</li>
+                          </ol>
+                        )}
+                        {embedMethod === "npm" && (
+                          <ol className="list-decimal list-inside space-y-2 text-sm">
+                            <li>
+                              Install the package:{" "}
+                              <code>npm install @chatwidget-pro/react</code>
+                            </li>
+                            <li>Import the component in your React app</li>
+                            <li>Add the ChatWidget component to your JSX</li>
+                            <li>Configure the widget with your settings</li>
+                          </ol>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="testing" className="space-y-6">
+              <Card className="bg-gradient-to-br from-card to-card/80">
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <Settings className="h-5 w-5 mr-2" />
-                    Embed Configuration
+                    <TestTube className="h-5 w-5 mr-2" />
+                    Testing Environment
                   </CardTitle>
                   <CardDescription>
-                    Customize how your widget will be embedded
+                    Test your widget integration before deploying to production
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="embed-method">Embed Method</Label>
-                    <Select
-                      value={embedMethod}
-                      onValueChange={(value: "script" | "iframe" | "npm") =>
-                        setEmbedMethod(value)
-                      }
-                    >
-                      <SelectTrigger id="embed-method">
-                        <SelectValue placeholder="Select embed method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="script">
-                          JavaScript (Recommended)
-                        </SelectItem>
-                        <SelectItem value="iframe">iFrame</SelectItem>
-                        <SelectItem value="npm">NPM Package (React)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="custom-domain">Custom Domain</Label>
+                    <Label htmlFor="test-url">Test URL (Optional)</Label>
                     <Input
-                      id="custom-domain"
-                      value={customDomain}
-                      onChange={(e) => setCustomDomain(e.target.value)}
-                      placeholder="chatwidget.pro"
+                      id="test-url"
+                      value={testUrl}
+                      onChange={(e) => setTestUrl(e.target.value)}
+                      placeholder="https://example.com"
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="enable-analytics">Enable Analytics</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Track widget interactions and performance
-                      </p>
-                    </div>
-                    <Switch
-                      id="enable-analytics"
-                      checked={enableAnalytics}
-                      onCheckedChange={setEnableAnalytics}
-                    />
+                  <div className="flex space-x-4">
+                    <Button onClick={openTestPage} className="flex-1">
+                      <Play className="h-4 w-4 mr-2" />
+                      Open Test Page
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => window.location.reload()}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh Preview
+                    </Button>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="enable-custom-css">Custom CSS</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Add custom styling to your widget
-                      </p>
-                    </div>
-                    <Switch
-                      id="enable-custom-css"
-                      checked={enableCustomCSS}
-                      onCheckedChange={setEnableCustomCSS}
-                    />
+                  <div className="bg-muted p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">Testing Checklist:</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>✓ Widget appears in the correct position</li>
+                      <li>✓ Widget opens and closes properly</li>
+                      <li>✓ Messages can be sent and received</li>
+                      <li>✓ Styling matches your configuration</li>
+                      <li>✓ Widget is responsive on different screen sizes</li>
+                      <li>✓ No console errors in browser developer tools</li>
+                    </ul>
                   </div>
-
-                  {enableCustomCSS && (
-                    <div className="space-y-2">
-                      <Label htmlFor="custom-css">Custom CSS Code</Label>
-                      <Textarea
-                        id="custom-css"
-                        value={customCSS}
-                        onChange={(e) => setCustomCSS(e.target.value)}
-                        placeholder="/* Add your custom CSS here */\n.chat-widget {\n  /* Custom styles */\n}"
-                        rows={6}
-                      />
-                    </div>
-                  )}
                 </CardContent>
               </Card>
-            </div>
+            </TabsContent>
 
-            <div className="space-y-6">
-              <Card>
+            <TabsContent value="advanced" className="space-y-6">
+              <Card className="bg-gradient-to-br from-card to-card/80">
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Code className="h-5 w-5 mr-2" />
-                      Generated Code
-                    </div>
-                    <Button onClick={copyToClipboard} size="sm">
-                      {copied ? (
-                        <Check className="h-4 w-4 mr-2" />
-                      ) : (
-                        <Copy className="h-4 w-4 mr-2" />
-                      )}
-                      {copied ? "Copied!" : "Copy"}
-                    </Button>
-                  </CardTitle>
+                  <CardTitle>Advanced Configuration</CardTitle>
                   <CardDescription>
-                    Embed code for widget: <strong>{widgetConfig.name}</strong>{" "}
-                    (ID: {widgetId})
+                    Advanced options for power users and developers
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="relative">
-                    <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto max-h-96 overflow-y-auto">
-                      <code>{generateEmbedCode()}</code>
+                <CardContent className="space-y-4">
+                  <div className="bg-muted p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">
+                      Widget Configuration Object:
+                    </h4>
+                    <pre className="text-sm overflow-x-auto">
+                      <code>{JSON.stringify(widgetConfig, null, 2)}</code>
                     </pre>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Installation Instructions</CardTitle>
-                  <CardDescription>
-                    Follow these steps to add the widget to your website
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
                   <div className="space-y-4">
-                    {embedMethod === "script" && (
-                      <ol className="list-decimal list-inside space-y-2 text-sm">
-                        <li>Copy the generated code above</li>
-                        <li>
-                          Paste it before the closing <code>&lt;/body&gt;</code>{" "}
-                          tag on your website
-                        </li>
-                        <li>Save your changes and refresh your website</li>
-                        <li>
-                          The chat widget should now appear on your website
-                        </li>
-                      </ol>
-                    )}
-                    {embedMethod === "iframe" && (
-                      <ol className="list-decimal list-inside space-y-2 text-sm">
-                        <li>Copy the generated iframe code above</li>
-                        <li>
-                          Paste it anywhere in your HTML where you want the
-                          widget to appear
-                        </li>
-                        <li>Adjust the positioning styles if needed</li>
-                        <li>Save your changes and refresh your website</li>
-                      </ol>
-                    )}
-                    {embedMethod === "npm" && (
-                      <ol className="list-decimal list-inside space-y-2 text-sm">
-                        <li>
-                          Install the package:{" "}
-                          <code>npm install @chatwidget-pro/react</code>
-                        </li>
-                        <li>Import the component in your React app</li>
-                        <li>Add the ChatWidget component to your JSX</li>
-                        <li>Configure the widget with your settings</li>
-                      </ol>
-                    )}
+                    <h4 className="font-medium">
+                      Available Customization Options:
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-2">
+                        <h5 className="font-medium">Appearance</h5>
+                        <ul className="text-muted-foreground space-y-1">
+                          <li>• Custom colors and themes</li>
+                          <li>• Widget positioning</li>
+                          <li>• Size customization</li>
+                          <li>• Custom CSS injection</li>
+                        </ul>
+                      </div>
+                      <div className="space-y-2">
+                        <h5 className="font-medium">Behavior</h5>
+                        <ul className="text-muted-foreground space-y-1">
+                          <li>• Auto-open settings</li>
+                          <li>• Welcome messages</li>
+                          <li>• Bot personality</li>
+                          <li>• Analytics tracking</li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="testing" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <TestTube className="h-5 w-5 mr-2" />
-                Testing Environment
-              </CardTitle>
-              <CardDescription>
-                Test your widget integration before deploying to production
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="test-url">Test URL (Optional)</Label>
-                <Input
-                  id="test-url"
-                  value={testUrl}
-                  onChange={(e) => setTestUrl(e.target.value)}
-                  placeholder="https://example.com"
-                />
-              </div>
-
-              <div className="flex space-x-4">
-                <Button onClick={openTestPage} className="flex-1">
-                  <Play className="h-4 w-4 mr-2" />
-                  Open Test Page
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => window.location.reload()}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Preview
-                </Button>
-              </div>
-
-              <div className="bg-muted p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Testing Checklist:</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>✓ Widget appears in the correct position</li>
-                  <li>✓ Widget opens and closes properly</li>
-                  <li>✓ Messages can be sent and received</li>
-                  <li>✓ Styling matches your configuration</li>
-                  <li>✓ Widget is responsive on different screen sizes</li>
-                  <li>✓ No console errors in browser developer tools</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="advanced" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Advanced Configuration</CardTitle>
-              <CardDescription>
-                Advanced options for power users and developers
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg">
-                <h4 className="font-medium mb-2">
-                  Widget Configuration Object:
-                </h4>
-                <pre className="text-sm overflow-x-auto">
-                  <code>{JSON.stringify(widgetConfig, null, 2)}</code>
-                </pre>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-medium">
-                  Available Customization Options:
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="space-y-2">
-                    <h5 className="font-medium">Appearance</h5>
-                    <ul className="text-muted-foreground space-y-1">
-                      <li>• Custom colors and themes</li>
-                      <li>• Widget positioning</li>
-                      <li>• Size customization</li>
-                      <li>• Custom CSS injection</li>
-                    </ul>
-                  </div>
-                  <div className="space-y-2">
-                    <h5 className="font-medium">Behavior</h5>
-                    <ul className="text-muted-foreground space-y-1">
-                      <li>• Auto-open settings</li>
-                      <li>• Welcome messages</li>
-                      <li>• Bot personality</li>
-                      <li>• Analytics tracking</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 };

@@ -236,21 +236,42 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-violet-50/20 dark:to-violet-950/20">
-      <div className="p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1d">Last 24h</SelectItem>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Header */}
+      <header className="border-b bg-card/80 backdrop-blur-xl p-6 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+              Analytics Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Monitor your chat widget performance and user engagement
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1d">Last 24h</SelectItem>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
         </div>
+      </header>
 
+      <div className="p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">

@@ -15,6 +15,7 @@ import WidgetConfiguration from "./components/dashboard/WidgetConfiguration";
 import AnalyticsDashboard from "./components/dashboard/AnalyticsDashboard";
 import SettingsPage from "./components/dashboard/SettingsPage";
 import EmbedCode from "./components/dashboard/EmbedCode";
+import PromptTemplates from "./components/dashboard/PromptTemplates";
 import routes from "tempo-routes";
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
             <Route path="ai-models" element={<AIModelConfig />} />
             <Route path="knowledge-base" element={<KnowledgeBaseConfig />} />
             <Route path="analytics" element={<AnalyticsDashboard />} />
+            <Route path="prompt-templates" element={<PromptTemplates />} />
             <Route path="embed" element={<EmbedCode />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

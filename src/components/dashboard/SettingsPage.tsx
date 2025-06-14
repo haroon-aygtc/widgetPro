@@ -241,6 +241,30 @@ const SettingsPage = () => {
 
   return (
     <div className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-violet-50/20 dark:to-violet-950/20">
+      {/* Header */}
+      <header className="border-b bg-card/80 backdrop-blur-xl p-6 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+              Settings
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Manage your account, security, and application preferences
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="outline"
+              onClick={() => handleSave(activeTab)}
+              disabled={isLoading}
+            >
+              {getSaveButtonIcon()}
+              <span className="ml-2">{getSaveButtonText()}</span>
+            </Button>
+          </div>
+        </div>
+      </header>
+
       <div className="p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6">

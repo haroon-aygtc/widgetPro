@@ -15,13 +15,7 @@ import {
   HelpCircle,
   LogOut,
   Code,
-  PlusCircle,
-  Download,
-  RefreshCw,
-  Save,
-  TestTube,
-  Copy,
-  Filter,
+  FileText,
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -30,89 +24,6 @@ const AdminLayout = () => {
   const isActive = (path: string) => {
     return location.pathname === path;
   };
-
-  const getPageConfig = () => {
-    const path = location.pathname;
-
-    switch (path) {
-      case "/admin":
-        return {
-          title: "Dashboard",
-          description: "Overview of your chat widget platform",
-          actions: [
-            { label: "Settings", icon: Settings, variant: "outline" as const },
-            {
-              label: "New Widget",
-              icon: PlusCircle,
-              variant: "default" as const,
-              to: "/admin/widgets",
-            },
-          ],
-        };
-      case "/admin/widgets":
-        return {
-          title: "Widget Configuration",
-          description: "Customize your AI chat widget appearance and behavior",
-          actions: [
-            { label: "Save Changes", icon: Save, variant: "default" as const },
-          ],
-        };
-      case "/admin/ai-models":
-        return {
-          title: "AI Model Configuration",
-          description:
-            "Connect and configure AI providers to power your chat widgets",
-          actions: [],
-        };
-      case "/admin/knowledge-base":
-        return {
-          title: "Knowledge Base Configuration",
-          description: "Enhance AI responses with custom knowledge sources",
-          actions: [],
-        };
-      case "/admin/analytics":
-        return {
-          title: "Analytics Dashboard",
-          description:
-            "Monitor your chat widget performance and user engagement",
-          actions: [
-            { label: "Refresh", icon: RefreshCw, variant: "outline" as const },
-            { label: "Export", icon: Download, variant: "default" as const },
-          ],
-        };
-      case "/admin/embed":
-        return {
-          title: "Embed Code Generator",
-          description:
-            "Generate and customize embed code for your chat widgets",
-          actions: [
-            {
-              label: "Test Widget",
-              icon: TestTube,
-              variant: "outline" as const,
-            },
-            { label: "Copy Code", icon: Copy, variant: "default" as const },
-          ],
-        };
-      case "/admin/settings":
-        return {
-          title: "Settings",
-          description:
-            "Manage your account, security, and application preferences",
-          actions: [
-            { label: "Save Changes", icon: Save, variant: "default" as const },
-          ],
-        };
-      default:
-        return {
-          title: "Dashboard",
-          description: "Overview of your chat widget platform",
-          actions: [],
-        };
-    }
-  };
-
-  const pageConfig = getPageConfig();
 
   const navItems = [
     {
@@ -139,6 +50,11 @@ const AdminLayout = () => {
       path: "/admin/analytics",
       label: "Analytics",
       icon: LineChart,
+    },
+    {
+      path: "/admin/prompt-templates",
+      label: "Prompt Templates",
+      icon: FileText,
     },
     {
       path: "/admin/embed",
@@ -178,14 +94,14 @@ const AdminLayout = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                  className={`flex items-center px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
                     isActive(item.path)
                       ? "bg-gradient-to-r from-violet-500/10 to-purple-500/10 text-violet-700 dark:text-violet-300 border border-violet-200/50 dark:border-violet-800/50 shadow-sm"
                       : "hover:bg-gradient-to-r hover:from-violet-500/5 hover:to-purple-500/5 hover:text-violet-600 dark:hover:text-violet-400 hover:translate-x-1"
                   }`}
                 >
-                  <span>{item.label}</span>
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-4 w-4 mr-2" />
+                  {item.label}
                 </Link>
               );
             })}
@@ -222,6 +138,22 @@ const AdminLayout = () => {
         <header className="border-b bg-card/80 backdrop-blur-xl p-4 shadow-sm shadow-violet-500/5">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
+              <h2 className="text-2xl font-bold text-violet-700 dark:text-violet-300">
+                {location.pathname === "/admin" && "Dashboard"}
+                {location.pathname === "/admin/widgets" &&
+                  "Widget Configuration"}
+                {location.pathname === "/admin/ai-models" && "AI Models"}
+                {location.pathname === "/admin/knowledge-base" &&
+                  "Knowledge Base"}
+                {location.pathname === "/admin/analytics" && "Analytics"}
+                {location.pathname === "/admin/prompt-templates" &&
+                  "Prompt Templates"}
+                {location.pathname === "/admin/embed" && "Embed Code"}
+                {location.pathname === "/admin/settings" && "Settings"}
+              </h2>
+            </div>
+
+            <div className="flex items-center space-x-3">
               {/* Search */}
               <Button
                 variant="ghost"
@@ -275,43 +207,6 @@ const AdminLayout = () => {
                 </Button>
               </div>
             </div>
-          </div>
-        </header>
-
-        {/* Page Header */}
-        <header className="border-b bg-card/80 backdrop-blur-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                {pageConfig.title}
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                {pageConfig.description}
-              </p>
-            </div>
-            {pageConfig.actions.length > 0 && (
-              <div className="flex items-center space-x-3">
-                {pageConfig.actions.map((action, index) => {
-                  const Icon = action.icon;
-                  const ButtonComponent = action.to ? Link : "button";
-                  const buttonProps = action.to ? { to: action.to } : {};
-
-                  return (
-                    <Button
-                      key={index}
-                      variant={action.variant}
-                      size="sm"
-                      asChild={!!action.to}
-                    >
-                      <ButtonComponent {...buttonProps}>
-                        <Icon className="h-4 w-4 mr-2" />
-                        {action.label}
-                      </ButtonComponent>
-                    </Button>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </header>
 

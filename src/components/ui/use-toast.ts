@@ -186,15 +186,39 @@ function useToast() {
   };
 }
 
-// Helper function to create toast variants
-function createToast(variant: string) {
-  return (props: Toast) => toast({ ...props, variant });
+// Helper function to create toast variants with color feedback
+function createToast(variant: string, className?: string) {
+  return (props: Toast) => toast({ ...props, variant, className });
 }
 
-// Export toast variants
-const toastSuccess = createToast("success");
-const toastError = createToast("error");
-const toastWarning = createToast("warning");
-const toastInfo = createToast("info");
+// Export toast variants with color feedback
+const toastSuccess = (props: Toast) =>
+  toast({
+    ...props,
+    className:
+      "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-200",
+  });
+
+const toastError = (props: Toast) =>
+  toast({
+    ...props,
+    variant: "destructive",
+    className:
+      "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200",
+  });
+
+const toastWarning = (props: Toast) =>
+  toast({
+    ...props,
+    className:
+      "border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200",
+  });
+
+const toastInfo = (props: Toast) =>
+  toast({
+    ...props,
+    className:
+      "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200",
+  });
 
 export { useToast, toast, toastSuccess, toastError, toastWarning, toastInfo };
