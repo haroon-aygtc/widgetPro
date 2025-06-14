@@ -50,8 +50,12 @@ import {
   Loader2,
 } from "lucide-react";
 import ErrorBoundary from "@/components/ui/error-boundary";
-import { toastUtils } from "@/components/ui/use-toast";
-import { useOperationLoading } from "@/contexts/LoadingContext";
+import {
+  toastSuccess,
+  toastError,
+  toastInfo,
+  toastWarning,
+} from "@/components/ui/use-toast";
 
 interface KnowledgeBaseConfigProps {
   knowledgeBaseId?: string;
@@ -89,20 +93,18 @@ interface ApiItem {
 
 const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
   knowledgeBaseId = "",
-  onSave = () => { },
-  onTest = () => { },
+  onSave = () => {},
+  onTest = () => {},
 }) => {
   const [activeTab, setActiveTab] = useState("documents");
   const [testResult, setTestResult] = useState<{
     success: boolean;
     message: string;
   } | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [testQuery, setTestQuery] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
-
-  // Use unified loading state management
-  const testLoading = useOperationLoading("knowledge-test");
-  const uploadLoading = useOperationLoading("file-upload");
+  const [isUploading, setIsUploading] = useState(false);
 
   // Sample data for demonstration
   const [documents] = useState<DocumentItem[]>([
@@ -492,7 +494,7 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
       return;
     }
 
-    testLoading.start("Testing knowledge base...");
+    setIsProcessing(true);
     try {
       // Simulate API call
       await new Promise((resolve, reject) => {
@@ -528,13 +530,14 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
           "Knowledge base test failed. Please check your configuration.",
       });
     } finally {
-      testLoading.stop();
+      setIsProcessing(false);
     }
   };
 
   const handleFileUpload = async () => {
     uploadLoading.start("Uploading files...");
     setUploadProgress(0);
+    setIsUploading(true);
 
     try {
       // Simulate file upload progress
@@ -559,6 +562,7 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
       toastUtils.fileUploadError();
     } finally {
       uploadLoading.stop();
+      setIsUploading(false);
     }
   };
 
@@ -756,11 +760,11 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
                           Support for PDF, DOCX, TXT, CSV files up to 10MB each
                         </p>
                       </div>
-                      <Button onClick={handleFileUpload} disabled={uploadLoading.isLoading}>
-                        {uploadLoading.isLoading ? (
+                      <Button onClick={handleFileUpload} disabled={isUploading}>
+                        {isUploading ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            {uploadLoading.loadingState?.message || "Uploading..."}
+                            Uploading...
                           </>
                         ) : (
                           <>
@@ -1156,12 +1160,12 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
               </div>
               <Button
                 onClick={handleTest}
-                disabled={testLoading.isLoading || !testQuery.trim()}
+                disabled={isProcessing || !testQuery.trim()}
               >
-                {testLoading.isLoading ? (
+                {isProcessing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {testLoading.loadingState?.message || "Testing..."}
+                    Testing...
                   </>
                 ) : (
                   <>
