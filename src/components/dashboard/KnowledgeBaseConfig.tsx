@@ -50,12 +50,8 @@ import {
   Loader2,
 } from "lucide-react";
 import ErrorBoundary from "@/components/ui/error-boundary";
-import {
-  toastSuccess,
-  toastError,
-  toastInfo,
-  toastWarning,
-} from "@/components/ui/use-toast";
+import { toastUtils } from "@/components/ui/use-toast";
+import { useOperationLoading } from "@/contexts/LoadingContext";
 
 interface KnowledgeBaseConfigProps {
   knowledgeBaseId?: string;
@@ -93,18 +89,20 @@ interface ApiItem {
 
 const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
   knowledgeBaseId = "",
-  onSave = () => {},
-  onTest = () => {},
+  onSave = () => { },
+  onTest = () => { },
 }) => {
   const [activeTab, setActiveTab] = useState("documents");
   const [testResult, setTestResult] = useState<{
     success: boolean;
     message: string;
   } | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [testQuery, setTestQuery] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
+
+  // Use unified loading state management
+  const testLoading = useOperationLoading("knowledge-test");
+  const uploadLoading = useOperationLoading("file-upload");
 
   // Sample data for demonstration
   const [documents] = useState<DocumentItem[]>([
@@ -494,7 +492,7 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
       return;
     }
 
-    setIsProcessing(true);
+    testLoading.start("Testing knowledge base...");
     try {
       // Simulate API call
       await new Promise((resolve, reject) => {
@@ -530,12 +528,12 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
           "Knowledge base test failed. Please check your configuration.",
       });
     } finally {
-      setIsProcessing(false);
+      testLoading.stop();
     }
   };
 
   const handleFileUpload = async () => {
-    setIsUploading(true);
+    uploadLoading.start("Uploading files...");
     setUploadProgress(0);
 
     try {
@@ -543,27 +541,24 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
       await new Promise((resolve, reject) => {
         const interval = setInterval(() => {
           setUploadProgress((prev) => {
-            if (prev >= 100) {
+            const newProgress = prev + 10;
+            uploadLoading.updateProgress(newProgress);
+            if (newProgress >= 100) {
               clearInterval(interval);
-              resolve(true);
+              uploadLoading.updateMessage("Processing files...");
+              setTimeout(() => resolve(true), 500);
               return 100;
             }
-            return prev + 10;
+            return newProgress;
           });
         }, 200);
       });
 
-      toastSuccess({
-        title: "Upload Complete",
-        description: "Files have been uploaded and are being processed.",
-      });
+      toastUtils.fileUploaded();
     } catch (error) {
-      toastError({
-        title: "Upload Failed",
-        description: "Failed to upload files. Please try again.",
-      });
+      toastUtils.fileUploadError();
     } finally {
-      setIsUploading(false);
+      uploadLoading.stop();
     }
   };
 
@@ -726,11 +721,11 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
                           Support for PDF, DOCX, TXT, CSV files up to 10MB each
                         </p>
                       </div>
-                      <Button onClick={handleFileUpload} disabled={isUploading}>
-                        {isUploading ? (
+                      <Button onClick={handleFileUpload} disabled={uploadLoading.isLoading}>
+                        {uploadLoading.isLoading ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Uploading...
+                            {uploadLoading.loadingState?.message || "Uploading..."}
                           </>
                         ) : (
                           <>
@@ -742,7 +737,7 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
                     </div>
                   </div>
 
-                  {isUploading && (
+                  {uploadLoading.isLoading && (
                     <div className="mt-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">
@@ -1106,12 +1101,12 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
               </div>
               <Button
                 onClick={handleTest}
-                disabled={isProcessing || !testQuery.trim()}
+                disabled={testLoading.isLoading || !testQuery.trim()}
               >
-                {isProcessing ? (
+                {testLoading.isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Testing...
+                    {testLoading.loadingState?.message || "Testing..."}
                   </>
                 ) : (
                   <>

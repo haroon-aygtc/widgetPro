@@ -35,7 +35,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ErrorBoundary from "@/components/ui/error-boundary";
-import { toastSuccess, toastError, toastInfo } from "@/components/ui/use-toast";
+import { toastUtils } from "@/components/ui/use-toast";
+import { useOperationLoading } from "@/contexts/LoadingContext";
 
 interface AIModelConfigProps {
   onSave?: (config: any) => void;
@@ -43,7 +44,7 @@ interface AIModelConfigProps {
 }
 
 const AIModelConfig = ({
-  onSave = () => {},
+  onSave = () => { },
   initialConfig = {},
 }: AIModelConfigProps) => {
   const [activeTab, setActiveTab] = useState("providers");
@@ -57,7 +58,11 @@ const AIModelConfig = ({
   );
   const [testResponse, setTestResponse] = useState("");
   const [isConnected, setIsConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+
+  // Use unified loading state management
+  const connectLoading = useOperationLoading("provider-connect");
+  const testLoading = useOperationLoading("model-test");
+  const saveLoading = useOperationLoading("config-save");
 
   const providers = [
     { id: "openai", name: "OpenAI", logo: "🟢" },
@@ -141,68 +146,70 @@ const AIModelConfig = ({
   };
 
   const handleConnectProvider = async () => {
-    setIsLoading(true);
+    connectLoading.start("Connecting to provider...");
     try {
       // Simulate API connection
+      connectLoading.updateMessage("Verifying API key...");
       await new Promise((resolve, reject) => {
         setTimeout(() => {
-          if (Math.random() > 0.1) {
-            resolve(true);
-          } else {
-            reject(new Error("Failed to connect to provider"));
-          }
-        }, 1500);
+          connectLoading.updateProgress(50);
+          connectLoading.updateMessage("Establishing connection...");
+          setTimeout(() => {
+            if (Math.random() > 0.1) {
+              connectLoading.updateProgress(100);
+              resolve(true);
+            } else {
+              reject(new Error("Failed to connect to provider"));
+            }
+          }, 750);
+        }, 750);
       });
 
       setIsConnected(true);
-      toastSuccess({
-        title: "Provider Connected",
-        description: `Successfully connected to ${providers.find((p) => p.id === selectedProvider)?.name}`,
-      });
+      toastUtils.operationSuccess(`${providers.find((p) => p.id === selectedProvider)?.name} connection`);
     } catch (error) {
-      toastError({
-        title: "Connection Failed",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to connect to AI provider",
-      });
+      toastUtils.operationError(
+        "Provider connection",
+        error instanceof Error ? error.message : undefined
+      );
     } finally {
-      setIsLoading(false);
+      connectLoading.stop();
     }
   };
 
   const handleTestModel = async () => {
-    setIsLoading(true);
+    testLoading.start("Testing model...");
     setTestResponse("");
     try {
       // Simulate API response
+      testLoading.updateMessage("Sending test prompt...");
       await new Promise((resolve, reject) => {
         setTimeout(() => {
-          if (Math.random() > 0.1) {
-            resolve(true);
-          } else {
-            reject(new Error("Model test failed"));
-          }
-        }, 2000);
+          testLoading.updateProgress(50);
+          testLoading.updateMessage("Generating response...");
+          setTimeout(() => {
+            if (Math.random() > 0.1) {
+              testLoading.updateProgress(100);
+              resolve(true);
+            } else {
+              reject(new Error("Model test failed"));
+            }
+          }, 1000);
+        }, 1000);
       });
 
       setTestResponse(
         "I'm a simulated AI response based on your configuration. In a real implementation, this would be an actual response from the selected AI model with the specified parameters.",
       );
 
-      toastSuccess({
-        title: "Model Test Successful",
-        description: "Your AI model configuration is working correctly!",
-      });
+      toastUtils.operationSuccess("Model test");
     } catch (error) {
-      toastError({
-        title: "Model Test Failed",
-        description:
-          error instanceof Error ? error.message : "Failed to test AI model",
-      });
+      toastUtils.operationError(
+        "Model test",
+        error instanceof Error ? error.message : undefined
+      );
     } finally {
-      setIsLoading(false);
+      testLoading.stop();
     }
   };
 
@@ -215,21 +222,21 @@ const AIModelConfig = ({
       systemPrompt,
     };
 
-    setIsLoading(true);
+    saveLoading.start("Saving configuration...");
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      saveLoading.updateMessage("Validating settings...");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      saveLoading.updateProgress(50);
+      saveLoading.updateMessage("Saving to server...");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      saveLoading.updateProgress(100);
+
       onSave(config);
-      toastSuccess({
-        title: "Configuration Saved",
-        description: "Your AI model configuration has been saved successfully!",
-      });
+      toastUtils.configSaved();
     } catch (error) {
-      toastError({
-        title: "Save Failed",
-        description: "Failed to save configuration. Please try again.",
-      });
+      toastUtils.operationError("Configuration save");
     } finally {
-      setIsLoading(false);
+      saveLoading.stop();
     }
   };
 
@@ -342,13 +349,13 @@ const AIModelConfig = ({
                   <Button variant="outline">Cancel</Button>
                   <Button
                     onClick={handleConnectProvider}
-                    disabled={!apiKey || isLoading}
+                    disabled={!apiKey || connectLoading.isLoading}
                   >
-                    {isLoading && (
+                    {connectLoading.isLoading && (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     )}
-                    {isLoading
-                      ? "Connecting..."
+                    {connectLoading.isLoading
+                      ? connectLoading.loadingState?.message || "Connecting..."
                       : isConnected
                         ? "Reconnect"
                         : "Connect Provider"}
@@ -649,12 +656,14 @@ const AIModelConfig = ({
                     <Button
                       onClick={handleTestModel}
                       className="w-full"
-                      disabled={isLoading}
+                      disabled={testLoading.isLoading}
                     >
-                      {isLoading && (
+                      {testLoading.isLoading && (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       )}
-                      {isLoading ? "Generating response..." : "Test Model"}
+                      {testLoading.isLoading
+                        ? testLoading.loadingState?.message || "Testing model..."
+                        : "Test Model"}
                     </Button>
 
                     {testResponse && (
@@ -672,11 +681,13 @@ const AIModelConfig = ({
                   >
                     Back
                   </Button>
-                  <Button onClick={handleSaveConfig} disabled={isLoading}>
-                    {isLoading && (
+                  <Button onClick={handleSaveConfig} disabled={saveLoading.isLoading}>
+                    {saveLoading.isLoading && (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     )}
-                    {isLoading ? "Saving..." : "Save Configuration"}
+                    {saveLoading.isLoading
+                      ? saveLoading.loadingState?.message || "Saving..."
+                      : "Save Configuration"}
                   </Button>
                 </CardFooter>
               </Card>

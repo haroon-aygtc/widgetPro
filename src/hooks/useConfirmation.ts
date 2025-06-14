@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useModal } from "./useModal";
 
 interface ConfirmationOptions {
   title: string;
@@ -8,46 +8,30 @@ interface ConfirmationOptions {
   variant?: "default" | "destructive" | "warning" | "info";
 }
 
-interface ConfirmationState extends ConfirmationOptions {
-  isOpen: boolean;
-  onConfirm?: () => void;
-  onCancel?: () => void;
-}
-
+// Legacy confirmation hook - now uses unified modal system
 export function useConfirmation() {
-  const [state, setState] = useState<ConfirmationState>({
-    isOpen: false,
-    title: "",
-    description: "",
-  });
+  const modal = useModal();
 
-  const confirm = useCallback(
-    (options: ConfirmationOptions): Promise<boolean> => {
-      return new Promise((resolve) => {
-        setState({
-          ...options,
-          isOpen: true,
-          onConfirm: () => {
-            resolve(true);
-            setState((prev) => ({ ...prev, isOpen: false }));
-          },
-          onCancel: () => {
-            resolve(false);
-            setState((prev) => ({ ...prev, isOpen: false }));
-          },
-        });
-      });
-    },
-    [],
-  );
-
-  const close = useCallback(() => {
-    setState((prev) => ({ ...prev, isOpen: false }));
-  }, []);
+  const confirm = (options: ConfirmationOptions): Promise<boolean> => {
+    return modal.confirm({
+      title: options.title,
+      description: options.description,
+      confirmText: options.confirmText,
+      cancelText: options.cancelText,
+      variant: options.variant,
+    });
+  };
 
   return {
-    ...state,
+    isOpen: modal.isOpen,
+    title: modal.modalState.title,
+    description: modal.modalState.description,
+    confirmText: modal.modalState.confirmText,
+    cancelText: modal.modalState.cancelText,
+    variant: modal.modalState.variant,
+    onConfirm: modal.modalState.onConfirm,
+    onCancel: modal.modalState.onCancel,
     confirm,
-    close,
+    close: modal.closeModal,
   };
 }

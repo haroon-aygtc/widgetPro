@@ -31,21 +31,21 @@ type ActionType = typeof actionTypes;
 
 type Action =
   | {
-      type: ActionType["ADD_TOAST"];
-      toast: ToasterToast;
-    }
+    type: ActionType["ADD_TOAST"];
+    toast: ToasterToast;
+  }
   | {
-      type: ActionType["UPDATE_TOAST"];
-      toast: Partial<ToasterToast>;
-    }
+    type: ActionType["UPDATE_TOAST"];
+    toast: Partial<ToasterToast>;
+  }
   | {
-      type: ActionType["DISMISS_TOAST"];
-      toastId?: ToasterToast["id"];
-    }
+    type: ActionType["DISMISS_TOAST"];
+    toastId?: ToasterToast["id"];
+  }
   | {
-      type: ActionType["REMOVE_TOAST"];
-      toastId?: ToasterToast["id"];
-    };
+    type: ActionType["REMOVE_TOAST"];
+    toastId?: ToasterToast["id"];
+  };
 
 interface State {
   toasts: ToasterToast[];
@@ -103,9 +103,9 @@ export const reducer = (state: State, action: Action): State => {
         toasts: state.toasts.map((t) =>
           t.id === toastId || toastId === undefined
             ? {
-                ...t,
-                open: false,
-              }
+              ...t,
+              open: false,
+            }
             : t,
         ),
       };
@@ -193,7 +193,7 @@ interface ToastOptions extends Omit<Toast, "variant"> {
   variant?: ToastVariant;
 }
 
-// Standardized toast creators with consistent messaging patterns
+// Unified toast notification system - consolidating all toast patterns
 const createStandardizedToast = (variant: ToastVariant) => {
   return (options: ToastOptions) => {
     return toast({
@@ -273,6 +273,60 @@ const showWarningToast = (
 
 const showInfoToast = (type: keyof typeof toastMessages.info = "loading") => {
   return toastInfo(toastMessages.info[type]);
+};
+
+// Unified toast utilities for common operations
+export const toastUtils = {
+  // Form operations
+  formSaved: () => showSuccessToast("saved"),
+  formError: (message?: string) => toastError({
+    title: "Form Error",
+    description: message || "Please check your input and try again."
+  }),
+  validationError: (errorCount: number = 1) => toastError({
+    title: "Validation Error",
+    description: `Please fix ${errorCount} error(s) in the form.`
+  }),
+
+  // Loading operations
+  loading: (message: string = "Processing...") => toastInfo({
+    title: "Loading",
+    description: message
+  }),
+
+  // API operations
+  apiSuccess: (operation: string = "Operation") => toastSuccess({
+    title: "Success",
+    description: `${operation} completed successfully.`
+  }),
+  apiError: (operation: string = "Operation") => toastError({
+    title: "Error",
+    description: `${operation} failed. Please try again.`
+  }),
+
+  // File operations
+  fileUploaded: (filename?: string) => toastSuccess({
+    title: "File Uploaded",
+    description: filename ? `${filename} uploaded successfully.` : "File uploaded successfully."
+  }),
+  fileUploadError: () => showErrorToast("upload"),
+
+  // Configuration operations
+  configSaved: () => showSuccessToast("saved"),
+  configReset: () => toastInfo({
+    title: "Configuration Reset",
+    description: "Settings have been reset to defaults."
+  }),
+
+  // Generic operations
+  operationSuccess: (operation: string) => toastSuccess({
+    title: "Success",
+    description: `${operation} completed successfully.`
+  }),
+  operationError: (operation: string, error?: string) => toastError({
+    title: "Error",
+    description: error || `${operation} failed. Please try again.`
+  })
 };
 
 export {

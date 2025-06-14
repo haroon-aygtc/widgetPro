@@ -40,6 +40,8 @@ import {
   Users,
   Lock,
 } from "lucide-react";
+import { toastUtils } from "@/components/ui/use-toast";
+import { useOperationLoading } from "@/contexts/LoadingContext";
 
 // Reusable Setting Item Component
 interface SettingItemProps {
@@ -153,10 +155,12 @@ const NotificationItem = ({
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
-  const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+
+  // Use unified loading state management
+  const saveLoading = useOperationLoading("settings-save");
 
   // Profile settings state
   const [profileData, setProfileData] = useState({
@@ -201,12 +205,13 @@ const SettingsPage = () => {
 
   const handleSave = async (section: string) => {
     setSaveStatus("saving");
-    setIsLoading(true);
+    saveLoading.start(`Saving ${section} settings...`);
 
     // Simulate API call
     setTimeout(() => {
       setSaveStatus("saved");
-      setIsLoading(false);
+      saveLoading.stop();
+      toastUtils.operationSuccess(`${section.charAt(0).toUpperCase() + section.slice(1)} settings save`);
 
       // Reset status after 2 seconds
       setTimeout(() => {
@@ -256,7 +261,7 @@ const SettingsPage = () => {
             <Button
               variant="outline"
               onClick={() => handleSave(activeTab)}
-              disabled={isLoading}
+              disabled={saveLoading.isLoading}
             >
               {getSaveButtonIcon()}
               <span className="ml-2">{getSaveButtonText()}</span>

@@ -13,15 +13,18 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { MessageSquare, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import ErrorBoundary from "@/components/ui/error-boundary";
-import { toastSuccess, toastError } from "@/components/ui/use-toast";
+import { toastUtils } from "@/components/ui/use-toast";
 import { useFormValidation } from "@/hooks/useFormValidation";
+import { useOperationLoading } from "@/contexts/LoadingContext";
 import { loginSchema } from "@/lib/validation";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Use unified loading state management
+  const loginLoading = useOperationLoading("login");
 
   const {
     errors,
@@ -48,46 +51,43 @@ const Login = () => {
 
     const validation = await validateForm(formData);
     if (!validation.success) {
-      toastError({
-        title: "Validation Error",
-        description: "Please fix the errors in the form",
-      });
+      toastUtils.validationError(Object.keys(errors).length);
       return;
     }
 
-    setIsLoading(true);
+    loginLoading.start("Signing you in...");
 
     try {
-      // Simulate login process
+      // Simulate login process with progress updates
+      loginLoading.updateMessage("Verifying credentials...");
       await new Promise((resolve, reject) => {
         setTimeout(() => {
-          // Simulate random success/failure for demo
-          if (Math.random() > 0.2) {
-            resolve(true);
-          } else {
-            reject(new Error("Invalid credentials"));
-          }
-        }, 1000);
+          loginLoading.updateProgress(50);
+          loginLoading.updateMessage("Logging you in...");
+          setTimeout(() => {
+            // Simulate random success/failure for demo
+            if (Math.random() > 0.2) {
+              loginLoading.updateProgress(100);
+              resolve(true);
+            } else {
+              reject(new Error("Invalid credentials"));
+            }
+          }, 500);
+        }, 500);
       });
 
-      toastSuccess({
-        title: "Login Successful",
-        description: "Welcome back! Redirecting to dashboard...",
-      });
+      toastUtils.operationSuccess("Login");
 
       setTimeout(() => {
         navigate("/admin");
       }, 500);
     } catch (error) {
-      toastError({
-        title: "Login Failed",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Please check your credentials and try again.",
-      });
+      toastUtils.operationError(
+        "Login",
+        error instanceof Error ? error.message : "Please check your credentials and try again."
+      );
     } finally {
-      setIsLoading(false);
+      loginLoading.stop();
     }
   };
 
@@ -132,9 +132,8 @@ const Login = () => {
                         handleInputChange("email", e.target.value)
                       }
                       onBlur={() => handleInputBlur("email")}
-                      className={`pl-10 h-11 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 ${
-                        getFieldError("email") ? "border-red-500" : ""
-                      }`}
+                      className={`pl-10 h-11 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 ${getFieldError("email") ? "border-red-500" : ""
+                        }`}
                       required
                     />
                     {getFieldError("email") && (
@@ -160,9 +159,8 @@ const Login = () => {
                         handleInputChange("password", e.target.value)
                       }
                       onBlur={() => handleInputBlur("password")}
-                      className={`pl-10 pr-10 h-11 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 ${
-                        getFieldError("password") ? "border-red-500" : ""
-                      }`}
+                      className={`pl-10 pr-10 h-11 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 ${getFieldError("password") ? "border-red-500" : ""
+                        }`}
                       required
                     />
                     {getFieldError("password") && (
@@ -209,9 +207,11 @@ const Login = () => {
                 <Button
                   type="submit"
                   className="w-full h-11 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25 hover:shadow-xl hover:shadow-violet-500/30 transition-all duration-300"
-                  disabled={isLoading}
+                  disabled={loginLoading.isLoading}
                 >
-                  {isLoading ? "Signing in..." : "Sign In"}
+                  {loginLoading.isLoading
+                    ? loginLoading.loadingState?.message || "Signing in..."
+                    : "Sign In"}
                 </Button>
               </form>
 

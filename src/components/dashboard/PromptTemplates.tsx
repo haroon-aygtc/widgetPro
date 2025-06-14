@@ -41,6 +41,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { toastUtils } from "@/components/ui/use-toast";
+import { useOperationLoading } from "@/contexts/LoadingContext";
 
 // Reusable Template Card Component
 interface TemplateCardProps {
@@ -197,7 +199,7 @@ interface PromptTemplatesProps {
 }
 
 const PromptTemplates = ({
-  onSave = () => {},
+  onSave = () => { },
   initialTemplates = [],
 }: PromptTemplatesProps) => {
   const [activeTab, setActiveTab] = useState("templates");
@@ -205,10 +207,12 @@ const PromptTemplates = ({
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isEditing, setIsEditing] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+
+  // Use unified loading state management
+  const saveLoading = useOperationLoading("template-save");
 
   const [templates, setTemplates] = useState([
     {
@@ -323,7 +327,7 @@ const PromptTemplates = ({
 
   const handleSaveTemplate = () => {
     setSaveStatus("saving");
-    setIsLoading(true);
+    saveLoading.start(isEditing ? "Updating template..." : "Saving template...");
 
     setTimeout(() => {
       if (isEditing && editingTemplate) {
@@ -332,10 +336,10 @@ const PromptTemplates = ({
           templates.map((t) =>
             t.id === editingTemplate.id
               ? {
-                  ...t,
-                  ...newTemplate,
-                  lastModified: "Just now",
-                }
+                ...t,
+                ...newTemplate,
+                lastModified: "Just now",
+              }
               : t,
           ),
         );
@@ -351,7 +355,9 @@ const PromptTemplates = ({
           usage: 0,
         };
         setTemplates([...templates, template]);
+        toastUtils.operationSuccess("Template creation");
       }
+      toastUtils.operationSuccess("Template update");
 
       // Reset form
       setNewTemplate({
@@ -363,7 +369,7 @@ const PromptTemplates = ({
       setIsEditing(false);
       setEditingTemplate(null);
       setSaveStatus("saved");
-      setIsLoading(false);
+      saveLoading.stop();
 
       // Switch back to templates tab
       setActiveTab("templates");
@@ -639,7 +645,7 @@ const PromptTemplates = ({
               <Button
                 onClick={handleSaveTemplate}
                 disabled={
-                  isLoading ||
+                  saveLoading.isLoading ||
                   !newTemplate.name ||
                   !newTemplate.description ||
                   !newTemplate.content

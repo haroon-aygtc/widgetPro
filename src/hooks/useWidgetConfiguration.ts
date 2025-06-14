@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { toastSuccess, toastError, toastInfo } from "@/components/ui/use-toast";
+import { toastUtils } from "@/components/ui/use-toast";
+import { useOperationLoading } from "@/contexts/LoadingContext";
 import {
   widgetConfigSchema,
   type WidgetConfigFormData,
@@ -55,10 +56,12 @@ export function useWidgetConfiguration(widgetId?: string) {
   const [history, setHistory] = useState<WidgetConfig[]>([defaultConfig]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState("templates");
   const lastSavedConfig = useRef<WidgetConfig>(defaultConfig);
+
+  // Use unified loading state management
+  const saveLoading = useOperationLoading("widget-save");
 
   // Track changes for undo/redo
   const updateConfig = useCallback(
@@ -97,10 +100,7 @@ export function useWidgetConfiguration(widgetId?: string) {
         JSON.stringify(lastSavedConfig.current);
       setHasUnsavedChanges(hasChanges);
 
-      toastInfo({
-        title: "Undone",
-        description: "Last change has been undone",
-      });
+      toastUtils.operationSuccess("Undo");
     }
   }, [historyIndex, history]);
 
@@ -116,10 +116,7 @@ export function useWidgetConfiguration(widgetId?: string) {
         JSON.stringify(lastSavedConfig.current);
       setHasUnsavedChanges(hasChanges);
 
-      toastInfo({
-        title: "Redone",
-        description: "Change has been redone",
-      });
+      toastUtils.operationSuccess("Redo");
     }
   }, [historyIndex, history]);
 
@@ -157,10 +154,7 @@ export function useWidgetConfiguration(widgetId?: string) {
           focusErrorField(firstErrorPath as string);
         }
 
-        toastError({
-          title: "Validation Error",
-          description: `Please fix ${error.errors.length} error(s) in your configuration`,
-        });
+        toastUtils.validationError(error.errors.length);
       }
       return false;
     }
@@ -200,28 +194,28 @@ export function useWidgetConfiguration(widgetId?: string) {
       return false;
     }
 
-    setIsSaving(true);
+    saveLoading.start("Saving configuration...");
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Simulate API call with progress
+      saveLoading.updateMessage("Validating configuration...");
+      await new Promise((resolve) => setTimeout(resolve, 750));
+
+      saveLoading.updateProgress(50);
+      saveLoading.updateMessage("Saving to server...");
+      await new Promise((resolve) => setTimeout(resolve, 750));
+
+      saveLoading.updateProgress(100);
 
       lastSavedConfig.current = { ...config };
       setHasUnsavedChanges(false);
 
-      toastSuccess({
-        title: "Configuration Saved",
-        description: "Your widget configuration has been saved successfully!",
-      });
-
+      toastUtils.configSaved();
       return true;
     } catch (error) {
-      toastError({
-        title: "Save Failed",
-        description: "Failed to save configuration. Please try again.",
-      });
+      toastUtils.operationError("Save configuration");
       return false;
     } finally {
-      setIsSaving(false);
+      saveLoading.stop();
     }
   }, [config, validateConfig]);
 
@@ -231,10 +225,7 @@ export function useWidgetConfiguration(widgetId?: string) {
     setHasUnsavedChanges(false);
     setErrors({});
 
-    toastInfo({
-      title: "Configuration Reset",
-      description: "Changes have been reset to last saved state",
-    });
+    toastUtils.configReset();
   }, []);
 
   // Keyboard shortcuts
@@ -266,7 +257,7 @@ export function useWidgetConfiguration(widgetId?: string) {
     canUndo: historyIndex > 0,
     canRedo: historyIndex < history.length - 1,
     hasUnsavedChanges,
-    isSaving,
+    isSaving: saveLoading.isLoading,
     errors,
     activeTab,
     setActiveTab,

@@ -13,15 +13,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { MessageSquare, Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import ErrorBoundary from "@/components/ui/error-boundary";
-import {
-  toastSuccess,
-  toastError,
-  toastWarning,
-} from "@/components/ui/use-toast";
-import {
-  useFormValidation,
-  formValidationPatterns,
-} from "@/hooks/useFormValidation";
+import { toastUtils } from "@/components/ui/use-toast";
+import { useFormValidation, formValidationPatterns } from "@/hooks/useFormValidation";
+import { useOperationLoading } from "@/contexts/LoadingContext";
 import { registerSchema } from "@/lib/validation";
 
 const Register = () => {
@@ -33,8 +27,10 @@ const Register = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Use unified loading state management
+  const registerLoading = useOperationLoading("register");
 
   const {
     errors,
@@ -66,47 +62,43 @@ const Register = () => {
 
     const validation = await validateForm(formData);
     if (!validation.success) {
-      toastError({
-        title: "Validation Error",
-        description: "Please fix the errors in the form",
-      });
+      toastUtils.validationError(Object.keys(errors).length);
       return;
     }
 
-    setIsLoading(true);
+    registerLoading.start("Creating your account...");
 
     try {
-      // Simulate registration process
+      // Simulate registration process with progress updates
+      registerLoading.updateMessage("Validating information...");
       await new Promise((resolve, reject) => {
         setTimeout(() => {
-          // Simulate random success/failure for demo
-          if (Math.random() > 0.15) {
-            resolve(true);
-          } else {
-            reject(new Error("Email already exists"));
-          }
-        }, 1500);
+          registerLoading.updateProgress(50);
+          registerLoading.updateMessage("Creating account...");
+          setTimeout(() => {
+            // Simulate random success/failure for demo
+            if (Math.random() > 0.15) {
+              registerLoading.updateProgress(100);
+              resolve(true);
+            } else {
+              reject(new Error("Email already exists"));
+            }
+          }, 750);
+        }, 750);
       });
 
-      toastSuccess({
-        title: "Account Created",
-        description:
-          "Your account has been created successfully! Redirecting...",
-      });
+      toastUtils.operationSuccess("Account creation");
 
       setTimeout(() => {
         navigate("/admin");
       }, 500);
     } catch (error) {
-      toastError({
-        title: "Registration Failed",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Something went wrong. Please try again.",
-      });
+      toastUtils.operationError(
+        "Registration",
+        error instanceof Error ? error.message : undefined
+      );
     } finally {
-      setIsLoading(false);
+      registerLoading.stop();
     }
   };
 
@@ -270,9 +262,11 @@ const Register = () => {
                 <Button
                   type="submit"
                   className="w-full h-11 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25 hover:shadow-xl hover:shadow-violet-500/30 transition-all duration-300"
-                  disabled={isLoading}
+                  disabled={registerLoading.isLoading}
                 >
-                  {isLoading ? "Creating account..." : "Create Account"}
+                  {registerLoading.isLoading
+                    ? registerLoading.loadingState?.message || "Creating account..."
+                    : "Create Account"}
                 </Button>
               </form>
 

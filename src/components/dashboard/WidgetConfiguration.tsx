@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutTemplate, Palette, Settings, Sliders, Code } from "lucide-react";
 import ErrorBoundary from "@/components/ui/error-boundary";
 import { useWidgetConfiguration } from "@/hooks/useWidgetConfiguration";
-import { useConfirmation } from "@/hooks/useConfirmation";
+import { useModal } from "@/hooks/useModal";
 import TemplateSelector from "./widget-config/TemplateSelector";
 import DesignControls from "./widget-config/DesignControls";
 import BehaviorControls from "./widget-config/BehaviorControls";
@@ -35,19 +35,11 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
     resetConfig,
   } = useWidgetConfiguration(widgetId);
 
-  const confirmation = useConfirmation();
+  const modal = useModal();
 
   const handleReset = async () => {
     if (hasUnsavedChanges) {
-      const confirmed = await confirmation.confirm({
-        title: "Reset Configuration",
-        description:
-          "Are you sure you want to reset all changes to the last saved state? This action cannot be undone.",
-        confirmText: "Reset",
-        cancelText: "Cancel",
-        variant: "warning",
-      });
-
+      const confirmed = await modal.confirmReset("configuration");
       if (confirmed) {
         resetConfig();
       }

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Common validation patterns
+// Unified validation patterns - consolidating all form validation logic
 export const commonValidation = {
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -28,11 +28,87 @@ export const commonValidation = {
       .max(max, `${fieldName} must be between ${min} and ${max}`),
 };
 
+// Unified validation patterns from useFormValidation hook - consolidating duplicate patterns
+export const formValidationPatterns = {
+  email: {
+    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    message: "Please enter a valid email address",
+    validate: (value: string) => {
+      if (!value) return "Email is required";
+      if (!formValidationPatterns.email.pattern.test(value)) {
+        return formValidationPatterns.email.message;
+      }
+      return "";
+    }
+  },
+
+  password: {
+    minLength: 8,
+    patterns: {
+      lowercase: /[a-z]/,
+      uppercase: /[A-Z]/,
+      number: /\d/,
+      special: /[!@#$%^&*(),.?":{}|<>]/
+    },
+    validate: (value: string) => {
+      if (!value) return "Password is required";
+      if (value.length < formValidationPatterns.password.minLength) {
+        return `Password must be at least ${formValidationPatterns.password.minLength} characters`;
+      }
+
+      const { patterns } = formValidationPatterns.password;
+      const missing = [];
+
+      if (!patterns.lowercase.test(value)) missing.push("lowercase letter");
+      if (!patterns.uppercase.test(value)) missing.push("uppercase letter");
+      if (!patterns.number.test(value)) missing.push("number");
+
+      if (missing.length > 0) {
+        return `Password must contain at least one ${missing.join(", ")}`;
+      }
+
+      return "";
+    },
+
+    getStrength: (value: string) => {
+      if (!value) return 0;
+
+      let score = 0;
+      const { patterns } = formValidationPatterns.password;
+
+      if (value.length >= 8) score += 1;
+      if (value.length >= 12) score += 1;
+      if (patterns.lowercase.test(value)) score += 1;
+      if (patterns.uppercase.test(value)) score += 1;
+      if (patterns.number.test(value)) score += 1;
+      if (patterns.special.test(value)) score += 1;
+
+      return Math.min(score / 6, 1);
+    }
+  },
+
+  url: {
+    pattern: /^https?:\/\/.+/,
+    validate: (value: string) => {
+      if (!value) return "URL is required";
+      if (!formValidationPatterns.url.pattern.test(value)) {
+        return "Please enter a valid URL starting with http:// or https://";
+      }
+      return "";
+    }
+  },
+
+  required: (fieldName: string) => (value: string) => {
+    if (!value || value.trim() === "") {
+      return `${fieldName} is required`;
+    }
+    return "";
+  }
+};
+
 // Validation utilities
 export const validationUtils = {
-  createPasswordConfirmation: (passwordField: string = "password") => ({
-    confirmPassword: z.string(),
-  }),
+  createPasswordConfirmation: () => ({ confirmPassword: z.string() }),
 
   addPasswordConfirmationRefine: <T extends Record<string, any>>(
     schema: z.ZodObject<T>,
@@ -97,7 +173,7 @@ export const registerSchema = validationUtils.addPasswordConfirmationRefine(
     name: commonValidation.name,
     email: commonValidation.email,
     password: commonValidation.strongPassword,
-    confirmPassword: z.string(),
+    confirmPassword: validationUtils.createPasswordConfirmation().confirmPassword,
   }),
 );
 
