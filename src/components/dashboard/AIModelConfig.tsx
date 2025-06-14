@@ -308,26 +308,120 @@ const AIModelConfig = ({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {providers.map((provider) => (
-                      <Card
-                        key={provider.id}
-                        className={`cursor-pointer border-2 ${selectedProvider === provider.id ? "border-primary" : "border-border"}`}
-                        onClick={() => setSelectedProvider(provider.id)}
-                      >
-                        <CardContent className="p-4 flex items-center space-x-4">
-                          <div className="text-3xl">{provider.logo}</div>
+                  {/* Provider Comparison Table */}
+                  <Card className="mb-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Sparkles className="h-5 w-5" />
+                        Provider Comparison
+                      </CardTitle>
+                      <CardDescription>
+                        Compare AI providers to find the best fit for your needs
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left p-2">Provider</th>
+                              <th className="text-left p-2">Best For</th>
+                              <th className="text-left p-2">Cost</th>
+                              <th className="text-left p-2">Speed</th>
+                              <th className="text-left p-2">Quality</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-b hover:bg-muted/50">
+                              <td className="p-2 font-medium">OpenAI GPT-4</td>
+                              <td className="p-2">Complex reasoning</td>
+                              <td className="p-2">$$</td>
+                              <td className="p-2">⭐⭐⭐</td>
+                              <td className="p-2">⭐⭐⭐⭐⭐</td>
+                            </tr>
+                            <tr className="border-b hover:bg-muted/50">
+                              <td className="p-2 font-medium">Claude 3</td>
+                              <td className="p-2">Long conversations</td>
+                              <td className="p-2">$$</td>
+                              <td className="p-2">⭐⭐⭐⭐</td>
+                              <td className="p-2">⭐⭐⭐⭐⭐</td>
+                            </tr>
+                            <tr className="border-b hover:bg-muted/50">
+                              <td className="p-2 font-medium">GPT-3.5 Turbo</td>
+                              <td className="p-2">Cost-effective</td>
+                              <td className="p-2">$</td>
+                              <td className="p-2">⭐⭐⭐⭐⭐</td>
+                              <td className="p-2">⭐⭐⭐⭐</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Recommended Suggestions */}
+                  <Alert className="mb-6 bg-blue-50 border-blue-200">
+                    <Sparkles className="h-4 w-4" />
+                    <AlertTitle>Recommended for you</AlertTitle>
+                    <AlertDescription>
+                      Based on your widget type, we recommend{" "}
+                      <strong>GPT-4</strong> for the best balance of quality and
+                      performance.
+                      <div className="mt-2">
+                        <Button size="sm" variant="outline">
+                          Use Recommended
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+
+                  {/* Cost Calculator */}
+                  <Card className="mb-6">
+                    <CardHeader>
+                      <CardTitle>Cost Calculator</CardTitle>
+                      <CardDescription>
+                        Estimate your monthly costs based on usage
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <h3 className="font-medium">{provider.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {selectedProvider === provider.id && isConnected
-                                ? "Connected"
-                                : "Not connected"}
-                            </p>
+                            <Label>Expected conversations/month</Label>
+                            <Input
+                              type="number"
+                              defaultValue="1000"
+                              className="mt-1"
+                            />
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          <div>
+                            <Label>Avg messages per conversation</Label>
+                            <Input
+                              type="number"
+                              defaultValue="5"
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
+                        <div className="p-4 bg-muted rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <span>Estimated monthly cost:</span>
+                            <span className="text-2xl font-bold text-primary">
+                              $24.50
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Based on GPT-4 pricing • 5,000 total messages
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <h5 className="font-medium">Appearance</h5>
+                    </div>
                   </div>
 
                   <div className="space-y-4">

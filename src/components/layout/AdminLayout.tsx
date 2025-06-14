@@ -70,6 +70,31 @@ const AdminLayout = () => {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-background via-background to-violet-50/30 dark:to-violet-950/30">
+      {/* Mobile Navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t shadow-lg">
+        <div className="grid grid-cols-4 gap-1 p-2">
+          {navItems.slice(0, 4).map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex flex-col items-center p-3 rounded-lg transition-all duration-200 min-h-[60px] ${
+                  isActive(item.path)
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-5 w-5 mb-1" />
+                <span className="text-xs font-medium truncate">
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Sidebar */}
       <div className="hidden md:flex w-64 flex-col border-r bg-card/80 backdrop-blur-xl shadow-xl shadow-violet-500/5">
         {/* Sidebar Header */}
@@ -211,7 +236,7 @@ const AdminLayout = () => {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto pb-20 md:pb-0">
           <Outlet />
         </div>
       </div>
