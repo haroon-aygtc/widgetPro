@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -20,9 +22,58 @@ import {
   Database,
   Bot,
   LineChart,
+  Trophy,
+  Target,
+  Zap,
+  CheckCircle2,
+  Star,
+  TrendingUp,
 } from "lucide-react";
 
 const Dashboard = () => {
+  const [achievements, setAchievements] = useState([
+    {
+      id: "first-widget",
+      name: "First Widget Created",
+      completed: true,
+      points: 100,
+    },
+    {
+      id: "ai-connected",
+      name: "AI Provider Connected",
+      completed: false,
+      points: 150,
+    },
+    {
+      id: "knowledge-base",
+      name: "Knowledge Base Added",
+      completed: false,
+      points: 200,
+    },
+    {
+      id: "first-conversation",
+      name: "First Conversation",
+      completed: true,
+      points: 50,
+    },
+  ]);
+
+  const [setupProgress, setSetupProgress] = useState({
+    widgetCreated: true,
+    aiConnected: false,
+    knowledgeAdded: false,
+    embedded: false,
+  });
+
+  const completedAchievements = achievements.filter((a) => a.completed);
+  const totalPoints = completedAchievements.reduce(
+    (sum, a) => sum + a.points,
+    0,
+  );
+  const progressPercentage =
+    (Object.values(setupProgress).filter(Boolean).length /
+      Object.keys(setupProgress).length) *
+    100;
   // Mock data for widgets
   const widgets = [
     {
@@ -99,6 +150,60 @@ const Dashboard = () => {
 
       {/* Dashboard Content */}
       <div className="p-6">
+        {/* Progress Tracking */}
+        {progressPercentage < 100 && (
+          <Alert className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <Target className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <div>
+                <strong>Setup Progress:</strong>{" "}
+                {Math.round(progressPercentage)}% complete
+                <div className="mt-2">
+                  <Progress value={progressPercentage} className="h-2 w-64" />
+                </div>
+              </div>
+              <Button size="sm" variant="outline">
+                Continue Setup
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Achievement System */}
+        {completedAchievements.length > 0 && (
+          <Card className="mb-6 bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-yellow-600" />
+                  <CardTitle className="text-yellow-800">
+                    Achievements
+                  </CardTitle>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="bg-yellow-100 text-yellow-800 border-yellow-300"
+                >
+                  {totalPoints} Points
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {completedAchievements.map((achievement) => (
+                  <Badge
+                    key={achievement.id}
+                    className="bg-yellow-500 text-white"
+                  >
+                    <Star className="h-3 w-3 mr-1" />
+                    {achievement.name}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card>

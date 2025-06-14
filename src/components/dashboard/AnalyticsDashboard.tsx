@@ -300,6 +300,107 @@ const AnalyticsDashboard = () => {
 
           <TabsContent value="overview" className="space-y-6">
             {/* Key Metrics */}
+            {/* Executive Summary */}
+            <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-600" />
+                  Executive Summary
+                </CardTitle>
+                <CardDescription>
+                  Key insights and automated recommendations for your chat
+                  widgets
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-medium mb-3">📈 Key Insights</h4>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-600">↗️</span>
+                        <span>Conversation volume increased 24% this week</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600">💬</span>
+                        <span>Peak activity: 2-4 PM (consider staffing)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-orange-600">⚡</span>
+                        <span>
+                          Response time improved by 15% with new AI model
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-3">🎯 Recommendations</h4>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start gap-2">
+                        <span className="text-purple-600">🔧</span>
+                        <span>Add more FAQ content for billing questions</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-600">📱</span>
+                        <span>Optimize widget for mobile (40% of traffic)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600">🎨</span>
+                        <span>
+                          A/B test welcome message for better engagement
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Goal Setting */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Goals & Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">
+                        Monthly Conversations
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        1,247 / 1,500
+                      </span>
+                    </div>
+                    <Progress value={83} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">
+                        Customer Satisfaction
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        94% / 95%
+                      </span>
+                    </div>
+                    <Progress value={94} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">Response Time</span>
+                      <span className="text-sm text-muted-foreground">
+                        2.3s / 3.0s ✅
+                      </span>
+                    </div>
+                    <Progress value={100} className="h-2" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <MetricCard
                 title="Total Conversations"

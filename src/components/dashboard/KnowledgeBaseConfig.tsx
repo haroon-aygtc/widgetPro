@@ -713,6 +713,41 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {/* One-Click Upload */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <Button
+                      variant="outline"
+                      className="h-24 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary"
+                      onClick={handleFileUpload}
+                    >
+                      <Upload className="h-6 w-6 text-primary" />
+                      <span className="font-medium">Upload Files</span>
+                      <span className="text-xs text-muted-foreground">
+                        PDF, DOCX, TXT
+                      </span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-24 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary"
+                    >
+                      <Globe className="h-6 w-6 text-primary" />
+                      <span className="font-medium">Crawl Website</span>
+                      <span className="text-xs text-muted-foreground">
+                        Auto-extract content
+                      </span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-24 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary"
+                    >
+                      <Database className="h-6 w-6 text-primary" />
+                      <span className="font-medium">Connect API</span>
+                      <span className="text-xs text-muted-foreground">
+                        Live data sync
+                      </span>
+                    </Button>
+                  </div>
+
                   <div className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
                     <div className="flex flex-col items-center gap-4">
                       <div className="p-4 bg-primary/10 rounded-full">
@@ -741,6 +776,26 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
                       </Button>
                     </div>
                   </div>
+
+                  {/* Content Quality Scoring */}
+                  <Alert className="mt-6">
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertTitle>Content Quality Score</AlertTitle>
+                    <AlertDescription>
+                      Your knowledge base has a quality score of{" "}
+                      <strong>92/100</strong>.
+                      <div className="mt-2 space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span>✅ Well-structured content</span>
+                          <span>✅ Good coverage</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          💡 Suggestion: Add more FAQ content to improve
+                          coverage
+                        </div>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
 
                   {isUploading && (
                     <div className="mt-4">
