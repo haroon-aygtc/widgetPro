@@ -9,7 +9,7 @@ use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
-class UserRoleController extends Controller
+class UserController extends Controller
 {
     public function __construct(
         private UserService $userService
@@ -113,7 +113,7 @@ class UserRoleController extends Controller
     }
 
     /**
-     * Assign a role to a user.
+     * Assign role to user.
      */
     public function assignRole(Request $request, User $user): JsonResponse
     {
@@ -137,7 +137,7 @@ class UserRoleController extends Controller
     }
 
     /**
-     * Remove a role from a user.
+     * Remove role from user.
      */
     public function removeRole(User $user, int $roleId): JsonResponse
     {
@@ -157,7 +157,7 @@ class UserRoleController extends Controller
     }
 
     /**
-     * Assign a permission to a user.
+     * Assign permission to user.
      */
     public function assignPermission(Request $request, User $user): JsonResponse
     {
@@ -181,7 +181,7 @@ class UserRoleController extends Controller
     }
 
     /**
-     * Remove a permission from a user.
+     * Remove permission from user.
      */
     public function removePermission(User $user, int $permissionId): JsonResponse
     {
@@ -201,7 +201,7 @@ class UserRoleController extends Controller
     }
 
     /**
-     * Bulk assign permissions to a user.
+     * Bulk assign permissions to user.
      */
     public function assignPermissions(Request $request, User $user): JsonResponse
     {

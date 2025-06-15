@@ -80,8 +80,16 @@ class RoleService
      */
     public function getPermissionsByCategory(): array
     {
-        $permissions = Permission::orderBy('category')->orderBy('name')->get();
+        $permissions = Permission::orderBy('category')->orderBy('display_name')->get();
 
-        return $permissions->groupBy('category')->toArray();
+        $grouped = $permissions->groupBy('category');
+        
+        // Convert to array format expected by frontend
+        $result = [];
+        foreach ($grouped as $category => $perms) {
+            $result[$category] = $perms->toArray();
+        }
+        
+        return $result;
     }
 }

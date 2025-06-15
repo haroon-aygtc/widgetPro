@@ -11,13 +11,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { MessageSquare, Eye, EyeOff, Mail, Lock, ArrowLeft, Sparkles, Shield, Zap } from "lucide-react";
+import {
+  MessageSquare,
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  ArrowLeft,
+  Sparkles,
+  Shield,
+  Zap,
+} from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import ErrorBoundary from "@/components/ui/error-boundary";
 import { toastUtils } from "@/components/ui/use-toast";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { useOperationLoading } from "@/contexts/LoadingContext";
 import { loginSchema } from "@/lib/validation";
+import { handleApiError } from "@/lib/api";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -52,41 +63,45 @@ const Login = () => {
 
     const validation = await validateForm(formData);
     if (!validation.success) {
-      toastUtils.validationError(Object.keys(errors).length);
+      const errorCount = Object.keys(errors).filter(
+        (key) => errors[key],
+      ).length;
+      toastUtils.validationError(errorCount);
       return;
     }
 
     loginLoading.start("Signing you in...");
 
     try {
+      // TODO: Replace with actual API call
+      // const response = await authApi.login(formData);
+
       // Simulate login process with progress updates
       loginLoading.updateMessage("Verifying credentials...");
       await new Promise((resolve, reject) => {
         setTimeout(() => {
           loginLoading.updateProgress(50);
-          loginLoading.updateMessage("Logging you in...");
+          loginLoading.updateMessage("Establishing session...");
           setTimeout(() => {
             // Simulate random success/failure for demo
             if (Math.random() > 0.2) {
               loginLoading.updateProgress(100);
               resolve(true);
             } else {
-              reject(new Error("Invalid credentials"));
+              reject(new Error("Invalid email or password"));
             }
           }, 500);
         }, 500);
       });
 
-      toastUtils.operationSuccess("Login");
+      toastUtils.operationSuccess("Login successful");
 
       setTimeout(() => {
         navigate("/admin");
       }, 500);
     } catch (error) {
-      toastUtils.operationError(
-        "Login",
-        error instanceof Error ? error.message : "Please check your credentials and try again."
-      );
+      const errorMessage = handleApiError(error);
+      toastUtils.operationError("Login failed", errorMessage);
     } finally {
       loginLoading.stop();
     }
@@ -108,9 +123,7 @@ const Login = () => {
                 <MessageSquare className="h-12 w-12 mr-4 text-white" />
                 <div className="absolute inset-0 h-12 w-12 mr-4 bg-white rounded-lg blur-lg opacity-20"></div>
               </div>
-              <h1 className="text-4xl font-bold">
-                HelixChat
-              </h1>
+              <h1 className="text-4xl font-bold">HelixChat</h1>
             </div>
 
             {/* Main Heading */}
@@ -122,7 +135,8 @@ const Login = () => {
                 </span>
               </h2>
               <p className="text-xl text-violet-100 leading-relaxed">
-                Transform your website with AI-powered chat widgets that understand, engage, and convert visitors into customers.
+                Transform your website with AI-powered chat widgets that
+                understand, engage, and convert visitors into customers.
               </p>
             </div>
 
@@ -133,28 +147,42 @@ const Login = () => {
                   <Sparkles className="h-6 w-6 text-yellow-300" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">AI-Powered Intelligence</h3>
-                  <p className="text-violet-200">Advanced AI models that understand context and provide meaningful responses</p>
+                  <h3 className="text-lg font-semibold mb-1">
+                    AI-Powered Intelligence
+                  </h3>
+                  <p className="text-violet-200">
+                    Advanced AI models that understand context and provide
+                    meaningful responses
+                  </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="flex-shrink-0 w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
                   <Shield className="h-6 w-6 text-green-300" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">Enterprise Security</h3>
-                  <p className="text-violet-200">Bank-grade security with end-to-end encryption and compliance</p>
+                  <h3 className="text-lg font-semibold mb-1">
+                    Enterprise Security
+                  </h3>
+                  <p className="text-violet-200">
+                    Bank-grade security with end-to-end encryption and
+                    compliance
+                  </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="flex-shrink-0 w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
                   <Zap className="h-6 w-6 text-blue-300" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">Lightning Fast Setup</h3>
-                  <p className="text-violet-200">Deploy in minutes with our intuitive configuration interface</p>
+                  <h3 className="text-lg font-semibold mb-1">
+                    Lightning Fast Setup
+                  </h3>
+                  <p className="text-violet-200">
+                    Deploy in minutes with our intuitive configuration interface
+                  </p>
                 </div>
               </div>
             </div>
@@ -229,8 +257,11 @@ const Login = () => {
                           handleInputChange("email", e.target.value)
                         }
                         onBlur={() => handleInputBlur("email")}
-                        className={`pl-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 ${getFieldError("email") ? "border-red-500" : ""
-                          }`}
+                        className={`pl-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${
+                          getFieldError("email")
+                            ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20"
+                            : ""
+                        }`}
                         required
                       />
                       {getFieldError("email") && (
@@ -256,8 +287,11 @@ const Login = () => {
                           handleInputChange("password", e.target.value)
                         }
                         onBlur={() => handleInputBlur("password")}
-                        className={`pl-10 pr-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 ${getFieldError("password") ? "border-red-500" : ""
-                          }`}
+                        className={`pl-10 pr-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${
+                          getFieldError("password")
+                            ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20"
+                            : ""
+                        }`}
                         required
                       />
                       {getFieldError("password") && (

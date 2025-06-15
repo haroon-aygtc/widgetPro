@@ -33,7 +33,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -42,209 +41,40 @@ import {
   Key,
   Search,
   Filter,
-  Shield,
-  Users,
-  Database,
-  BarChart3,
-  Settings,
-  MessageSquare,
   CheckCircle,
   AlertCircle,
-  Plus,
-  Minus,
+  Loader2,
 } from "lucide-react";
+import { useUserManagement } from "@/hooks/useUserManagement";
+import { usePermissionManagement } from "@/hooks/usePermissionManagement";
 
 const AssignPermission = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterRole, setFilterRole] = useState("all");
+  const {
+    users,
+    roles,
+    searchTerm,
+    filterRole,
+    isLoading,
+    setSearchTerm,
+    setFilterRole,
+  } = useUserManagement();
+
+  const { permissions } = usePermissionManagement();
+
   const [isManagePermissionsOpen, setIsManagePermissionsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Mock data for users with their current permissions
-  const users = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john.doe@company.com",
-      role: "Admin",
-      status: "Active",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=john",
-      permissions: [
-        "user.read",
-        "user.update",
-        "role.read",
-        "widget.create",
-        "widget.read",
-        "widget.update",
-        "widget.delete",
-        "analytics.read",
-        "settings.update",
-      ],
-      lastUpdated: "2024-01-15",
-    },
-    {
-      id: 2,
-      name: "Sarah Wilson",
-      email: "sarah.wilson@company.com",
-      role: "Manager",
-      status: "Active",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah",
-      permissions: [
-        "user.read",
-        "widget.create",
-        "widget.read",
-        "widget.update",
-        "analytics.read",
-      ],
-      lastUpdated: "2024-01-10",
-    },
-    {
-      id: 3,
-      name: "Mike Johnson",
-      email: "mike.johnson@company.com",
-      role: "User",
-      status: "Inactive",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=mike",
-      permissions: ["widget.read", "widget.update", "analytics.read"],
-      lastUpdated: "2024-01-05",
-    },
-    {
-      id: 4,
-      name: "Emily Davis",
-      email: "emily.davis@company.com",
-      role: "Viewer",
-      status: "Active",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=emily",
-      permissions: ["widget.read", "analytics.read"],
-      lastUpdated: "2024-01-20",
-    },
-  ];
-
-  // Mock data for available permissions
-  const availablePermissions = [
-    {
-      id: "user.create",
-      name: "Create Users",
-      description: "Ability to create new user accounts",
-      category: "User Management",
-      icon: Users,
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-    },
-    {
-      id: "user.read",
-      name: "View Users",
-      description: "Ability to view user accounts and profiles",
-      category: "User Management",
-      icon: Users,
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-    },
-    {
-      id: "user.update",
-      name: "Edit Users",
-      description: "Ability to modify user account information",
-      category: "User Management",
-      icon: Users,
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-    },
-    {
-      id: "user.delete",
-      name: "Delete Users",
-      description: "Ability to permanently delete user accounts",
-      category: "User Management",
-      icon: Users,
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-    },
-    {
-      id: "role.create",
-      name: "Create Roles",
-      description: "Ability to create new user roles",
-      category: "Role Management",
-      icon: Shield,
-      color:
-        "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-    },
-    {
-      id: "role.read",
-      name: "View Roles",
-      description: "Ability to view user roles and permissions",
-      category: "Role Management",
-      icon: Shield,
-      color:
-        "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-    },
-    {
-      id: "widget.create",
-      name: "Create Widgets",
-      description: "Ability to create new chat widgets",
-      category: "Widget Management",
-      icon: MessageSquare,
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-    },
-    {
-      id: "widget.read",
-      name: "View Widgets",
-      description: "Ability to view chat widgets and configurations",
-      category: "Widget Management",
-      icon: MessageSquare,
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-    },
-    {
-      id: "widget.update",
-      name: "Edit Widgets",
-      description: "Ability to modify widget configurations",
-      category: "Widget Management",
-      icon: MessageSquare,
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-    },
-    {
-      id: "widget.delete",
-      name: "Delete Widgets",
-      description: "Ability to permanently delete widgets",
-      category: "Widget Management",
-      icon: MessageSquare,
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-    },
-    {
-      id: "analytics.read",
-      name: "View Analytics",
-      description: "Ability to view analytics and reports",
-      category: "Analytics",
-      icon: BarChart3,
-      color:
-        "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-    },
-    {
-      id: "settings.update",
-      name: "Update Settings",
-      description: "Ability to modify system settings",
-      category: "System",
-      icon: Settings,
-      color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-    },
-  ];
-
-  const roles = ["Admin", "Manager", "User", "Viewer"];
-
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = filterRole === "all" || user.role === filterRole;
-    return matchesSearch && matchesRole;
-  });
-
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case "Admin":
+  const getRoleBadgeColor = (roleName: string) => {
+    switch (roleName.toLowerCase()) {
+      case "super admin":
         return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      case "Manager":
+      case "admin":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
+      case "manager":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-      case "User":
+      case "user":
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
@@ -261,32 +91,36 @@ const AssignPermission = () => {
     }
   };
 
-  const handleSavePermissions = () => {
-    if (selectedUser) {
-      // Here you would typically make an API call to update user permissions
-      console.log(
-        `Updating permissions for ${selectedUser.name}:`,
-        selectedPermissions,
-      );
+  const handleSavePermissions = async () => {
+    if (!selectedUser) return;
+
+    try {
+      setSubmitting(true);
+      // Note: This would need to be implemented in the userService
+      // For now, we'll just close the dialog
       setIsManagePermissionsOpen(false);
       setSelectedUser(null);
       setSelectedPermissions([]);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const openPermissionsDialog = (user: any) => {
     setSelectedUser(user);
-    setSelectedPermissions([...user.permissions]);
+    setSelectedPermissions(
+      user.permissions?.map((p: any) => p.id.toString()) || [],
+    );
     setIsManagePermissionsOpen(true);
   };
 
-  const permissionsByCategory = availablePermissions.reduce(
+  const permissionsByCategory = permissions.reduce(
     (acc, perm) => {
       if (!acc[perm.category]) acc[perm.category] = [];
       acc[perm.category].push(perm);
       return acc;
     },
-    {} as Record<string, typeof availablePermissions>,
+    {} as Record<string, any[]>,
   );
 
   return (
@@ -304,7 +138,7 @@ const AssignPermission = () => {
       </div>
 
       {/* Info Alert */}
-      <Alert className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-950/50 dark:to-indigo-950/50 dark:border-blue-800">
+      <Alert className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200/50 dark:from-blue-950/50 dark:to-indigo-950/50 dark:border-blue-800">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           <strong>Permission Management:</strong> Individual permissions
@@ -335,8 +169,8 @@ const AssignPermission = () => {
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
                   {roles.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {role}
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -351,7 +185,7 @@ const AssignPermission = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Key className="h-5 w-5 text-violet-600" />
-            User Permission Management ({filteredUsers.length})
+            User Permission Management ({users.length})
           </CardTitle>
           <CardDescription>
             Manage individual user permissions and access controls
@@ -370,79 +204,109 @@ const AssignPermission = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow
-                  key={user.id}
-                  className="hover:bg-violet-50/50 dark:hover:bg-violet-950/50"
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white">
-                          {user.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium text-violet-700 dark:text-violet-300">
-                          {user.name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {user.email}
-                        </div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getRoleBadgeColor(user.role)}>
-                      {user.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {user.permissions.slice(0, 3).map((permission) => (
-                        <Badge
-                          key={permission}
-                          variant="outline"
-                          className="text-xs bg-violet-50 dark:bg-violet-950/50 border-violet-200 dark:border-violet-800"
-                        >
-                          {permission.split(".")[1]}
-                        </Badge>
-                      ))}
-                      {user.permissions.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{user.permissions.length - 3} more
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        user.status === "Active" ? "default" : "secondary"
-                      }
-                    >
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {user.lastUpdated}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openPermissionsDialog(user)}
-                    >
-                      <Key className="h-4 w-4 mr-2" />
-                      Manage Permissions
-                    </Button>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-violet-600 mx-auto" />
+                    <span className="ml-2 text-muted-foreground">
+                      Loading users...
+                    </span>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : users.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="text-center py-8 text-muted-foreground"
+                  >
+                    No users found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                users.map((user) => (
+                  <TableRow
+                    key={user.id}
+                    className="hover:bg-violet-50/50 dark:hover:bg-violet-950/50"
+                  >
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
+                          <AvatarImage
+                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
+                            alt={user.name}
+                          />
+                          <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white">
+                            {user.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium text-violet-700 dark:text-violet-300">
+                            {user.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {user.email}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {user.roles?.map((role) => (
+                          <Badge
+                            key={role.id}
+                            className={getRoleBadgeColor(role.name)}
+                          >
+                            {role.name}
+                          </Badge>
+                        )) || <Badge variant="outline">No Role</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {user.permissions?.slice(0, 3).map((permission) => (
+                          <Badge
+                            key={permission.id}
+                            variant="outline"
+                            className="text-xs bg-violet-50 dark:bg-violet-950/50 border-violet-200 dark:border-violet-800"
+                          >
+                            {permission.display_name}
+                          </Badge>
+                        )) || []}
+                        {(user.permissions?.length || 0) > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{(user.permissions?.length || 0) - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          user.status === "active" ? "default" : "secondary"
+                        }
+                      >
+                        {user.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(user.updated_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openPermissionsDialog(user)}
+                      >
+                        <Key className="h-4 w-4 mr-2" />
+                        Manage Permissions
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -475,38 +339,51 @@ const AssignPermission = () => {
                       {permissions.map((permission) => {
                         const IconComponent = permission.icon;
                         const isChecked = selectedPermissions.includes(
-                          permission.id,
+                          permission.id.toString(),
                         );
                         return (
                           <div
                             key={permission.id}
-                            className="flex items-start space-x-3 p-3 rounded-lg border border-violet-200/50 dark:border-violet-800/50 hover:bg-violet-50/50 dark:hover:bg-violet-950/50"
+                            className={`group relative flex items-start space-x-3 p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer hover:shadow-md ${
+                              isChecked
+                                ? "bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/50 dark:to-purple-950/50 border-violet-300 dark:border-violet-700 shadow-sm"
+                                : "bg-white dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 hover:border-violet-200 dark:hover:border-violet-800"
+                            }`}
+                            onClick={() =>
+                              handlePermissionChange(
+                                permission.id.toString(),
+                                !isChecked,
+                              )
+                            }
                           >
                             <Checkbox
-                              id={permission.id}
+                              id={permission.id.toString()}
                               checked={isChecked}
                               onCheckedChange={(checked) =>
                                 handlePermissionChange(
-                                  permission.id,
+                                  permission.id.toString(),
                                   checked as boolean,
                                 )
                               }
-                              className="mt-1"
+                              className="mt-0.5 border-2 border-violet-300 dark:border-violet-700 data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600"
+                              onClick={(e) => e.stopPropagation()}
                             />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <IconComponent className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                                <Label
-                                  htmlFor={permission.id}
-                                  className="font-medium text-violet-700 dark:text-violet-300 cursor-pointer"
-                                >
-                                  {permission.name}
-                                </Label>
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">
+                            <div className="flex-1 min-w-0">
+                              <Label
+                                htmlFor={permission.id.toString()}
+                                className="font-semibold text-violet-700 dark:text-violet-300 cursor-pointer group-hover:text-violet-800 dark:group-hover:text-violet-200 transition-colors block mb-1 text-sm"
+                              >
+                                {permission.display_name}
+                              </Label>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
                                 {permission.description}
                               </p>
                             </div>
+                            {isChecked && (
+                              <div className="absolute top-2 right-2">
+                                <CheckCircle className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -518,8 +395,8 @@ const AssignPermission = () => {
           </ScrollArea>
           <DialogFooter className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              {selectedPermissions.length} of {availablePermissions.length}{" "}
-              permissions selected
+              {selectedPermissions.length} of {permissions.length} permissions
+              selected
             </div>
             <div className="flex gap-2">
               <Button
@@ -532,7 +409,16 @@ const AssignPermission = () => {
               >
                 Cancel
               </Button>
-              <Button onClick={handleSavePermissions}>Save Permissions</Button>
+              <Button onClick={handleSavePermissions} disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Permissions"
+                )}
+              </Button>
             </div>
           </DialogFooter>
         </DialogContent>

@@ -31,21 +31,21 @@ type ActionType = typeof actionTypes;
 
 type Action =
   | {
-    type: ActionType["ADD_TOAST"];
-    toast: ToasterToast;
-  }
+      type: ActionType["ADD_TOAST"];
+      toast: ToasterToast;
+    }
   | {
-    type: ActionType["UPDATE_TOAST"];
-    toast: Partial<ToasterToast>;
-  }
+      type: ActionType["UPDATE_TOAST"];
+      toast: Partial<ToasterToast>;
+    }
   | {
-    type: ActionType["DISMISS_TOAST"];
-    toastId?: ToasterToast["id"];
-  }
+      type: ActionType["DISMISS_TOAST"];
+      toastId?: ToasterToast["id"];
+    }
   | {
-    type: ActionType["REMOVE_TOAST"];
-    toastId?: ToasterToast["id"];
-  };
+      type: ActionType["REMOVE_TOAST"];
+      toastId?: ToasterToast["id"];
+    };
 
 interface State {
   toasts: ToasterToast[];
@@ -103,9 +103,9 @@ export const reducer = (state: State, action: Action): State => {
         toasts: state.toasts.map((t) =>
           t.id === toastId || toastId === undefined
             ? {
-              ...t,
-              open: false,
-            }
+                ...t,
+                open: false,
+              }
             : t,
         ),
       };
@@ -277,56 +277,102 @@ const showInfoToast = (type: keyof typeof toastMessages.info = "loading") => {
 
 // Unified toast utilities for common operations
 export const toastUtils = {
+  // Authentication operations
+  loginSuccess: () =>
+    toastSuccess({
+      title: "Welcome back!",
+      description: "You have been successfully signed in.",
+    }),
+  loginError: (message?: string) =>
+    toastError({
+      title: "Sign In Failed",
+      description: message || "Please check your email and password.",
+    }),
+  registerSuccess: () =>
+    toastSuccess({
+      title: "Account Created!",
+      description: "Welcome to HelixChat. You can now start creating widgets.",
+    }),
+  registerError: (message?: string) =>
+    toastError({
+      title: "Registration Failed",
+      description: message || "Please check your information and try again.",
+    }),
+  logoutSuccess: () =>
+    toastSuccess({
+      title: "Signed Out",
+      description: "You have been successfully signed out.",
+    }),
+  sessionExpired: () =>
+    toastWarning({
+      title: "Session Expired",
+      description: "Please sign in again to continue.",
+    }),
+
   // Form operations
   formSaved: () => showSuccessToast("saved"),
-  formError: (message?: string) => toastError({
-    title: "Form Error",
-    description: message || "Please check your input and try again."
-  }),
-  validationError: (errorCount: number = 1) => toastError({
-    title: "Validation Error",
-    description: `Please fix ${errorCount} error(s) in the form.`
-  }),
+  formError: (message?: string) =>
+    toastError({
+      title: "Form Error",
+      description: message || "Please check your input and try again.",
+    }),
+  validationError: (errorCount: number = 1) =>
+    toastError({
+      title: "Validation Error",
+      description:
+        errorCount === 1
+          ? "Please fix the error in the form."
+          : `Please fix ${errorCount} errors in the form.`,
+    }),
 
   // Loading operations
-  loading: (message: string = "Processing...") => toastInfo({
-    title: "Loading",
-    description: message
-  }),
+  loading: (message: string = "Processing...") =>
+    toastInfo({
+      title: "Loading",
+      description: message,
+    }),
 
   // API operations
-  apiSuccess: (operation: string = "Operation") => toastSuccess({
-    title: "Success",
-    description: `${operation} completed successfully.`
-  }),
-  apiError: (operation: string = "Operation") => toastError({
-    title: "Error",
-    description: `${operation} failed. Please try again.`
-  }),
+  apiSuccess: (operation: string = "Operation") =>
+    toastSuccess({
+      title: "Success",
+      description: `${operation} completed successfully.`,
+    }),
+  apiError: (operation: string = "Operation") =>
+    toastError({
+      title: "Error",
+      description: `${operation} failed. Please try again.`,
+    }),
 
   // File operations
-  fileUploaded: (filename?: string) => toastSuccess({
-    title: "File Uploaded",
-    description: filename ? `${filename} uploaded successfully.` : "File uploaded successfully."
-  }),
+  fileUploaded: (filename?: string) =>
+    toastSuccess({
+      title: "File Uploaded",
+      description: filename
+        ? `${filename} uploaded successfully.`
+        : "File uploaded successfully.",
+    }),
   fileUploadError: () => showErrorToast("upload"),
 
   // Configuration operations
   configSaved: () => showSuccessToast("saved"),
-  configReset: () => toastInfo({
-    title: "Configuration Reset",
-    description: "Settings have been reset to defaults."
-  }),
+  configReset: () =>
+    toastInfo({
+      title: "Configuration Reset",
+      description: "Settings have been reset to defaults.",
+    }),
 
   // Generic operations
-  operationSuccess: (operation: string) => toastSuccess({
-    title: "Success",
-    description: `${operation} completed successfully.`
-  }),
-  operationError: (operation: string, error?: string) => toastError({
-    title: "Error",
-    description: error || `${operation} failed. Please try again.`
-  })
+  operationSuccess: (operation: string) =>
+    toastSuccess({
+      title: "Success",
+      description: `${operation} completed successfully.`,
+    }),
+  operationError: (operation: string, error?: string) =>
+    toastError({
+      title: "Error",
+      description: error || `${operation} failed. Please try again.`,
+    }),
 };
 
 export {

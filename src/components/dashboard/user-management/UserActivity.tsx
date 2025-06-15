@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -30,14 +30,12 @@ import {
   Activity,
   Search,
   Filter,
-  Calendar,
   Download,
   Eye,
   LogIn,
   LogOut,
   Settings,
   MessageSquare,
-  Database,
   Shield,
   Users,
   Clock,
@@ -45,159 +43,26 @@ import {
   Monitor,
   AlertTriangle,
   CheckCircle,
+  Loader2,
 } from "lucide-react";
-import { addDays } from "date-fns";
+import { useUserActivity } from "@/hooks/useUserActivity";
 
 const UserActivity = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterActivity, setFilterActivity] = useState("all");
-  const [filterUser, setFilterUser] = useState("all");
-  const [dateRange, setDateRange] = useState({
-    from: addDays(new Date(), -7),
-    to: new Date(),
-  });
-
-  // Mock data for user activities
-  const activities = [
-    {
-      id: 1,
-      user: {
-        name: "John Doe",
-        email: "john.doe@company.com",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=john",
-        role: "Admin",
-      },
-      action: "login",
-      description: "User logged into the system",
-      timestamp: "2024-01-22 14:30:25",
-      ipAddress: "192.168.1.100",
-      location: "New York, US",
-      device: "Chrome on Windows",
-      status: "success",
-      details: "Successful login from trusted device",
-    },
-    {
-      id: 2,
-      user: {
-        name: "Sarah Wilson",
-        email: "sarah.wilson@company.com",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah",
-        role: "Manager",
-      },
-      action: "widget_create",
-      description: "Created new chat widget 'Customer Support'",
-      timestamp: "2024-01-22 13:45:12",
-      ipAddress: "192.168.1.101",
-      location: "California, US",
-      device: "Safari on macOS",
-      status: "success",
-      details: "Widget created with GPT-4 model configuration",
-    },
-    {
-      id: 3,
-      user: {
-        name: "Mike Johnson",
-        email: "mike.johnson@company.com",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=mike",
-        role: "User",
-      },
-      action: "settings_update",
-      description: "Updated widget appearance settings",
-      timestamp: "2024-01-22 12:20:45",
-      ipAddress: "192.168.1.102",
-      location: "Texas, US",
-      device: "Firefox on Linux",
-      status: "success",
-      details: "Changed widget theme from light to dark mode",
-    },
-    {
-      id: 4,
-      user: {
-        name: "Emily Davis",
-        email: "emily.davis@company.com",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=emily",
-        role: "Viewer",
-      },
-      action: "view_analytics",
-      description: "Viewed analytics dashboard",
-      timestamp: "2024-01-22 11:15:30",
-      ipAddress: "192.168.1.103",
-      location: "Florida, US",
-      device: "Chrome on Android",
-      status: "success",
-      details: "Accessed conversation metrics and performance data",
-    },
-    {
-      id: 5,
-      user: {
-        name: "John Doe",
-        email: "john.doe@company.com",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=john",
-        role: "Admin",
-      },
-      action: "user_create",
-      description: "Created new user account",
-      timestamp: "2024-01-22 10:30:15",
-      ipAddress: "192.168.1.100",
-      location: "New York, US",
-      device: "Chrome on Windows",
-      status: "success",
-      details:
-        "Created user account for alex.smith@company.com with Manager role",
-    },
-    {
-      id: 6,
-      user: {
-        name: "Sarah Wilson",
-        email: "sarah.wilson@company.com",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah",
-        role: "Manager",
-      },
-      action: "login_failed",
-      description: "Failed login attempt",
-      timestamp: "2024-01-22 09:45:22",
-      ipAddress: "192.168.1.101",
-      location: "California, US",
-      device: "Safari on macOS",
-      status: "failed",
-      details: "Invalid password entered, account temporarily locked",
-    },
-    {
-      id: 7,
-      user: {
-        name: "Mike Johnson",
-        email: "mike.johnson@company.com",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=mike",
-        role: "User",
-      },
-      action: "logout",
-      description: "User logged out of the system",
-      timestamp: "2024-01-22 08:30:10",
-      ipAddress: "192.168.1.102",
-      location: "Texas, US",
-      device: "Firefox on Linux",
-      status: "success",
-      details: "Normal logout process completed",
-    },
-    {
-      id: 8,
-      user: {
-        name: "Emily Davis",
-        email: "emily.davis@company.com",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=emily",
-        role: "Viewer",
-      },
-      action: "permission_denied",
-      description: "Attempted to access restricted area",
-      timestamp: "2024-01-22 07:15:45",
-      ipAddress: "192.168.1.103",
-      location: "Florida, US",
-      device: "Chrome on Android",
-      status: "warning",
-      details:
-        "Tried to access user management section without proper permissions",
-    },
-  ];
+  const {
+    activities,
+    statistics,
+    users,
+    searchTerm,
+    filterActivity,
+    filterUser,
+    dateRange,
+    isLoading,
+    setSearchTerm,
+    setFilterActivity,
+    setFilterUser,
+    setDateRange,
+    exportActivities,
+  } = useUserActivity();
 
   const activityTypes = [
     "login",
@@ -212,21 +77,6 @@ const UserActivity = () => {
     "user_update",
     "permission_denied",
   ];
-
-  const users = [...new Set(activities.map((a) => a.user.name))];
-
-  const filteredActivities = activities.filter((activity) => {
-    const matchesSearch =
-      activity.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      activity.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      activity.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      activity.action.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesActivity =
-      filterActivity === "all" || activity.action === filterActivity;
-    const matchesUser =
-      filterUser === "all" || activity.user.name === filterUser;
-    return matchesSearch && matchesActivity && matchesUser;
-  });
 
   const getActivityIcon = (action: string) => {
     switch (action) {
@@ -295,11 +145,6 @@ const UserActivity = () => {
     }
   };
 
-  const exportActivities = () => {
-    // Here you would implement the export functionality
-    console.log("Exporting activities...", filteredActivities);
-  };
-
   return (
     <>
       {/* Header */}
@@ -328,7 +173,7 @@ const UserActivity = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {activities.filter((a) => a.status === "success").length}
+                  {statistics.successful_activities}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Successful Actions
@@ -345,7 +190,7 @@ const UserActivity = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  {activities.filter((a) => a.status === "failed").length}
+                  {statistics.failed_activities}
                 </p>
                 <p className="text-sm text-muted-foreground">Failed Actions</p>
               </div>
@@ -360,7 +205,7 @@ const UserActivity = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {users.length}
+                  {statistics.unique_users}
                 </p>
                 <p className="text-sm text-muted-foreground">Active Users</p>
               </div>
@@ -375,7 +220,7 @@ const UserActivity = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">
-                  {activities.length}
+                  {statistics.total_activities}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Total Activities
@@ -430,7 +275,10 @@ const UserActivity = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <DatePickerWithRange />
+              <DatePickerWithRange
+                date={dateRange}
+                onDateChange={setDateRange}
+              />
             </div>
           </div>
         </CardContent>
@@ -441,7 +289,7 @@ const UserActivity = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-violet-600" />
-            Recent Activities ({filteredActivities.length})
+            Recent Activities ({activities.length})
           </CardTitle>
           <CardDescription>
             Track user actions and system interactions in real-time
@@ -461,89 +309,118 @@ const UserActivity = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredActivities.map((activity) => {
-                const IconComponent = getActivityIcon(activity.action);
-                return (
-                  <TableRow
-                    key={activity.id}
-                    className="hover:bg-violet-50/50 dark:hover:bg-violet-950/50"
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-violet-600 mx-auto" />
+                    <span className="ml-2 text-muted-foreground">
+                      Loading activities...
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ) : activities.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="text-center py-8 text-muted-foreground"
                   >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
-                          <AvatarImage
-                            src={activity.user.avatar}
-                            alt={activity.user.name}
-                          />
-                          <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs">
-                            {activity.user.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium text-violet-700 dark:text-violet-300">
-                            {activity.user.name}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            <Badge
-                              className={getRoleBadgeColor(activity.user.role)}
-                              variant="outline"
-                            >
-                              {activity.user.role}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-200/50 dark:border-violet-800/50">
-                          <IconComponent className="h-3 w-3 text-violet-600 dark:text-violet-400" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-sm">
-                            {activity.action
-                              .replace("_", " ")
-                              .replace(/\b\w/g, (l) => l.toUpperCase())}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {activity.description}
+                    No activities found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                activities.map((activity) => {
+                  const IconComponent = getActivityIcon(activity.action);
+                  return (
+                    <TableRow
+                      key={activity.id}
+                      className="hover:bg-violet-50/50 dark:hover:bg-violet-950/50"
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
+                            <AvatarImage
+                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${activity.user?.name || "user"}`}
+                              alt={activity.user?.name || "User"}
+                            />
+                            <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs">
+                              {activity.user?.name
+                                ?.split(" ")
+                                .map((n) => n[0])
+                                .join("") || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium text-violet-700 dark:text-violet-300">
+                              {activity.user?.name || "Unknown User"}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              <Badge
+                                className={getRoleBadgeColor(
+                                  activity.user?.role || "User",
+                                )}
+                                variant="outline"
+                              >
+                                {activity.user?.email || "Unknown email"}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(activity.status)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {activity.timestamp}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        {activity.location}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {activity.ipAddress}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Monitor className="h-3 w-3" />
-                        {activity.device}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="text-xs text-muted-foreground max-w-[200px] truncate">
-                        {activity.details}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-lg bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-200/50 dark:border-violet-800/50">
+                            <IconComponent className="h-3 w-3 text-violet-600 dark:text-violet-400" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">
+                              {activity.action
+                                ?.replace("_", " ")
+                                .replace(/\b\w/g, (l) => l.toUpperCase()) ||
+                                "Unknown Action"}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {activity.description || "No details"}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(activity.status || "unknown")}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {activity.created_at
+                            ? new Date(activity.created_at).toLocaleString()
+                            : "Unknown"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <MapPin className="h-3 w-3" />
+                          {activity.ip_address || "Unknown IP"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {activity.ip_address || "Unknown IP"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Monitor className="h-3 w-3" />
+                          {activity.user_agent
+                            ? activity.user_agent.substring(0, 20) + "..."
+                            : "Unknown Device"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="text-xs text-muted-foreground max-w-[200px] truncate">
+                          {activity.details || "No details"}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
             </TableBody>
           </Table>
         </CardContent>

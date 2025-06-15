@@ -12,7 +12,7 @@ class UpdateUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true; // Add authorization logic as needed
+        return true;
     }
 
     /**
@@ -23,31 +23,11 @@ class UpdateUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['sometimes', 'string', 'min:2', 'max:255'],
-            'email' => [
-                'sometimes',
-                'string',
-                'email',
-                'max:255',
-                Rule::unique('users')->ignore($this->route('user'))
-            ],
-            'status' => ['sometimes', 'in:active,inactive'],
+            'name' => ['required', 'string', 'min:2', 'max:255'],
+            'email' => ['required', 'email', Rule::unique('users')->ignore($this->route('user'))],
+            'password' => ['sometimes', 'string', 'min:8'],
             'role_ids' => ['sometimes', 'array'],
             'role_ids.*' => ['integer', 'exists:roles,id'],
-        ];
-    }
-
-    /**
-     * Get custom messages for validator errors.
-     */
-    public function messages(): array
-    {
-        return [
-            'name.min' => 'Name must be at least 2 characters',
-            'email.email' => 'Please enter a valid email address',
-            'email.unique' => 'This email is already registered',
-            'status.in' => 'Status must be either active or inactive',
-            'role_ids.*.exists' => 'Selected role does not exist',
         ];
     }
 }

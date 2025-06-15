@@ -53,144 +53,103 @@ import {
   Trash2,
   Shield,
   Users,
-  Database,
-  BarChart3,
-  Settings,
-  MessageSquare,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
+import { usePermissionManagement } from "@/hooks/usePermissionManagement";
+import {
+  CreatePermissionData,
+  UpdatePermissionData,
+} from "@/services/permissionService";
 
 const Permissions = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("all");
+  const {
+    permissions,
+    categories,
+    searchTerm,
+    filterCategory,
+    errors,
+    isLoading,
+    setSearchTerm,
+    setFilterCategory,
+    createPermission,
+    updatePermission,
+    deletePermission,
+    clearErrors,
+  } = usePermissionManagement();
+
   const [isCreatePermissionOpen, setIsCreatePermissionOpen] = useState(false);
-
-  // Mock data for permissions
-  const permissions = [
-    {
-      id: 1,
-      name: "user.create",
-      displayName: "Create Users",
-      description: "Ability to create new user accounts",
-      category: "User Management",
-      rolesCount: 2,
-      usersCount: 7,
-      icon: Users,
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      createdAt: "2024-01-01",
-    },
-    {
-      id: 2,
-      name: "user.read",
-      displayName: "View Users",
-      description: "Ability to view user accounts and profiles",
-      category: "User Management",
-      rolesCount: 5,
-      usersCount: 52,
-      icon: Users,
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      createdAt: "2024-01-01",
-    },
-    {
-      id: 3,
-      name: "user.update",
-      displayName: "Edit Users",
-      description: "Ability to modify user account information",
-      category: "User Management",
-      rolesCount: 3,
-      usersCount: 15,
-      icon: Users,
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      createdAt: "2024-01-01",
-    },
-    {
-      id: 4,
-      name: "user.delete",
-      displayName: "Delete Users",
-      description: "Ability to permanently delete user accounts",
-      category: "User Management",
-      rolesCount: 1,
-      usersCount: 2,
-      icon: Users,
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      createdAt: "2024-01-01",
-    },
-    {
-      id: 5,
-      name: "role.create",
-      displayName: "Create Roles",
-      description: "Ability to create new user roles",
-      category: "Role Management",
-      rolesCount: 1,
-      usersCount: 2,
-      icon: Shield,
-      color:
-        "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-      createdAt: "2024-01-01",
-    },
-    {
-      id: 6,
-      name: "widget.create",
-      displayName: "Create Widgets",
-      description: "Ability to create new chat widgets",
-      category: "Widget Management",
-      rolesCount: 4,
-      usersCount: 40,
-      icon: MessageSquare,
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-      createdAt: "2024-01-01",
-    },
-    {
-      id: 7,
-      name: "widget.read",
-      displayName: "View Widgets",
-      description: "Ability to view chat widgets and their configurations",
-      category: "Widget Management",
-      rolesCount: 5,
-      usersCount: 52,
-      icon: MessageSquare,
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-      createdAt: "2024-01-01",
-    },
-    {
-      id: 8,
-      name: "analytics.read",
-      displayName: "View Analytics",
-      description: "Ability to view analytics and reports",
-      category: "Analytics",
-      rolesCount: 5,
-      usersCount: 52,
-      icon: BarChart3,
-      color:
-        "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-      createdAt: "2024-01-01",
-    },
-    {
-      id: 9,
-      name: "settings.update",
-      displayName: "Update Settings",
-      description: "Ability to modify system settings and configurations",
-      category: "System",
-      rolesCount: 2,
-      usersCount: 7,
-      icon: Settings,
-      color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-      createdAt: "2024-01-01",
-    },
-  ];
-
-  const categories = [...new Set(permissions.map((p) => p.category))];
-
-  const filteredPermissions = permissions.filter((permission) => {
-    const matchesSearch =
-      permission.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      permission.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      permission.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      filterCategory === "all" || permission.category === filterCategory;
-    return matchesSearch && matchesCategory;
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    display_name: "",
+    description: "",
+    category: "",
   });
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editPermission, setEditPermission] = useState<any>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      if (isEditMode && editPermission) {
+        const updateData: UpdatePermissionData = {
+          name: formData.name,
+          display_name: formData.display_name,
+          description: formData.description,
+          category: formData.category,
+        };
+        const result = await updatePermission(editPermission.id, updateData);
+        if (result.success) {
+          resetForm();
+        }
+      } else {
+        const createData: CreatePermissionData = {
+          name: formData.name,
+          display_name: formData.display_name,
+          description: formData.description,
+          category: formData.category,
+        };
+        const result = await createPermission(createData);
+        if (result.success) {
+          resetForm();
+        }
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ name: "", display_name: "", description: "", category: "" });
+    clearErrors();
+    setIsEditMode(false);
+    setEditPermission(null);
+    setIsCreatePermissionOpen(false);
+  };
+
+  const handleEdit = (permission: any) => {
+    setIsEditMode(true);
+    setEditPermission(permission);
+    setFormData({
+      name: permission.name,
+      display_name: permission.display_name,
+      description: permission.description || "",
+      category: permission.category,
+    });
+    clearErrors();
+    setIsCreatePermissionOpen(true);
+  };
+
+  const handleDelete = async (permissionId: number) => {
+    if (!confirm("Are you sure you want to delete this permission?")) {
+      return;
+    }
+    await deletePermission(permissionId);
+  };
 
   return (
     <>
@@ -221,71 +180,118 @@ const Permissions = () => {
                 Define a new permission with specific access controls.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="permissionName" className="text-right">
-                  Permission Key
-                </Label>
-                <Input
-                  id="permissionName"
-                  className="col-span-3"
-                  placeholder="e.g., widget.create"
-                />
+            <form onSubmit={handleSubmit}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="permissionName" className="text-right">
+                    Permission Key
+                  </Label>
+                  <div className="col-span-3">
+                    <Input
+                      id="permissionName"
+                      className={errors.name ? "border-red-500" : ""}
+                      placeholder="e.g., widget.create"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                    />
+                    {errors.name && (
+                      <p className="text-sm text-red-600 mt-1">{errors.name}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="displayName" className="text-right">
+                    Display Name
+                  </Label>
+                  <div className="col-span-3">
+                    <Input
+                      id="displayName"
+                      className={errors.display_name ? "border-red-500" : ""}
+                      placeholder="e.g., Create Widgets"
+                      value={formData.display_name}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          display_name: e.target.value,
+                        })
+                      }
+                    />
+                    {errors.display_name && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {errors.display_name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="category" className="text-right">
+                    Category
+                  </Label>
+                  <div className="col-span-3">
+                    <Input
+                      id="category"
+                      className={errors.category ? "border-red-500" : ""}
+                      placeholder="e.g., User Management"
+                      value={formData.category}
+                      onChange={(e) =>
+                        setFormData({ ...formData, category: e.target.value })
+                      }
+                    />
+                    {errors.category && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {errors.category}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="description" className="text-right pt-2">
+                    Description
+                  </Label>
+                  <div className="col-span-3">
+                    <Textarea
+                      id="description"
+                      className={errors.description ? "border-red-500" : ""}
+                      placeholder="Describe what this permission allows"
+                      rows={3}
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
+                    />
+                    {errors.description && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {errors.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="displayName" className="text-right">
-                  Display Name
-                </Label>
-                <Input
-                  id="displayName"
-                  className="col-span-3"
-                  placeholder="e.g., Create Widgets"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="category" className="text-right">
-                  Category
-                </Label>
-                <Select>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem
-                        key={category}
-                        value={category.toLowerCase().replace(" ", "-")}
-                      >
-                        {category}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="new-category">
-                      + Add New Category
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="description" className="text-right pt-2">
-                  Description
-                </Label>
-                <Textarea
-                  id="description"
-                  className="col-span-3"
-                  placeholder="Describe what this permission allows"
-                  rows={3}
-                />
-              </div>
-            </div>
+            </form>
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setIsCreatePermissionOpen(false)}
+                onClick={resetForm}
+                disabled={submitting}
               >
                 Cancel
               </Button>
-              <Button onClick={() => setIsCreatePermissionOpen(false)}>
-                Create Permission
+              <Button onClick={handleSubmit} disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {isEditMode ? "Updating..." : "Creating..."}
+                  </>
+                ) : isEditMode ? (
+                  "Update Permission"
+                ) : (
+                  "Create Permission"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -330,7 +336,7 @@ const Permissions = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Key className="h-5 w-5 text-violet-600" />
-            Permissions ({filteredPermissions.length})
+            Permissions ({permissions.length})
           </CardTitle>
           <CardDescription>
             Manage system permissions and access controls
@@ -349,9 +355,26 @@ const Permissions = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPermissions.map((permission) => {
-                const IconComponent = permission.icon;
-                return (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-violet-600 mx-auto" />
+                    <span className="ml-2 text-muted-foreground">
+                      Loading permissions...
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ) : permissions.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="text-center py-8 text-muted-foreground"
+                  >
+                    No permissions found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                permissions.map((permission) => (
                   <TableRow
                     key={permission.id}
                     className="hover:bg-violet-50/50 dark:hover:bg-violet-950/50"
@@ -359,38 +382,36 @@ const Permissions = () => {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-200/50 dark:border-violet-800/50">
-                          <IconComponent className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                          <Key className="h-4 w-4 text-violet-600 dark:text-violet-400" />
                         </div>
                         <div>
                           <div className="font-medium text-violet-700 dark:text-violet-300">
-                            {permission.displayName}
+                            {permission.display_name}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {permission.name}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            {permission.description}
+                            {permission.description || "No description"}
                           </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={permission.color}>
-                        {permission.category}
+                      <Badge variant="outline">{permission.category}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {permission.roles_count || 0} roles
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {permission.rolesCount} roles
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {permission.usersCount} users
+                        {permission.users_count || 0} users
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {permission.createdAt}
+                      {new Date(permission.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -401,7 +422,9 @@ const Permissions = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleEdit(permission)}
+                          >
                             <Edit className="h-4 w-4 mr-2" />
                             Edit Permission
                           </DropdownMenuItem>
@@ -414,7 +437,10 @@ const Permissions = () => {
                             View Users
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => handleDelete(permission.id)}
+                          >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete Permission
                           </DropdownMenuItem>
@@ -422,8 +448,8 @@ const Permissions = () => {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                );
-              })}
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

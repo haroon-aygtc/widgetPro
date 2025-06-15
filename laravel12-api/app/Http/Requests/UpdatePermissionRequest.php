@@ -12,7 +12,7 @@ class UpdatePermissionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true; // Add authorization logic as needed
+        return true;
     }
 
     /**
@@ -23,28 +23,10 @@ class UpdatePermissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => [
-                'sometimes',
-                'string',
-                'min:2',
-                'max:255',
-                Rule::unique('permissions')->ignore($this->route('permission'))
-            ],
-            'display_name' => ['sometimes', 'string', 'min:2', 'max:255'],
-            'description' => ['sometimes', 'string', 'max:1000'],
-            'category' => ['sometimes', 'string', 'max:255'],
-        ];
-    }
-
-    /**
-     * Get custom messages for validator errors.
-     */
-    public function messages(): array
-    {
-        return [
-            'name.min' => 'Permission name must be at least 2 characters',
-            'name.unique' => 'This permission name already exists',
-            'display_name.min' => 'Display name must be at least 2 characters',
+            'name' => ['required', 'string', 'min:2', 'max:255', Rule::unique('permissions')->ignore($this->route('permission'))],
+            'display_name' => ['required', 'string', 'min:2', 'max:255'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'category' => ['required', 'string', 'max:100'],
         ];
     }
 }

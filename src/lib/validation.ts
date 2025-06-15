@@ -39,7 +39,7 @@ export const formValidationPatterns = {
         return formValidationPatterns.email.message;
       }
       return "";
-    }
+    },
   },
 
   password: {
@@ -48,7 +48,7 @@ export const formValidationPatterns = {
       lowercase: /[a-z]/,
       uppercase: /[A-Z]/,
       number: /\d/,
-      special: /[!@#$%^&*(),.?":{}|<>]/
+      special: /[!@#$%^&*(),.?":{}|<>]/,
     },
     validate: (value: string) => {
       if (!value) return "Password is required";
@@ -84,7 +84,7 @@ export const formValidationPatterns = {
       if (patterns.special.test(value)) score += 1;
 
       return Math.min(score / 6, 1);
-    }
+    },
   },
 
   url: {
@@ -95,7 +95,7 @@ export const formValidationPatterns = {
         return "Please enter a valid URL starting with http:// or https://";
       }
       return "";
-    }
+    },
   },
 
   required: (fieldName: string) => (value: string) => {
@@ -103,7 +103,7 @@ export const formValidationPatterns = {
       return `${fieldName} is required`;
     }
     return "";
-  }
+  },
 };
 
 // Validation utilities
@@ -162,18 +162,39 @@ export const validationUtils = {
   },
 };
 
-// Auth Schemas
+// Auth Schemas with improved field names and messages
 export const loginSchema = z.object({
-  email: commonValidation.email,
-  password: commonValidation.password,
+  email: z
+    .string()
+    .min(1, "Email address is required")
+    .email("Please enter a valid email address"),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(6, "Password must be at least 6 characters"),
 });
 
 export const registerSchema = validationUtils.addPasswordConfirmationRefine(
   z.object({
-    name: commonValidation.name,
-    email: commonValidation.email,
-    password: commonValidation.strongPassword,
-    confirmPassword: validationUtils.createPasswordConfirmation().confirmPassword,
+    name: z
+      .string()
+      .min(1, "Full name is required")
+      .min(2, "Name must be at least 2 characters")
+      .max(255, "Name must be less than 255 characters"),
+    email: z
+      .string()
+      .min(1, "Email address is required")
+      .email("Please enter a valid email address")
+      .max(255, "Email must be less than 255 characters"),
+    password: z
+      .string()
+      .min(1, "Password is required")
+      .min(8, "Password must be at least 8 characters")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+      ),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
   }),
 );
 
@@ -264,7 +285,10 @@ export const createRoleSchema = z.object({
 export const updateRoleSchema = z.object({
   name: commonValidation.nonEmptyString("Role name").optional(),
   display_name: commonValidation.nonEmptyString("Display name").optional(),
-  description: z.string().max(1000, "Description must be less than 1000 characters").optional(),
+  description: z
+    .string()
+    .max(1000, "Description must be less than 1000 characters")
+    .optional(),
   permission_ids: z.array(z.number().int().positive()).optional(),
 });
 
@@ -279,8 +303,14 @@ export const createPermissionSchema = z.object({
 export const updatePermissionSchema = z.object({
   name: commonValidation.nonEmptyString("Permission name").optional(),
   display_name: commonValidation.nonEmptyString("Display name").optional(),
-  description: z.string().max(1000, "Description must be less than 1000 characters").optional(),
-  category: z.string().max(255, "Category must be less than 255 characters").optional(),
+  description: z
+    .string()
+    .max(1000, "Description must be less than 1000 characters")
+    .optional(),
+  category: z
+    .string()
+    .max(255, "Category must be less than 255 characters")
+    .optional(),
 });
 
 // Export types

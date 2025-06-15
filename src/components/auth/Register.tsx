@@ -11,13 +11,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { MessageSquare, Eye, EyeOff, Mail, Lock, User, ArrowLeft, Users, TrendingUp, Globe, CheckCircle } from "lucide-react";
+import {
+  MessageSquare,
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  ArrowLeft,
+  Users,
+  TrendingUp,
+  Globe,
+  CheckCircle,
+} from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import ErrorBoundary from "@/components/ui/error-boundary";
 import { toastUtils } from "@/components/ui/use-toast";
-import { useFormValidation, formValidationPatterns } from "@/hooks/useFormValidation";
+import {
+  useFormValidation,
+  formValidationPatterns,
+} from "@/hooks/useFormValidation";
 import { useOperationLoading } from "@/contexts/LoadingContext";
 import { registerSchema } from "@/lib/validation";
+import { handleApiError } from "@/lib/api";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -63,13 +79,19 @@ const Register = () => {
 
     const validation = await validateForm(formData);
     if (!validation.success) {
-      toastUtils.validationError(Object.keys(errors).length);
+      const errorCount = Object.keys(errors).filter(
+        (key) => errors[key],
+      ).length;
+      toastUtils.validationError(errorCount);
       return;
     }
 
     registerLoading.start("Creating your account...");
 
     try {
+      // TODO: Replace with actual API call
+      // const response = await authApi.register(formData);
+
       // Simulate registration process with progress updates
       registerLoading.updateMessage("Validating information...");
       await new Promise((resolve, reject) => {
@@ -82,22 +104,20 @@ const Register = () => {
               registerLoading.updateProgress(100);
               resolve(true);
             } else {
-              reject(new Error("Email already exists"));
+              reject(new Error("Email address is already registered"));
             }
           }, 750);
         }, 750);
       });
 
-      toastUtils.operationSuccess("Account creation");
+      toastUtils.operationSuccess("Account created successfully");
 
       setTimeout(() => {
         navigate("/admin");
       }, 500);
     } catch (error) {
-      toastUtils.operationError(
-        "Registration",
-        error instanceof Error ? error.message : undefined
-      );
+      const errorMessage = handleApiError(error);
+      toastUtils.operationError("Registration failed", errorMessage);
     } finally {
       registerLoading.stop();
     }
@@ -119,9 +139,7 @@ const Register = () => {
                 <MessageSquare className="h-12 w-12 mr-4 text-white" />
                 <div className="absolute inset-0 h-12 w-12 mr-4 bg-white rounded-lg blur-lg opacity-20"></div>
               </div>
-              <h1 className="text-4xl font-bold">
-                HelixChat
-              </h1>
+              <h1 className="text-4xl font-bold">HelixChat</h1>
             </div>
 
             {/* Main Heading */}
@@ -133,7 +151,8 @@ const Register = () => {
                 </span>
               </h2>
               <p className="text-xl text-indigo-100 leading-relaxed">
-                Start your free trial today and transform how you engage with customers. No credit card required.
+                Start your free trial today and transform how you engage with
+                customers. No credit card required.
               </p>
             </div>
 
@@ -144,8 +163,12 @@ const Register = () => {
                   <CheckCircle className="h-6 w-6 text-green-300" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">Free 14-day trial</h3>
-                  <p className="text-indigo-200">Full access to all features, no limitations</p>
+                  <h3 className="text-lg font-semibold mb-1">
+                    Free 14-day trial
+                  </h3>
+                  <p className="text-indigo-200">
+                    Full access to all features, no limitations
+                  </p>
                 </div>
               </div>
 
@@ -154,8 +177,12 @@ const Register = () => {
                   <Users className="h-6 w-6 text-blue-300" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">Unlimited team members</h3>
-                  <p className="text-indigo-200">Collaborate with your entire team from day one</p>
+                  <h3 className="text-lg font-semibold mb-1">
+                    Unlimited team members
+                  </h3>
+                  <p className="text-indigo-200">
+                    Collaborate with your entire team from day one
+                  </p>
                 </div>
               </div>
 
@@ -164,8 +191,12 @@ const Register = () => {
                   <TrendingUp className="h-6 w-6 text-purple-300" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">Advanced analytics</h3>
-                  <p className="text-indigo-200">Track performance and optimize conversations</p>
+                  <h3 className="text-lg font-semibold mb-1">
+                    Advanced analytics
+                  </h3>
+                  <p className="text-indigo-200">
+                    Track performance and optimize conversations
+                  </p>
                 </div>
               </div>
 
@@ -174,8 +205,12 @@ const Register = () => {
                   <Globe className="h-6 w-6 text-cyan-300" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">Global deployment</h3>
-                  <p className="text-indigo-200">Deploy widgets worldwide with edge optimization</p>
+                  <h3 className="text-lg font-semibold mb-1">
+                    Global deployment
+                  </h3>
+                  <p className="text-indigo-200">
+                    Deploy widgets worldwide with edge optimization
+                  </p>
                 </div>
               </div>
             </div>
@@ -190,11 +225,15 @@ const Register = () => {
                 />
                 <div>
                   <div className="font-semibold text-white">Sarah Chen</div>
-                  <div className="text-indigo-200 text-sm">Head of Growth, TechCorp</div>
+                  <div className="text-indigo-200 text-sm">
+                    Head of Growth, TechCorp
+                  </div>
                 </div>
               </div>
               <p className="text-indigo-100 italic">
-                &quot;HelixChat increased our conversion rate by 340% in just 2 months. The AI responses are incredibly natural and helpful.&quot;
+                &quot;HelixChat increased our conversion rate by 340% in just 2
+                months. The AI responses are incredibly natural and
+                helpful.&quot;
               </p>
             </div>
           </div>
@@ -232,7 +271,8 @@ const Register = () => {
                   Create Account
                 </CardTitle>
                 <CardDescription className="text-base text-muted-foreground">
-                  Start your free trial and join thousands of successful businesses
+                  Start your free trial and join thousands of successful
+                  businesses
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
@@ -251,7 +291,7 @@ const Register = () => {
                         value={formData.name}
                         onChange={handleChange}
                         onBlur={() => handleBlur("name")}
-                        className={`pl-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 ${getFieldError("name") ? "border-red-500" : ""}`}
+                        className={`pl-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${getFieldError("name") ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20" : ""}`}
                         required
                       />
                       {getFieldError("name") && (
@@ -276,7 +316,7 @@ const Register = () => {
                         value={formData.email}
                         onChange={handleChange}
                         onBlur={() => handleBlur("email")}
-                        className={`pl-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 ${getFieldError("email") ? "border-red-500" : ""}`}
+                        className={`pl-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${getFieldError("email") ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20" : ""}`}
                         required
                       />
                       {getFieldError("email") && (
@@ -301,7 +341,7 @@ const Register = () => {
                         value={formData.password}
                         onChange={handleChange}
                         onBlur={() => handleBlur("password")}
-                        className={`pl-10 pr-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 ${getFieldError("password") ? "border-red-500" : ""}`}
+                        className={`pl-10 pr-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${getFieldError("password") ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20" : ""}`}
                         required
                       />
                       {getFieldError("password") && (
@@ -340,7 +380,7 @@ const Register = () => {
                         value={formData.confirmPassword}
                         onChange={handleChange}
                         onBlur={() => handleBlur("confirmPassword")}
-                        className={`pl-10 pr-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 ${getFieldError("confirmPassword") ? "border-red-500" : ""}`}
+                        className={`pl-10 pr-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${getFieldError("confirmPassword") ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20" : ""}`}
                         required
                       />
                       {getFieldError("confirmPassword") && (
@@ -398,7 +438,8 @@ const Register = () => {
                     disabled={registerLoading.isLoading}
                   >
                     {registerLoading.isLoading
-                      ? registerLoading.loadingState?.message || "Creating account..."
+                      ? registerLoading.loadingState?.message ||
+                        "Creating account..."
                       : "Start Free Trial"}
                   </Button>
                 </form>
@@ -472,7 +513,6 @@ const Register = () => {
           </div>
         </div>
       </div>
-
     </ErrorBoundary>
   );
 };

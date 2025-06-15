@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -19,15 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -54,85 +44,124 @@ import {
   Shield,
   Mail,
   Calendar,
+  Users as UsersIcon,
+  Loader2,
 } from "lucide-react";
+import { useUserManagement } from "@/hooks/useUserManagement";
+import { CreateUserData, UpdateUserData } from "@/services/userService";
 
 const Users = () => {
-  const [activeSubTab, setActiveSubTab] = useState("list");
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editUser, setEditUser] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterRole, setFilterRole] = useState("all");
+  const {
+    users,
+    roles,
+    searchTerm,
+    filterRole,
+    errors,
+    isLoading,
+    setSearchTerm,
+    setFilterRole,
+    createUser,
+    updateUser,
+    deleteUser,
+    clearErrors,
+  } = useUserManagement();
 
-  // Mock data for users
-  const users = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john.doe@company.com",
-      role: "Admin",
-      status: "Active",
-      lastLogin: "2 hours ago",
-      createdAt: "2024-01-15",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=john",
-    },
-    {
-      id: 2,
-      name: "Sarah Wilson",
-      email: "sarah.wilson@company.com",
-      role: "Manager",
-      status: "Active",
-      lastLogin: "1 day ago",
-      createdAt: "2024-01-10",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah",
-    },
-    {
-      id: 3,
-      name: "Mike Johnson",
-      email: "mike.johnson@company.com",
-      role: "User",
-      status: "Inactive",
-      lastLogin: "1 week ago",
-      createdAt: "2024-01-05",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=mike",
-    },
-    {
-      id: 4,
-      name: "Emily Davis",
-      email: "emily.davis@company.com",
-      role: "User",
-      status: "Active",
-      lastLogin: "3 hours ago",
-      createdAt: "2024-01-20",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=emily",
-    },
-  ];
-
-  const roles = ["Admin", "Manager", "User", "Viewer"];
-
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = filterRole === "all" || user.role === filterRole;
-    return matchesSearch && matchesRole;
+  const [isEditMode, setIsEditMode] = React.useState(false);
+  const [editUser, setEditUser] = React.useState<any>(null);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [formData, setFormData] = React.useState({
+    name: "",
+    email: "",
+    password: "",
+    role_ids: [] as number[],
   });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      if (isEditMode && editUser) {
+        const updateData: UpdateUserData = {
+          name: formData.name,
+          email: formData.email,
+          role_ids: formData.role_ids,
+        };
+        const result = await updateUser(editUser.id, updateData);
+        if (result.success) {
+          resetForm();
+        }
+      } else {
+        const createData: CreateUserData = {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role_ids: formData.role_ids,
+        };
+        const result = await createUser(createData);
+        if (result.success) {
+          resetForm();
+        }
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ name: "", email: "", password: "", role_ids: [] });
+    clearErrors();
+    setIsEditMode(false);
+    setEditUser(null);
+  };
+
+  const handleEdit = (user: any) => {
+    setIsEditMode(true);
+    setEditUser(user);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      password: "",
+      role_ids: user.roles?.map((role: any) => role.id) || [],
+    });
+    clearErrors();
+  };
+
+  const handleDelete = async (userId: number) => {
+    if (!confirm("Are you sure you want to delete this user?")) {
+      return;
+    }
+    await deleteUser(userId);
+  };
 
   const getStatusBadgeVariant = (status: string) => {
     return status === "Active" ? "default" : "secondary";
   };
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case "Admin":
+  const getRoleBadgeColor = (roleName: string) => {
+    switch (roleName.toLowerCase()) {
+      case "admin":
+      case "super admin":
         return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      case "Manager":
+      case "manager":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-      case "User":
+      case "user":
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
     }
   };
+
+  if (isLoading) {
+    return (
+      <Card className="bg-card/80 backdrop-blur-xl border-violet-200/50 dark:border-violet-800/50">
+        <CardContent className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+          <span className="ml-2 text-muted-foreground">Loading users...</span>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-card/80 backdrop-blur-xl border-violet-200/50 dark:border-violet-800/50">
@@ -147,17 +176,9 @@ const Users = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full mb-4">
-          <TabsList>
-            <TabsTrigger value="list">Users List</TabsTrigger>
-            <TabsTrigger value="add">{isEditMode ? "Edit User" : "Add User"}</TabsTrigger>
-          </TabsList>
-          <TabsContent value="list" className="space-y-6">
-            <div className="flex justify-end mb-4">
-              <Button onClick={() => { setActiveSubTab("add"); setIsEditMode(false); setEditUser(null); }}>
-                <UserPlus className="h-4 w-4 mr-2" /> Add User
-              </Button>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+          {/* Users List Side */}
+          <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 mb-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -177,8 +198,8 @@ const Users = () => {
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
                     {roles.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role}
+                      <SelectItem key={role.id} value={role.name}>
+                        {role.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -189,7 +210,7 @@ const Users = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5 text-violet-600" />
-                  Users ({filteredUsers.length})
+                  Users ({users.length})
                 </CardTitle>
                 <CardDescription>
                   Manage user accounts and their access levels
@@ -202,22 +223,23 @@ const Users = () => {
                       <TableHead>User</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Last Login</TableHead>
-                      <TableHead>Created</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers.map((user) => (
+                    {users.map((user) => (
                       <TableRow
                         key={user.id}
                         className="hover:bg-violet-50/50 dark:hover:bg-violet-950/50"
                       >
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
-                              <AvatarImage src={user.avatar} alt={user.name} />
-                              <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white">
+                            <Avatar className="h-8 w-8 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
+                              <AvatarImage
+                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
+                                alt={user.name}
+                              />
+                              <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs">
                                 {user.name
                                   .split(" ")
                                   .map((n) => n[0])
@@ -225,10 +247,10 @@ const Users = () => {
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="font-medium text-violet-700 dark:text-violet-300">
+                              <div className="font-medium text-violet-700 dark:text-violet-300 text-sm">
                                 {user.name}
                               </div>
-                              <div className="text-sm text-muted-foreground flex items-center gap-1">
+                              <div className="text-xs text-muted-foreground flex items-center gap-1">
                                 <Mail className="h-3 w-3" />
                                 {user.email}
                               </div>
@@ -236,21 +258,25 @@ const Users = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getRoleBadgeColor(user.role)}>
-                            {user.role}
-                          </Badge>
+                          <div className="flex flex-wrap gap-1">
+                            {user.roles?.map((role) => (
+                              <Badge
+                                key={role.id}
+                                className={getRoleBadgeColor(role.name)}
+                              >
+                                {role.name}
+                              </Badge>
+                            )) || <Badge variant="outline">No Role</Badge>}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusBadgeVariant(user.status)}>
+                          <Badge
+                            variant={
+                              user.status === "active" ? "default" : "secondary"
+                            }
+                          >
                             {user.status}
                           </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {user.lastLogin}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {user.createdAt}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -261,14 +287,19 @@ const Users = () => {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => { setActiveSubTab("add"); setIsEditMode(true); setEditUser(user); }}>
+                              <DropdownMenuItem
+                                onClick={() => handleEdit(user)}
+                              >
                                 <Edit className="h-4 w-4 mr-2" /> Edit User
                               </DropdownMenuItem>
                               <DropdownMenuItem>
                                 <Shield className="h-4 w-4 mr-2" /> Manage Roles
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-red-600">
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => handleDelete(user.id)}
+                              >
                                 <Trash2 className="h-4 w-4 mr-2" /> Delete User
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -280,47 +311,240 @@ const Users = () => {
                 </Table>
               </CardContent>
             </Card>
-          </TabsContent>
-          <TabsContent value="add" className="space-y-6">
-            <Card className="max-w-xl mx-auto">
-              <CardHeader>
-                <CardTitle>{isEditMode ? "Edit User" : "Add New User"}</CardTitle>
-                <CardDescription>{isEditMode ? "Edit the selected user account." : "Create a new user account with appropriate role and permissions."}</CardDescription>
+          </div>
+
+          {/* User Form Side */}
+          <div className="space-y-6">
+            <Card className="bg-gradient-to-br from-white to-violet-50/30 dark:from-gray-900 dark:to-violet-950/30 border-2 border-violet-200/50 dark:border-violet-800/50 shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-b border-violet-200/50 dark:border-violet-800/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg">
+                    <UserPlus className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold text-violet-700 dark:text-violet-300">
+                      {isEditMode ? "Edit User Account" : "Create New User"}
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground mt-1">
+                      {isEditMode
+                        ? "Modify user account details and permissions."
+                        : "Set up a new user account with appropriate role and access levels."}
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">Name</Label>
-                    <Input id="name" className="col-span-3" placeholder="Enter full name" defaultValue={isEditMode && editUser ? editUser.name : ""} />
+              <CardContent className="p-8">
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  {/* Profile Section */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-1 w-8 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full"></div>
+                      <h3 className="text-lg font-semibold text-violet-700 dark:text-violet-300">
+                        Profile Information
+                      </h3>
+                    </div>
+
+                    <div className="grid gap-6">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="name"
+                          className="text-sm font-semibold text-violet-700 dark:text-violet-300 flex items-center gap-2"
+                        >
+                          <UsersIcon className="h-4 w-4" />
+                          Full Name
+                        </Label>
+                        <Input
+                          id="name"
+                          className={`h-12 border-2 ${errors.name ? "border-red-500 focus:border-red-500" : "border-violet-200/60 dark:border-violet-800/60 focus:border-violet-400 dark:focus:border-violet-600"} bg-white/50 dark:bg-gray-900/50`}
+                          placeholder="Enter user's full name"
+                          value={formData.name}
+                          onChange={(e) =>
+                            setFormData({ ...formData, name: e.target.value })
+                          }
+                        />
+                        {errors.name && (
+                          <p className="text-sm text-red-600">{errors.name}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="email"
+                          className="text-sm font-semibold text-violet-700 dark:text-violet-300 flex items-center gap-2"
+                        >
+                          <Mail className="h-4 w-4" />
+                          Email Address
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          className={`h-12 border-2 ${errors.email ? "border-red-500 focus:border-red-500" : "border-violet-200/60 dark:border-violet-800/60 focus:border-violet-400 dark:focus:border-violet-600"} bg-white/50 dark:bg-gray-900/50`}
+                          placeholder="Enter email address"
+                          value={formData.email}
+                          onChange={(e) =>
+                            setFormData({ ...formData, email: e.target.value })
+                          }
+                        />
+                        {errors.email && (
+                          <p className="text-sm text-red-600">{errors.email}</p>
+                        )}
+                      </div>
+
+                      {!isEditMode && (
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="password"
+                            className="text-sm font-semibold text-violet-700 dark:text-violet-300 flex items-center gap-2"
+                          >
+                            <Shield className="h-4 w-4" />
+                            Password
+                          </Label>
+                          <Input
+                            id="password"
+                            type="password"
+                            className={`h-12 border-2 ${errors.password ? "border-red-500 focus:border-red-500" : "border-violet-200/60 dark:border-violet-800/60 focus:border-violet-400 dark:focus:border-violet-600"} bg-white/50 dark:bg-gray-900/50`}
+                            placeholder="Enter password"
+                            value={formData.password}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                password: e.target.value,
+                              })
+                            }
+                          />
+                          {errors.password && (
+                            <p className="text-sm text-red-600">
+                              {errors.password}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">Email</Label>
-                    <Input id="email" type="email" className="col-span-3" placeholder="Enter email address" defaultValue={isEditMode && editUser ? editUser.email : ""} />
+
+                  {/* Role Assignment Section */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-1 w-8 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full"></div>
+                      <h3 className="text-lg font-semibold text-violet-700 dark:text-violet-300">
+                        Role Assignment
+                      </h3>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="role"
+                        className="text-sm font-semibold text-violet-700 dark:text-violet-300 flex items-center gap-2"
+                      >
+                        <Shield className="h-4 w-4" />
+                        User Role
+                      </Label>
+                      <Select
+                        value={
+                          formData.role_ids.length > 0
+                            ? formData.role_ids[0].toString()
+                            : ""
+                        }
+                        onValueChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            role_ids: value ? [parseInt(value)] : [],
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-12 border-2 border-violet-200/60 dark:border-violet-800/60 focus:border-violet-400 dark:focus:border-violet-600 bg-white/50 dark:bg-gray-900/50">
+                          <SelectValue placeholder="Choose a role for this user" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {roles.map((role) => (
+                            <SelectItem
+                              key={role.id}
+                              value={role.id.toString()}
+                              className="py-3"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={`w-3 h-3 rounded-full ${getRoleBadgeColor(role.name).split(" ")[0]}`}
+                                ></div>
+                                <span className="font-medium">{role.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Role determines the user's access level and available
+                        permissions
+                      </p>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="role" className="text-right">Role</Label>
-                    <Select defaultValue={isEditMode && editUser ? editUser.role.toLowerCase() : undefined}>
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {roles.map((role) => (
-                          <SelectItem key={role} value={role.toLowerCase()}>
-                            {role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+
+                  {/* Additional Settings */}
+                  {isEditMode && (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="h-1 w-8 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full"></div>
+                        <h3 className="text-lg font-semibold text-violet-700 dark:text-violet-300">
+                          Account Status
+                        </h3>
+                      </div>
+
+                      <div className="p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-blue-700 dark:text-blue-300">
+                              Account Status
+                            </p>
+                            <p className="text-sm text-blue-600/80 dark:text-blue-400/80">
+                              Current status: {editUser?.status}
+                            </p>
+                          </div>
+                          <Badge
+                            variant={
+                              editUser?.status === "Active"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {editUser?.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-violet-200/50 dark:border-violet-800/50">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={resetForm}
+                      disabled={submitting}
+                      className="px-6 border-2 border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500"
+                    >
+                      {isEditMode ? "Cancel" : "Clear"}
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={submitting}
+                      className="px-8 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          {isEditMode ? "Updating..." : "Creating..."}
+                        </>
+                      ) : isEditMode ? (
+                        "Update User"
+                      ) : (
+                        "Create User"
+                      )}
+                    </Button>
                   </div>
-                </div>
-                <div className="flex justify-end gap-2 mt-4">
-                  <Button variant="outline" onClick={() => { setActiveSubTab("list"); setIsEditMode(false); setEditUser(null); }}>Cancel</Button>
-                  <Button>{isEditMode ? "Update User" : "Create User"}</Button>
-                </div>
+                </form>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

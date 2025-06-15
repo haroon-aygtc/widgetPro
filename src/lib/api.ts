@@ -1,257 +1,356 @@
-// Central API client for all backend communication
-interface ApiResponse<T = any> {
-    success: boolean;
-    data?: T;
-    message?: string;
-    errors?: Record<string, string[]>;
+const API_BASE_URL = "http://localhost:8000/api";
+
+// Types
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  roles?: Role[];
+  permissions?: Permission[];
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  permissions?: Permission[];
+  users_count?: number;
+}
+
+export interface Permission {
+  id: number;
+  name: string;
+  display_name: string;
+  description?: string;
+  category: string;
+  created_at: string;
+  updated_at: string;
+  roles_count?: number;
+  users_count?: number;
+}
+
+export interface UserActivity {
+  id: number;
+  user_id: number;
+  action: string;
+  description?: string;
+  status: "success" | "failed" | "warning";
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+  user?: User;
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  errors?: Record<string, string[]>;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+// API Client
+class ApiClient {
+  private baseURL: string;
+
+  constructor(baseURL: string) {
+    this.baseURL = baseURL;
   }
-  
-  interface PaginatedResponse<T> extends ApiResponse<T[]> {
-    meta: {
-      current_page: number;
-      last_page: number;
-      per_page: number;
-      total: number;
-    };
-  }
-  
-  class ApiClient {
-    private baseURL: string;
-    private token: string | null = null;
-  
-    constructor() {
-      this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-      this.token = localStorage.getItem('auth_token');
-    }
-  
-    private async request<T = any>(
-      endpoint: string,
-      options: RequestInit = {}
-    ): Promise<ApiResponse<T>> {
-      const url = `${this.baseURL}${endpoint}`;
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {},
+  ): Promise<ApiResponse<T>> {
+    const url = `${this.baseURL}${endpoint}`;
+    const config: RequestInit = {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
         ...options.headers,
-      };
-  
-      if (this.token) {
-        headers.Authorization = `Bearer ${this.token}`;
+      },
+      ...options,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw {
+          response: {
+            status: response.status,
+            data: data,
+          },
+          message: data.message || "An error occurred",
+        };
       }
-  
-      try {
-        const response = await fetch(url, {
-          ...options,
-          headers,
-        });
-  
-        const data = await response.json();
-  
-        if (!response.ok) {
-          throw new Error(data.message || 'API request failed');
-        }
-  
-        return data;
-      } catch (error) {
-        console.error('API Error:', error);
+
+      return data;
+    } catch (error: any) {
+      if (error.response) {
         throw error;
       }
-    }
-  
-    setToken(token: string) {
-      this.token = token;
-      localStorage.setItem('auth_token', token);
-    }
-  
-    clearToken() {
-      this.token = null;
-      localStorage.removeItem('auth_token');
-    }
-  
-    // Generic CRUD methods
-    async get<T>(endpoint: string): Promise<ApiResponse<T>> {
-      return this.request<T>(endpoint, { method: 'GET' });
-    }
-  
-    async post<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
-      return this.request<T>(endpoint, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-    }
-  
-    async put<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
-      return this.request<T>(endpoint, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      });
-    }
-  
-    async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-      return this.request<T>(endpoint, { method: 'DELETE' });
-    }
-  
-    // Paginated requests
-    async getPaginated<T>(
-      endpoint: string,
-      params?: Record<string, any>
-    ): Promise<PaginatedResponse<T>> {
-      const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-      return this.request<T[]>(`${endpoint}${queryString}`, { method: 'GET' }) as Promise<PaginatedResponse<T>>;
+      throw {
+        message: "Network error occurred",
+        response: { status: 500, data: {} },
+      };
     }
   }
-  
-  // Export singleton instance
-  export const apiClient = new ApiClient();
-  
-  // User Management API
-  export interface User {
-    id: number;
+
+  // User endpoints
+  async getUsers(params?: {
+    search?: string;
+    role?: string;
+    page?: number;
+  }): Promise<ApiResponse<User[]>> {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.append("search", params.search);
+    if (params?.role) searchParams.append("role", params.role);
+    if (params?.page) searchParams.append("page", params.page.toString());
+
+    const query = searchParams.toString();
+    return this.request<User[]>(`/users${query ? `?${query}` : ""}`);
+  }
+
+  async getUser(id: number): Promise<ApiResponse<User>> {
+    return this.request<User>(`/users/${id}`);
+  }
+
+  async createUser(data: {
     name: string;
     email: string;
-    status: 'active' | 'inactive';
-    email_verified_at: string | null;
-    created_at: string;
-    updated_at: string;
-    roles: Role[];
-    permissions: Permission[];
+    password: string;
+    role_ids?: number[];
+  }): Promise<ApiResponse<User>> {
+    return this.request<User>("/users", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
-  
-  export interface Role {
-    id: number;
+
+  async updateUser(
+    id: number,
+    data: {
+      name: string;
+      email: string;
+      role_ids?: number[];
+    },
+  ): Promise<ApiResponse<User>> {
+    return this.request<User>(`/users/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUser(id: number): Promise<ApiResponse<void>> {
+    return this.request<void>(`/users/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  // Role endpoints
+  async getRoles(params?: {
+    search?: string;
+    page?: number;
+  }): Promise<ApiResponse<Role[]>> {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.append("search", params.search);
+    if (params?.page) searchParams.append("page", params.page.toString());
+
+    const query = searchParams.toString();
+    return this.request<Role[]>(`/roles${query ? `?${query}` : ""}`);
+  }
+
+  async getRole(id: number): Promise<ApiResponse<Role>> {
+    return this.request<Role>(`/roles/${id}`);
+  }
+
+  async createRole(data: {
     name: string;
     description: string;
-    created_at: string;
-    updated_at: string;
-    permissions: Permission[];
-    users_count?: number;
+    permission_ids?: number[];
+  }): Promise<ApiResponse<Role>> {
+    return this.request<Role>("/roles", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
-  
-  export interface Permission {
-    id: number;
+
+  async updateRole(
+    id: number,
+    data: {
+      name: string;
+      description: string;
+      permission_ids?: number[];
+    },
+  ): Promise<ApiResponse<Role>> {
+    return this.request<Role>(`/roles/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteRole(id: number): Promise<ApiResponse<void>> {
+    return this.request<void>(`/roles/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  // Permission endpoints
+  async getPermissions(params?: {
+    search?: string;
+    category?: string;
+    page?: number;
+  }): Promise<ApiResponse<Permission[]>> {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.append("search", params.search);
+    if (params?.category) searchParams.append("category", params.category);
+    if (params?.page) searchParams.append("page", params.page.toString());
+
+    const query = searchParams.toString();
+    return this.request<Permission[]>(
+      `/permissions${query ? `?${query}` : ""}`,
+    );
+  }
+
+  async getPermissionsGrouped(): Promise<
+    ApiResponse<Record<string, Permission[]>>
+  > {
+    return this.request<Record<string, Permission[]>>("/permissions/grouped");
+  }
+
+  async createPermission(data: {
     name: string;
     display_name: string;
-    description: string;
+    description?: string;
     category: string;
-    created_at: string;
-    updated_at: string;
-    roles_count?: number;
-    users_count?: number;
-  }
-  
-  export interface UserActivity {
-    id: number;
-    user_id: number;
-    action: string;
-    description: string;
-    ip_address: string;
-    user_agent: string;
-    location: string;
-    status: 'success' | 'failed' | 'warning';
-    details: string;
-    created_at: string;
-    user: User;
-  }
-  
-  export const userApi = {
-    // Users
-    getUsers: (params?: { search?: string; role?: string; status?: string; page?: number }) =>
-      apiClient.getPaginated<User>('/users', params),
-    
-    getUser: (id: number) =>
-      apiClient.get<User>(`/users/${id}`),
-    
-    createUser: (data: { name: string; email: string; password: string; role_ids?: number[] }) =>
-      apiClient.post<User>('/users', data),
-    
-    updateUser: (id: number, data: { name?: string; email?: string; status?: string; role_ids?: number[] }) =>
-      apiClient.put<User>(`/users/${id}`, data),
-    
-    deleteUser: (id: number) =>
-      apiClient.delete(`/users/${id}`),
-    
-    // Roles
-    getRoles: (params?: { search?: string; page?: number }) =>
-      apiClient.getPaginated<Role>('/roles', params),
-    
-    getRole: (id: number) =>
-      apiClient.get<Role>(`/roles/${id}`),
-    
-    createRole: (data: { name: string; description: string; permission_ids?: number[] }) =>
-      apiClient.post<Role>('/roles', data),
-    
-    updateRole: (id: number, data: { name?: string; description?: string; permission_ids?: number[] }) =>
-      apiClient.put<Role>(`/roles/${id}`, data),
-    
-    deleteRole: (id: number) =>
-      apiClient.delete(`/roles/${id}`),
-    
-    // Permissions
-    getPermissions: (params?: { search?: string; category?: string; page?: number }) =>
-      apiClient.getPaginated<Permission>('/permissions', params),
-    
-    getPermission: (id: number) =>
-      apiClient.get<Permission>(`/permissions/${id}`),
-    
-    createPermission: (data: { name: string; display_name: string; description: string; category: string }) =>
-      apiClient.post<Permission>('/permissions', data),
-    
-    updatePermission: (id: number, data: { name?: string; display_name?: string; description?: string; category?: string }) =>
-      apiClient.put<Permission>(`/permissions/${id}`, data),
-    
-    deletePermission: (id: number) =>
-      apiClient.delete(`/permissions/${id}`),
-    
-    // Role Assignment
-    assignRole: (userId: number, roleId: number) =>
-      apiClient.post(`/users/${userId}/roles`, { role_id: roleId }),
-    
-    removeRole: (userId: number, roleId: number) =>
-      apiClient.delete(`/users/${userId}/roles/${roleId}`),
-    
-    // Permission Assignment
-    assignPermission: (userId: number, permissionId: number) =>
-      apiClient.post(`/users/${userId}/permissions`, { permission_id: permissionId }),
-    
-    removePermission: (userId: number, permissionId: number) =>
-      apiClient.delete(`/users/${userId}/permissions/${permissionId}`),
-    
-    assignPermissionsToUser: (userId: number, permissionIds: number[]) =>
-      apiClient.post(`/users/${userId}/permissions/bulk`, { permission_ids: permissionIds }),
-    
-    // User Activity
-    getUserActivities: (params?: { 
-      search?: string; 
-      user_id?: number; 
-      action?: string; 
-      status?: string;
-      date_from?: string;
-      date_to?: string;
-      page?: number;
-    }) =>
-      apiClient.getPaginated<UserActivity>('/user-activities', params),
-    
-    exportUserActivities: (params?: Record<string, any>) =>
-      apiClient.get('/user-activities/export', params),
-  };
-  
-  // Error handling utility
-  export const handleApiError = (error: any): string => {
-    if (error.response?.data?.message) {
-      return error.response.data.message;
-    }
-    if (error.message) {
-      return error.message;
-    }
-    return 'An unexpected error occurred';
-  };
-  
-  // Validation error handling
-  export const handleValidationErrors = (errors: Record<string, string[]>): Record<string, string> => {
-    const formattedErrors: Record<string, string> = {};
-    Object.keys(errors).forEach(field => {
-      formattedErrors[field] = errors[field][0]; // Take first error message
+  }): Promise<ApiResponse<Permission>> {
+    return this.request<Permission>("/permissions", {
+      method: "POST",
+      body: JSON.stringify(data),
     });
-    return formattedErrors;
-  };
-  
+  }
+
+  async updatePermission(
+    id: number,
+    data: {
+      name: string;
+      display_name: string;
+      description?: string;
+      category: string;
+    },
+  ): Promise<ApiResponse<Permission>> {
+    return this.request<Permission>(`/permissions/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deletePermission(id: number): Promise<ApiResponse<void>> {
+    return this.request<void>(`/permissions/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  // User Activity endpoints
+  async getUserActivities(params?: {
+    search?: string;
+    user_id?: number;
+    action?: string;
+    status?: string;
+    date_from?: string;
+    date_to?: string;
+    page?: number;
+  }): Promise<ApiResponse<UserActivity[]>> {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.append("search", params.search);
+    if (params?.user_id)
+      searchParams.append("user_id", params.user_id.toString());
+    if (params?.action) searchParams.append("action", params.action);
+    if (params?.status) searchParams.append("status", params.status);
+    if (params?.date_from) searchParams.append("date_from", params.date_from);
+    if (params?.date_to) searchParams.append("date_to", params.date_to);
+    if (params?.page) searchParams.append("page", params.page.toString());
+
+    const query = searchParams.toString();
+    return this.request<UserActivity[]>(
+      `/user-activities${query ? `?${query}` : ""}`,
+    );
+  }
+
+  async getUserActivityStatistics(params?: {
+    date_from?: string;
+    date_to?: string;
+  }): Promise<ApiResponse<any>> {
+    const searchParams = new URLSearchParams();
+    if (params?.date_from) searchParams.append("date_from", params.date_from);
+    if (params?.date_to) searchParams.append("date_to", params.date_to);
+
+    const query = searchParams.toString();
+    return this.request<any>(
+      `/user-activities/statistics${query ? `?${query}` : ""}`,
+    );
+  }
+
+  // Role-Permission assignment
+  async assignPermissionsToRole(
+    roleId: number,
+    permissionIds: number[],
+  ): Promise<ApiResponse<void>> {
+    return this.request<void>(`/roles/${roleId}/permissions`, {
+      method: "POST",
+      body: JSON.stringify({ permission_ids: permissionIds }),
+    });
+  }
+
+  // User-Permission assignment
+  async assignPermissionsToUser(
+    userId: number,
+    permissionIds: number[],
+  ): Promise<ApiResponse<void>> {
+    return this.request<void>(`/users/${userId}/permissions`, {
+      method: "POST",
+      body: JSON.stringify({ permission_ids: permissionIds }),
+    });
+  }
+
+  // User-Role assignment
+  async assignRolesToUser(
+    userId: number,
+    roleIds: number[],
+  ): Promise<ApiResponse<void>> {
+    return this.request<void>(`/users/${userId}/roles`, {
+      method: "POST",
+      body: JSON.stringify({ role_ids: roleIds }),
+    });
+  }
+}
+
+// Create API client instance
+export const userApi = new ApiClient(API_BASE_URL);
+
+// Error handler utility
+export const handleApiError = (error: any): string => {
+  if (error.response?.data?.message) {
+    return error.response.data.message;
+  }
+  if (error.response?.data?.errors) {
+    const errors = error.response.data.errors;
+    const firstError = Object.values(errors)[0];
+    if (Array.isArray(firstError)) {
+      return firstError[0] as string;
+    }
+  }
+  return error.message || "An unexpected error occurred";
+};

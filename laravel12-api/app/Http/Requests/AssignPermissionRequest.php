@@ -11,7 +11,7 @@ class AssignPermissionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,20 @@ class AssignPermissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'permission_ids' => ['required', 'array'],
+            'permission_ids.*' => ['integer', 'exists:permissions,id'],
+        ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     */
+    public function messages(): array
+    {
+        return [
+            'permission_ids.required' => 'At least one permission must be selected',
+            'permission_ids.array' => 'Permissions must be provided as an array',
+            'permission_ids.*.exists' => 'Selected permission does not exist',
         ];
     }
 }
