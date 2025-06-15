@@ -238,6 +238,51 @@ export const settingsSchema = z.object({
   }),
 });
 
+// User Management Schemas
+export const createUserSchema = z.object({
+  name: commonValidation.name,
+  email: commonValidation.email,
+  password: commonValidation.strongPassword,
+  role_ids: z.array(z.number().int().positive()).optional(),
+});
+
+export const updateUserSchema = z.object({
+  name: commonValidation.name.optional(),
+  email: commonValidation.email.optional(),
+  status: z.enum(["active", "inactive"]).optional(),
+  role_ids: z.array(z.number().int().positive()).optional(),
+});
+
+// Role Management Schemas
+export const createRoleSchema = z.object({
+  name: commonValidation.nonEmptyString("Role name"),
+  display_name: commonValidation.nonEmptyString("Display name"),
+  description: commonValidation.nonEmptyString("Description"),
+  permission_ids: z.array(z.number().int().positive()).optional(),
+});
+
+export const updateRoleSchema = z.object({
+  name: commonValidation.nonEmptyString("Role name").optional(),
+  display_name: commonValidation.nonEmptyString("Display name").optional(),
+  description: z.string().max(1000, "Description must be less than 1000 characters").optional(),
+  permission_ids: z.array(z.number().int().positive()).optional(),
+});
+
+// Permission Management Schemas
+export const createPermissionSchema = z.object({
+  name: commonValidation.nonEmptyString("Permission name"),
+  display_name: commonValidation.nonEmptyString("Display name"),
+  description: commonValidation.nonEmptyString("Description"),
+  category: commonValidation.nonEmptyString("Category"),
+});
+
+export const updatePermissionSchema = z.object({
+  name: commonValidation.nonEmptyString("Permission name").optional(),
+  display_name: commonValidation.nonEmptyString("Display name").optional(),
+  description: z.string().max(1000, "Description must be less than 1000 characters").optional(),
+  category: z.string().max(255, "Category must be less than 255 characters").optional(),
+});
+
 // Export types
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;
@@ -245,3 +290,9 @@ export type WidgetConfigFormData = z.infer<typeof widgetConfigSchema>;
 export type AIModelConfigFormData = z.infer<typeof aiModelConfigSchema>;
 export type KnowledgeBaseFormData = z.infer<typeof knowledgeBaseSchema>;
 export type SettingsFormData = z.infer<typeof settingsSchema>;
+export type CreateUserFormData = z.infer<typeof createUserSchema>;
+export type UpdateUserFormData = z.infer<typeof updateUserSchema>;
+export type CreateRoleFormData = z.infer<typeof createRoleSchema>;
+export type UpdateRoleFormData = z.infer<typeof updateRoleSchema>;
+export type CreatePermissionFormData = z.infer<typeof createPermissionSchema>;
+export type UpdatePermissionFormData = z.infer<typeof updatePermissionSchema>;
