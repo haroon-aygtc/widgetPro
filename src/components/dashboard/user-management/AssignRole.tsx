@@ -431,6 +431,7 @@ const AssignRole = () => {
         </CardContent>
       </Card>
     </>
+  );
 };
 
 export default AssignRole;

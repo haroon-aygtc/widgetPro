@@ -429,6 +429,7 @@ const Permissions = () => {
         </CardContent>
       </Card>
     </>
+  );
 };
 
 export default Permissions;

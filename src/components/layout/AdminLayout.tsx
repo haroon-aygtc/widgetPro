@@ -87,63 +87,17 @@ const AdminLayout = () => {
       icon: Code,
     },
     {
+      path: "/admin/user-management",
+      label: "User Management",
+      icon: Users,
+    },  
+    {
       path: "/admin/settings",
       label: "Settings",
       icon: Settings,
     },
   ];
 
-  const userManagementModule = {
-    key: "user-management",
-    label: "User Management",
-    icon: Users,
-    paths: [
-      "/admin/users",
-      "/admin/roles",
-      "/admin/permissions",
-      "/admin/assign-role",
-      "/admin/assign-permission",
-      "/admin/user-activity",
-      "/admin/activity-logs",
-    ],
-    subItems: [
-      {
-        path: "/admin/users",
-        label: "Users",
-        icon: Users,
-      },
-      {
-        path: "/admin/roles",
-        label: "Roles",
-        icon: Shield,
-      },
-      {
-        path: "/admin/permissions",
-        label: "Permissions",
-        icon: Key,
-      },
-      {
-        path: "/admin/assign-role",
-        label: "Assign Role to User",
-        icon: UserCheck,
-      },
-      {
-        path: "/admin/assign-permission",
-        label: "Assign Permission to User",
-        icon: UserCheck,
-      },
-      {
-        path: "/admin/user-activity",
-        label: "User Activity",
-        icon: Activity,
-      },
-      {
-        path: "/admin/activity-logs",
-        label: "Activity Logs & Audit Trail",
-        icon: FileCheck,
-      },
-    ],
-  };
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-background via-background to-violet-50/30 dark:to-violet-950/30">
@@ -208,49 +162,7 @@ const AdminLayout = () => {
               );
             })}
 
-            {/* User Management Module */}
-            <div className="space-y-1">
-              <button
-                onClick={() => toggleModule(userManagementModule.key)}
-                className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
-                  isModuleActive(userManagementModule.paths)
-                    ? "bg-gradient-to-r from-violet-500/10 to-purple-500/10 text-violet-700 dark:text-violet-300 border border-violet-200/50 dark:border-violet-800/50 shadow-sm"
-                    : "hover:bg-gradient-to-r hover:from-violet-500/5 hover:to-purple-500/5 hover:text-violet-600 dark:hover:text-violet-400 hover:translate-x-1"
-                }`}
-              >
-                <div className="flex items-center">
-                  <userManagementModule.icon className="h-4 w-4 mr-2" />
-                  {userManagementModule.label}
-                </div>
-                {isModuleExpanded(userManagementModule.key) ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-              </button>
-
-              {isModuleExpanded(userManagementModule.key) && (
-                <div className="ml-4 space-y-1 border-l border-violet-200/30 dark:border-violet-800/30 pl-2">
-                  {userManagementModule.subItems.map((subItem) => {
-                    const SubIcon = subItem.icon;
-                    return (
-                      <Link
-                        key={subItem.path}
-                        to={subItem.path}
-                        className={`flex items-center px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
-                          isActive(subItem.path)
-                            ? "bg-gradient-to-r from-violet-500/10 to-purple-500/10 text-violet-700 dark:text-violet-300 border border-violet-200/50 dark:border-violet-800/50 shadow-sm"
-                            : "hover:bg-gradient-to-r hover:from-violet-500/5 hover:to-purple-500/5 hover:text-violet-600 dark:hover:text-violet-400 hover:translate-x-1"
-                        }`}
-                      >
-                        <SubIcon className="h-3 w-3 mr-2" />
-                        {subItem.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+       
           </nav>
         </div>
 

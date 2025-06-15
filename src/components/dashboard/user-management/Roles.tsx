@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -38,10 +39,15 @@ import {
   Key,
   Crown,
   UserCheck,
+  List,
+  Grid,
 } from "lucide-react";
 
 const Roles = () => {
-  const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState("list");
+  const [viewMode, setViewMode] = useState("grid");
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editRole, setEditRole] = useState(null);
 
   // Mock data for roles
   const roles = [
@@ -160,189 +166,160 @@ const Roles = () => {
   ];
 
   return (
-    <>
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <Card className="bg-card/80 backdrop-blur-xl border-violet-200/50 dark:border-violet-800/50">
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
         <div>
-          <h2 className="text-2xl font-bold text-violet-700 dark:text-violet-300">
+          <CardTitle className="text-2xl font-bold text-violet-700 dark:text-violet-300">
             Roles Management
-          </h2>
-          <p className="text-muted-foreground mt-1">
+          </CardTitle>
+          <CardDescription className="text-muted-foreground mt-1">
             Define and manage user roles with specific permissions
-          </p>
+          </CardDescription>
         </div>
-        <Dialog open={isCreateRoleOpen} onOpenChange={setIsCreateRoleOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Role
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New Role</DialogTitle>
-              <DialogDescription>
-                Define a new role with specific permissions and access levels.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="roleName" className="text-right">
-                  Role Name
-                </Label>
-                <Input
-                  id="roleName"
-                  className="col-span-3"
-                  placeholder="Enter role name"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="roleDescription" className="text-right pt-2">
-                  Description
-                </Label>
-                <Textarea
-                  id="roleDescription"
-                  className="col-span-3"
-                  placeholder="Describe the role and its purpose"
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="text-right pt-2">Permissions</Label>
-                <div className="col-span-3 space-y-4 max-h-60 overflow-y-auto">
-                  {Object.entries(
-                    availablePermissions.reduce(
-                      (acc, perm) => {
-                        if (!acc[perm.category]) acc[perm.category] = [];
-                        acc[perm.category].push(perm);
-                        return acc;
-                      },
-                      {} as Record<string, typeof availablePermissions>,
-                    ),
-                  ).map(([category, perms]) => (
-                    <div key={category} className="space-y-2">
-                      <h4 className="font-medium text-sm text-violet-700 dark:text-violet-300">
-                        {category}
-                      </h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {perms.map((perm) => (
-                          <label
-                            key={perm.id}
-                            className="flex items-center space-x-2 text-sm"
-                          >
-                            <input type="checkbox" className="rounded" />
-                            <span>{perm.name}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full mb-4">
+          <TabsList>
+            <TabsTrigger value="list">Roles List</TabsTrigger>
+            <TabsTrigger value="add">{isEditMode ? "Edit Role" : "Add Role"}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="list" className="space-y-6">
+            <div className="flex justify-end mb-4 gap-2">
+              <Button variant={viewMode === "grid" ? "default" : "outline"} size="sm" onClick={() => setViewMode("grid")}> <Grid className="h-4 w-4 mr-1" /> Grid </Button>
+              <Button variant={viewMode === "list" ? "default" : "outline"} size="sm" onClick={() => setViewMode("list")}> <List className="h-4 w-4 mr-1" /> List </Button>
+              <Button className="ml-2" onClick={() => { setActiveSubTab("add"); setIsEditMode(false); setEditRole(null); }}> <Plus className="h-4 w-4 mr-2" /> Add Role </Button>
             </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsCreateRoleOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={() => setIsCreateRoleOpen(false)}>
-                Create Role
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Roles Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {roles.map((role) => {
-          const IconComponent = role.icon;
-          return (
-            <Card
-              key={role.id}
-              className="bg-card/80 backdrop-blur-xl border-violet-200/50 dark:border-violet-800/50 hover:shadow-lg transition-all duration-200 hover:shadow-violet-500/10"
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-200/50 dark:border-violet-800/50">
-                      <IconComponent className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg text-violet-700 dark:text-violet-300">
-                        {role.name}
-                      </CardTitle>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge className={role.color}>{role.name}</Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {role.userCount} users
-                        </Badge>
+            {viewMode === "grid" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {roles.map((role) => {
+                  const IconComponent = role.icon;
+                  return (
+                    <Card key={role.id} className="hover:shadow-lg transition-all duration-200 hover:shadow-violet-500/10">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-200/50 dark:border-violet-800/50">
+                              <IconComponent className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg text-violet-700 dark:text-violet-300">{role.name}</CardTitle>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge className={role.color}>{role.name}</Badge>
+                                <Badge variant="outline" className="text-xs">{role.userCount} users</Badge>
+                              </div>
+                            </div>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => { setActiveSubTab("add"); setIsEditMode(true); setEditRole(role); }}>
+                                <Edit className="h-4 w-4 mr-2" /> Edit Role
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Users className="h-4 w-4 mr-2" /> View Users
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-red-600">
+                                <Trash2 className="h-4 w-4 mr-2" /> Delete Role
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <CardDescription className="mb-4">{role.description}</CardDescription>
+                        <div className="space-y-3">
+                          <div>
+                            <h4 className="text-sm font-medium text-violet-700 dark:text-violet-300 mb-2">Permissions ({role.permissions.length})</h4>
+                            <div className="flex flex-wrap gap-1">
+                              {role.permissions.slice(0, 4).map((permission) => (
+                                <Badge key={permission} variant="outline" className="text-xs bg-violet-50 dark:bg-violet-950/50 border-violet-200 dark:border-violet-800">{permission.split(".")[1]}</Badge>
+                              ))}
+                              {role.permissions.length > 4 && (
+                                <Badge variant="outline" className="text-xs">+{role.permissions.length - 4} more</Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground">Created: {role.createdAt}</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {roles.map((role) => (
+                  <Card key={role.id} className="flex flex-row items-center justify-between p-4 hover:shadow-lg transition-all duration-200 hover:shadow-violet-500/10">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-200/50 dark:border-violet-800/50">
+                        {role.icon && <role.icon className="h-5 w-5 text-violet-600 dark:text-violet-400" />}
+                      </div>
+                      <div>
+                        <div className="font-medium text-violet-700 dark:text-violet-300">{role.name}</div>
+                        <div className="text-xs text-muted-foreground">{role.description}</div>
                       </div>
                     </div>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit Role
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Users className="h-4 w-4 mr-2" />
-                        View Users
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Role
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={role.color}>{role.name}</Badge>
+                      <Button size="sm" variant="outline" onClick={() => { setActiveSubTab("add"); setIsEditMode(true); setEditRole(role); }}><Edit className="h-4 w-4" /></Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent value="add" className="space-y-6">
+            <Card className="max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle>{isEditMode ? "Edit Role" : "Create New Role"}</CardTitle>
+                <CardDescription>{isEditMode ? "Edit the selected role and its permissions." : "Define a new role with specific permissions and access levels."}</CardDescription>
               </CardHeader>
               <CardContent>
-                <CardDescription className="mb-4">
-                  {role.description}
-                </CardDescription>
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="text-sm font-medium text-violet-700 dark:text-violet-300 mb-2">
-                      Permissions ({role.permissions.length})
-                    </h4>
-                    <div className="flex flex-wrap gap-1">
-                      {role.permissions.slice(0, 4).map((permission) => (
-                        <Badge
-                          key={permission}
-                          variant="outline"
-                          className="text-xs bg-violet-50 dark:bg-violet-950/50 border-violet-200 dark:border-violet-800"
-                        >
-                          {permission.split(".")[1]}
-                        </Badge>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="roleName" className="text-right">Role Name</Label>
+                    <Input id="roleName" className="col-span-3" placeholder="Enter role name" defaultValue={isEditMode && editRole ? editRole.name : ""} />
+                  </div>
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="roleDescription" className="text-right pt-2">Description</Label>
+                    <Textarea id="roleDescription" className="col-span-3" placeholder="Describe the role and its purpose" rows={3} defaultValue={isEditMode && editRole ? editRole.description : ""} />
+                  </div>
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label className="text-right pt-2">Permissions</Label>
+                    <div className="col-span-3 space-y-4 max-h-60 overflow-y-auto">
+                      {Object.entries(availablePermissions.reduce((acc, perm) => { if (!acc[perm.category]) acc[perm.category] = []; acc[perm.category].push(perm); return acc; }, {} as Record<string, typeof availablePermissions>)).map(([category, perms]) => (
+                        <div key={category} className="space-y-2">
+                          <h4 className="font-medium text-sm text-violet-700 dark:text-violet-300">{category}</h4>
+                          <div className="grid grid-cols-2 gap-2">
+                            {perms.map((perm) => (
+                              <label key={perm.id} className="flex items-center space-x-2 text-sm">
+                                <input type="checkbox" className="rounded" />
+                                <span>{perm.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
                       ))}
-                      {role.permissions.length > 4 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{role.permissions.length - 4} more
-                        </Badge>
-                      )}
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    Created: {role.createdAt}
-                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button variant="outline" onClick={() => { setActiveSubTab("list"); setIsEditMode(false); setEditRole(null); }}>Cancel</Button>
+                  <Button>{isEditMode ? "Update Role" : "Create Role"}</Button>
                 </div>
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
-    </>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
 };
 
 export default Roles;

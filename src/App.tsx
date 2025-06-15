@@ -16,12 +16,7 @@ import AnalyticsDashboard from "./components/dashboard/AnalyticsDashboard";
 import SettingsPage from "./components/dashboard/SettingsPage";
 import EmbedCode from "./components/dashboard/EmbedCode";
 import PromptTemplates from "./components/dashboard/PromptTemplates";
-import Users from "./components/dashboard/user-management/Users";
-import Roles from "./components/dashboard/user-management/Roles";
-import Permissions from "./components/dashboard/user-management/Permissions";
-import AssignRole from "./components/dashboard/user-management/AssignRole";
-import AssignPermission from "./components/dashboard/user-management/AssignPermission";
-import UserActivity from "./components/dashboard/user-management/UserActivity";
+import UserManagement from "./components/dashboard/user-management/UserManagement";
 import routes from "tempo-routes";
 
 function App() {
@@ -41,12 +36,7 @@ function App() {
             <Route path="prompt-templates" element={<PromptTemplates />} />
             <Route path="embed" element={<EmbedCode />} />
             <Route path="settings" element={<SettingsPage />} />
-            <Route path="users" element={<Users />} />
-            <Route path="roles" element={<Roles />} />
-            <Route path="permissions" element={<Permissions />} />
-            <Route path="assign-role" element={<AssignRole />} />
-            <Route path="assign-permission" element={<AssignPermission />} />
-            <Route path="user-activity" element={<UserActivity />} />
+            <Route path="user-management" element={<UserManagement />} />
           </Route>
         </Routes>
         {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}

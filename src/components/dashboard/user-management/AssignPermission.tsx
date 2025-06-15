@@ -538,6 +538,7 @@ const AssignPermission = () => {
         </DialogContent>
       </Dialog>
     </>
+  );
 };
 
 export default AssignPermission;
