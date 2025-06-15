@@ -259,14 +259,16 @@ const AnalyticsDashboard = () => {
                 <SelectItem value="90d">Last 90 days</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
+            <div className="flex items-center gap-2">
+              <button className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 hover:border-border/80 hover:bg-muted/50 transition-all duration-200">
+                <RefreshCw className="h-4 w-4 group-hover:animate-spin" />
+                <span className="text-sm font-medium">Refresh</span>
+              </button>
+              <button className="group flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md">
+                <Download className="h-4 w-4 group-hover:animate-bounce" />
+                <span className="text-sm font-medium">Export</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>

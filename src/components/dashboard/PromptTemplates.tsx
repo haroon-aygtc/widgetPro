@@ -135,24 +135,32 @@ const TemplateCard = ({
         </div>
       </CardContent>
       <CardFooter className="pt-0 flex justify-end space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
+        <button
           onClick={() => onDuplicate(template)}
+          className="group p-2 rounded-lg border border-border/60 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-200"
+          title="Duplicate template"
         >
-          <Copy className="h-4 w-4" />
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => onEdit(template)}>
-          <Edit3 className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
+          <Copy className="h-4 w-4 text-blue-600 group-hover:animate-pulse" />
+        </button>
+        <button
+          onClick={() => onEdit(template)}
+          className="group p-2 rounded-lg border border-border/60 hover:border-green-300 hover:bg-green-50 dark:hover:bg-green-950/20 transition-all duration-200"
+          title="Edit template"
+        >
+          <Edit3 className="h-4 w-4 text-green-600 group-hover:animate-pulse" />
+        </button>
+        <button
           onClick={() => onDelete(template.id)}
           disabled={template.isDefault}
+          className="group p-2 rounded-lg border border-border/60 hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          title={
+            template.isDefault
+              ? "Cannot delete default template"
+              : "Delete template"
+          }
         >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+          <Trash2 className="h-4 w-4 text-red-600 group-hover:animate-pulse" />
+        </button>
       </CardFooter>
     </Card>
   );
@@ -199,7 +207,7 @@ interface PromptTemplatesProps {
 }
 
 const PromptTemplates = ({
-  onSave = () => { },
+  onSave = () => {},
   initialTemplates = [],
 }: PromptTemplatesProps) => {
   const [activeTab, setActiveTab] = useState("templates");
@@ -327,7 +335,9 @@ const PromptTemplates = ({
 
   const handleSaveTemplate = () => {
     setSaveStatus("saving");
-    saveLoading.start(isEditing ? "Updating template..." : "Saving template...");
+    saveLoading.start(
+      isEditing ? "Updating template..." : "Saving template...",
+    );
 
     setTimeout(() => {
       if (isEditing && editingTemplate) {
@@ -336,10 +346,10 @@ const PromptTemplates = ({
           templates.map((t) =>
             t.id === editingTemplate.id
               ? {
-                ...t,
-                ...newTemplate,
-                lastModified: "Just now",
-              }
+                  ...t,
+                  ...newTemplate,
+                  lastModified: "Just now",
+                }
               : t,
           ),
         );
@@ -432,10 +442,13 @@ const PromptTemplates = ({
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            <Button variant="outline" size="sm" onClick={handleNewTemplate}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Template
-            </Button>
+            <button
+              onClick={handleNewTemplate}
+              className="group flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+            >
+              <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform duration-200" />
+              <span className="font-medium">New Template</span>
+            </button>
           </div>
         </div>
       </header>
@@ -511,10 +524,13 @@ const PromptTemplates = ({
                       ? "Try adjusting your search or filter criteria."
                       : "Create your first prompt template to get started."}
                   </p>
-                  <Button onClick={handleNewTemplate}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Template
-                  </Button>
+                  <button
+                    onClick={handleNewTemplate}
+                    className="group flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+                  >
+                    <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-200" />
+                    <span className="font-semibold">Create Template</span>
+                  </button>
                 </CardContent>
               </Card>
             ) : (
@@ -632,28 +648,33 @@ const PromptTemplates = ({
             </SectionCard>
 
             <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActiveTab("templates");
-                  setIsEditing(false);
-                  setEditingTemplate(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveTemplate}
-                disabled={
-                  saveLoading.isLoading ||
-                  !newTemplate.name ||
-                  !newTemplate.description ||
-                  !newTemplate.content
-                }
-              >
-                {getSaveButtonIcon()}
-                <span className="ml-2">{getSaveButtonText()}</span>
-              </Button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setActiveTab("templates");
+                    setIsEditing(false);
+                    setEditingTemplate(null);
+                  }}
+                  className="px-4 py-2 rounded-lg border border-border/60 hover:border-border/80 hover:bg-muted/50 transition-all duration-200 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveTemplate}
+                  disabled={
+                    saveLoading.isLoading ||
+                    !newTemplate.name ||
+                    !newTemplate.description ||
+                    !newTemplate.content
+                  }
+                  className="group flex items-center gap-2 px-6 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
+                >
+                  <div className="group-hover:animate-pulse">
+                    {getSaveButtonIcon()}
+                  </div>
+                  <span className="font-medium">{getSaveButtonText()}</span>
+                </button>
+              </div>
             </div>
           </TabsContent>
 
@@ -708,15 +729,15 @@ const PromptTemplates = ({
               icon={<FileText className="h-5 w-5" />}
             >
               <div className="space-y-4">
-                <div className="flex space-x-2">
-                  <Button variant="outline">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Export Templates
-                  </Button>
-                  <Button variant="outline">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Import Templates
-                  </Button>
+                <div className="flex gap-3">
+                  <button className="group flex items-center gap-2 px-4 py-2 rounded-lg border border-border/60 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-200">
+                    <FileText className="h-4 w-4 text-blue-600 group-hover:animate-bounce" />
+                    <span className="font-medium">Export Templates</span>
+                  </button>
+                  <button className="group flex items-center gap-2 px-4 py-2 rounded-lg border border-border/60 hover:border-green-300 hover:bg-green-50 dark:hover:bg-green-950/20 transition-all duration-200">
+                    <FileText className="h-4 w-4 text-green-600 group-hover:animate-bounce" />
+                    <span className="font-medium">Import Templates</span>
+                  </button>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Export your templates as JSON for backup or sharing. Import

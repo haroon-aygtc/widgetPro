@@ -44,7 +44,7 @@ interface AIModelConfigProps {
 }
 
 const AIModelConfig = ({
-  onSave = () => { },
+  onSave = () => {},
   initialConfig = {},
 }: AIModelConfigProps) => {
   const [activeTab, setActiveTab] = useState("providers");
@@ -166,11 +166,13 @@ const AIModelConfig = ({
       });
 
       setIsConnected(true);
-      toastUtils.operationSuccess(`${providers.find((p) => p.id === selectedProvider)?.name} connection`);
+      toastUtils.operationSuccess(
+        `${providers.find((p) => p.id === selectedProvider)?.name} connection`,
+      );
     } catch (error) {
       toastUtils.operationError(
         "Provider connection",
-        error instanceof Error ? error.message : undefined
+        error instanceof Error ? error.message : undefined,
       );
     } finally {
       connectLoading.stop();
@@ -206,7 +208,7 @@ const AIModelConfig = ({
     } catch (error) {
       toastUtils.operationError(
         "Model test",
-        error instanceof Error ? error.message : undefined
+        error instanceof Error ? error.message : undefined,
       );
     } finally {
       testLoading.stop();
@@ -418,25 +420,75 @@ const AIModelConfig = ({
                     </CardContent>
                   </Card>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <h5 className="font-medium">Appearance</h5>
-                    </div>
+                  {/* Quick Provider Selection */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                    {providers.map((provider) => (
+                      <button
+                        key={provider.id}
+                        onClick={() => setSelectedProvider(provider.id)}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-md ${
+                          selectedProvider === provider.id
+                            ? "border-primary bg-primary/5 shadow-sm"
+                            : "border-border/60 hover:border-border/80"
+                        }`}
+                      >
+                        <div className="text-2xl mb-2">{provider.logo}</div>
+                        <div className="font-medium text-sm">
+                          {provider.name}
+                        </div>
+                      </button>
+                    ))}
                   </div>
 
                   <div className="space-y-4">
-                    <Label htmlFor="api-key">API Key</Label>
-                    <Input
-                      id="api-key"
-                      type="password"
-                      placeholder="Enter your API key"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Your API key is securely stored and encrypted. We never
-                      share your credentials.
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="api-key"
+                        className="text-base font-semibold"
+                      >
+                        API Key
+                      </Label>
+                      <Badge variant="outline" className="text-xs">
+                        {selectedProvider === "openai"
+                          ? "OpenAI"
+                          : selectedProvider === "anthropic"
+                            ? "Anthropic"
+                            : selectedProvider === "google"
+                              ? "Google AI"
+                              : selectedProvider === "meta"
+                                ? "Meta AI"
+                                : "Groq"}
+                      </Badge>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="api-key"
+                        type="password"
+                        placeholder={`Enter your ${providers.find((p) => p.id === selectedProvider)?.name} API key`}
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        className="pr-12"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => {
+                          const input = document.getElementById(
+                            "api-key",
+                          ) as HTMLInputElement;
+                          input.type =
+                            input.type === "password" ? "text" : "password";
+                        }}
+                      >
+                        👁️
+                      </button>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        🔒 Your API key is securely stored and encrypted. We
+                        never share your credentials.
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
@@ -756,7 +808,8 @@ const AIModelConfig = ({
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       )}
                       {testLoading.isLoading
-                        ? testLoading.loadingState?.message || "Testing model..."
+                        ? testLoading.loadingState?.message ||
+                          "Testing model..."
                         : "Test Model"}
                     </Button>
 
@@ -775,7 +828,10 @@ const AIModelConfig = ({
                   >
                     Back
                   </Button>
-                  <Button onClick={handleSaveConfig} disabled={saveLoading.isLoading}>
+                  <Button
+                    onClick={handleSaveConfig}
+                    disabled={saveLoading.isLoading}
+                  >
                     {saveLoading.isLoading && (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     )}

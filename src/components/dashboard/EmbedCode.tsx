@@ -238,18 +238,34 @@ function App() {
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            <Button onClick={openTestPage} variant="outline">
-              <TestTube className="h-4 w-4 mr-2" />
-              Test Widget
-            </Button>
-            <Button onClick={copyToClipboard}>
-              {copied ? (
-                <Check className="h-4 w-4 mr-2" />
-              ) : (
-                <Copy className="h-4 w-4 mr-2" />
-              )}
-              {copied ? "Copied!" : "Copy Code"}
-            </Button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={openTestPage}
+                className="group flex items-center gap-2 px-4 py-2 rounded-lg border border-border/60 hover:border-border/80 hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
+              >
+                <TestTube className="h-4 w-4 group-hover:animate-pulse text-blue-600" />
+                <span className="font-medium">Test Widget</span>
+              </button>
+              <button
+                onClick={copyToClipboard}
+                className={`group flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 ${
+                  copied
+                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                    : "bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700"
+                }`}
+              >
+                <div className="group-hover:animate-bounce">
+                  {copied ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </div>
+                <span className="font-medium">
+                  {copied ? "Copied!" : "Copy Code"}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </header>

@@ -211,7 +211,9 @@ const SettingsPage = () => {
     setTimeout(() => {
       setSaveStatus("saved");
       saveLoading.stop();
-      toastUtils.operationSuccess(`${section.charAt(0).toUpperCase() + section.slice(1)} settings save`);
+      toastUtils.operationSuccess(
+        `${section.charAt(0).toUpperCase() + section.slice(1)} settings save`,
+      );
 
       // Reset status after 2 seconds
       setTimeout(() => {
@@ -258,14 +260,16 @@ const SettingsPage = () => {
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
+            <button
               onClick={() => handleSave(activeTab)}
               disabled={saveLoading.isLoading}
+              className="group flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
             >
-              {getSaveButtonIcon()}
-              <span className="ml-2">{getSaveButtonText()}</span>
-            </Button>
+              <div className="group-hover:animate-pulse">
+                {getSaveButtonIcon()}
+              </div>
+              <span className="font-medium">{getSaveButtonText()}</span>
+            </button>
           </div>
         </div>
       </header>

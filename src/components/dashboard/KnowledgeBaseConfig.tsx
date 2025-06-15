@@ -535,20 +535,17 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
   };
 
   const handleFileUpload = async () => {
-    uploadLoading.start("Uploading files...");
     setUploadProgress(0);
     setIsUploading(true);
 
     try {
       // Simulate file upload progress
-      await new Promise((resolve, reject) => {
+      await new Promise((resolve) => {
         const interval = setInterval(() => {
           setUploadProgress((prev) => {
             const newProgress = prev + 10;
-            uploadLoading.updateProgress(newProgress);
             if (newProgress >= 100) {
               clearInterval(interval);
-              uploadLoading.updateMessage("Processing files...");
               setTimeout(() => resolve(true), 500);
               return 100;
             }
@@ -557,11 +554,17 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
         }, 200);
       });
 
-      toastUtils.fileUploaded();
+      toastSuccess({
+        title: "Files Uploaded",
+        description:
+          "Your files have been uploaded and processed successfully.",
+      });
     } catch (error) {
-      toastUtils.fileUploadError();
+      toastError({
+        title: "Upload Failed",
+        description: "Failed to upload files. Please try again.",
+      });
     } finally {
-      uploadLoading.stop();
       setIsUploading(false);
     }
   };
@@ -712,39 +715,73 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {/* One-Click Upload */}
+                  {/* One-Click Upload - Enhanced */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <Button
-                      variant="outline"
-                      className="h-24 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary"
+                    <button
                       onClick={handleFileUpload}
+                      disabled={isUploading}
+                      className="group relative h-32 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/60 hover:border-primary/60 transition-all duration-200 hover:shadow-lg hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Upload className="h-6 w-6 text-primary" />
-                      <span className="font-medium">Upload Files</span>
-                      <span className="text-xs text-muted-foreground">
-                        PDF, DOCX, TXT
-                      </span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-24 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary"
+                      <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-800/40 transition-colors">
+                        <Upload className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-sm mb-1">
+                          Upload Files
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          PDF, DOCX, TXT, CSV
+                        </div>
+                        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          Click to browse
+                        </div>
+                      </div>
+                      {isUploading && (
+                        <div className="absolute inset-0 bg-background/80 rounded-xl flex items-center justify-center">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        </div>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab("websites")}
+                      className="group h-32 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/60 hover:border-primary/60 transition-all duration-200 hover:shadow-lg hover:bg-primary/5"
                     >
-                      <Globe className="h-6 w-6 text-primary" />
-                      <span className="font-medium">Crawl Website</span>
-                      <span className="text-xs text-muted-foreground">
-                        Auto-extract content
-                      </span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-24 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary"
+                      <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30 group-hover:bg-green-200 dark:group-hover:bg-green-800/40 transition-colors">
+                        <Globe className="h-6 w-6 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-sm mb-1">
+                          Crawl Website
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Auto-extract content
+                        </div>
+                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          Configure crawling
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab("apis")}
+                      className="group h-32 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/60 hover:border-primary/60 transition-all duration-200 hover:shadow-lg hover:bg-primary/5"
                     >
-                      <Database className="h-6 w-6 text-primary" />
-                      <span className="font-medium">Connect API</span>
-                      <span className="text-xs text-muted-foreground">
-                        Live data sync
-                      </span>
-                    </Button>
+                      <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/40 transition-colors">
+                        <Database className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-sm mb-1">
+                          Connect API
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Live data sync
+                        </div>
+                        <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                          Setup integration
+                        </div>
+                      </div>
+                    </button>
                   </div>
 
                   <div className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">

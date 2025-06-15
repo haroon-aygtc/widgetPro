@@ -103,14 +103,15 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                 onReset={handleReset}
                 errorCount={errorCount}
               />
-              <Button
-                variant="outline"
-                onClick={() => setShowQuickSetup(true)}
-                className="flex items-center gap-2"
-              >
-                <Zap className="h-4 w-4" />
-                Quick Setup
-              </Button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowQuickSetup(true)}
+                  className="group flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+                >
+                  <Zap className="h-4 w-4 group-hover:animate-pulse" />
+                  <span className="font-medium">Quick Setup</span>
+                </button>
+              </div>
             </div>
           </header>
 
