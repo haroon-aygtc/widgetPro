@@ -290,13 +290,13 @@ const AssignPermission = () => {
   );
 
   return (
-    <div className="p-6 bg-gradient-to-br from-background via-background to-violet-50/30 dark:to-violet-950/30 min-h-screen">
+    <>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl font-bold text-violet-700 dark:text-violet-300">
             Assign Permission to User
-          </h1>
+          </h2>
           <p className="text-muted-foreground mt-1">
             Manage individual user permissions and access controls
           </p>
@@ -537,8 +537,7 @@ const AssignPermission = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </>
 };
 
 export default AssignPermission;
