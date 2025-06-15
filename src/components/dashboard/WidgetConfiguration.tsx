@@ -38,11 +38,16 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
     canRedo,
     hasUnsavedChanges,
     isSaving,
+    isLoading,
     errors,
     activeTab,
     setActiveTab,
+    validateField,
     saveConfig,
     resetConfig,
+    testConfig,
+    duplicateConfig,
+    widgetId: currentWidgetId,
   } = useWidgetConfiguration(widgetId);
 
   const modal = useModal();
@@ -104,6 +109,16 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                 errorCount={errorCount}
               />
               <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={testConfig}
+                  disabled={
+                    isSaving || isLoading || Object.keys(errors).length > 0
+                  }
+                >
+                  Test Widget
+                </Button>
                 <button
                   onClick={() => setShowQuickSetup(true)}
                   className="group flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
@@ -171,6 +186,7 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                       updateConfig({ widgetName: name })
                     }
                     errors={errors}
+                    onFieldValidation={validateField}
                   />
                 </TabsContent>
 
@@ -185,6 +201,7 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                       updateConfig({ widgetPosition: position })
                     }
                     errors={errors}
+                    onFieldValidation={validateField}
                   />
                 </TabsContent>
 
@@ -211,6 +228,7 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                       updateConfig({ autoTrigger })
                     }
                     errors={errors}
+                    onFieldValidation={validateField}
                   />
                 </TabsContent>
 
@@ -236,7 +254,7 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                 </TabsContent>
 
                 <TabsContent value="embed" className="space-y-6">
-                  <EmbedCodeGenerator widgetId={widgetId} />
+                  <EmbedCodeGenerator widgetId={currentWidgetId?.toString()} />
                 </TabsContent>
               </Tabs>
             </div>

@@ -198,23 +198,128 @@ export const registerSchema = validationUtils.addPasswordConfirmationRefine(
   }),
 );
 
-// Widget Configuration Schema
+// Widget Configuration Schema with enhanced field-level validation
 export const widgetConfigSchema = z.object({
-  name: commonValidation.nonEmptyString("Widget name"),
+  name: z
+    .string()
+    .min(1, "Widget name is required")
+    .min(2, "Widget name must be at least 2 characters")
+    .max(100, "Widget name must be less than 100 characters")
+    .regex(
+      /^[a-zA-Z0-9\s\-_]+$/,
+      "Widget name can only contain letters, numbers, spaces, hyphens, and underscores",
+    ),
   description: z.string().optional(),
-  template: commonValidation.nonEmptyString("Template"),
-  primaryColor: commonValidation.hexColor,
-  position: z.enum(["bottom-right", "bottom-left", "top-right", "top-left"]),
-  welcomeMessage: commonValidation.nonEmptyString("Welcome message"),
-  placeholder: commonValidation.nonEmptyString("Placeholder text"),
+  template: z
+    .string()
+    .min(1, "Template selection is required")
+    .refine(
+      (val) => ["default", "minimal", "modern", "enterprise"].includes(val),
+      {
+        message: "Please select a valid template",
+      },
+    ),
+  primaryColor: z
+    .string()
+    .min(1, "Primary color is required")
+    .regex(/^#[0-9A-F]{6}$/i, "Please enter a valid hex color (e.g., #4f46e5)"),
+  position: z.enum(["bottom-right", "bottom-left", "top-right", "top-left"], {
+    errorMap: () => ({ message: "Please select a valid widget position" }),
+  }),
+  welcomeMessage: z
+    .string()
+    .min(1, "Welcome message is required")
+    .min(5, "Welcome message must be at least 5 characters")
+    .max(200, "Welcome message must be less than 200 characters"),
+  placeholder: z
+    .string()
+    .min(1, "Placeholder text is required")
+    .min(3, "Placeholder must be at least 3 characters")
+    .max(50, "Placeholder must be less than 50 characters"),
+  botName: z
+    .string()
+    .min(2, "Bot name must be at least 2 characters")
+    .max(30, "Bot name must be less than 30 characters")
+    .optional(),
+  botAvatar: z
+    .string()
+    .url("Please enter a valid avatar URL")
+    .optional()
+    .or(z.literal("")),
   autoTrigger: z.object({
     enabled: z.boolean(),
-    delay: commonValidation.numberInRange(0, 60, "Delay"),
-    message: z.string().optional(),
+    delay: z
+      .number()
+      .min(1, "Delay must be at least 1 second")
+      .max(60, "Delay must be less than 60 seconds"),
+    message: z
+      .string()
+      .max(150, "Trigger message must be less than 150 characters")
+      .optional(),
   }),
-  aiModel: commonValidation.nonEmptyString("AI model"),
+  autoOpen: z.boolean().optional(),
+  widgetTheme: z
+    .enum(["light", "dark"], {
+      errorMap: () => ({ message: "Please select a valid theme" }),
+    })
+    .optional(),
+  widgetWidth: z
+    .number()
+    .min(250, "Widget width must be at least 250px")
+    .max(450, "Widget width must be less than 450px")
+    .optional(),
+  widgetHeight: z
+    .number()
+    .min(400, "Widget height must be at least 400px")
+    .max(600, "Widget height must be less than 600px")
+    .optional(),
+  aiModel: z.string().optional(),
   knowledgeBase: z.array(z.string()).optional(),
 });
+
+// Individual field validation schemas for real-time validation
+export const widgetFieldValidation = {
+  widgetName: z
+    .string()
+    .min(1, "Widget name is required")
+    .min(2, "Widget name must be at least 2 characters")
+    .max(100, "Widget name must be less than 100 characters")
+    .regex(
+      /^[a-zA-Z0-9\s\-_]+$/,
+      "Widget name can only contain letters, numbers, spaces, hyphens, and underscores",
+    ),
+
+  primaryColor: z
+    .string()
+    .min(1, "Primary color is required")
+    .regex(/^#[0-9A-F]{6}$/i, "Please enter a valid hex color (e.g., #4f46e5)"),
+
+  welcomeMessage: z
+    .string()
+    .min(1, "Welcome message is required")
+    .min(5, "Welcome message must be at least 5 characters")
+    .max(200, "Welcome message must be less than 200 characters"),
+
+  placeholder: z
+    .string()
+    .min(1, "Placeholder text is required")
+    .min(3, "Placeholder must be at least 3 characters")
+    .max(50, "Placeholder must be less than 50 characters"),
+
+  botName: z
+    .string()
+    .min(2, "Bot name must be at least 2 characters")
+    .max(30, "Bot name must be less than 30 characters"),
+
+  botAvatar: z
+    .string()
+    .url("Please enter a valid avatar URL")
+    .or(z.literal("")),
+
+  autoTriggerMessage: z
+    .string()
+    .max(150, "Trigger message must be less than 150 characters"),
+} as const;
 
 // AI Model Configuration Schema
 export const aiModelConfigSchema = z.object({

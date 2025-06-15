@@ -5,6 +5,7 @@ import {
   widgetConfigSchema,
   type WidgetConfigFormData,
 } from "@/lib/validation";
+import { widgetService, handleWidgetError } from "@/services/widgetService";
 import { z } from "zod";
 
 export interface WidgetConfig {
@@ -58,10 +59,16 @@ export function useWidgetConfiguration(widgetId?: string) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState("templates");
+  const [isLoading, setIsLoading] = useState(false);
+  const [widgetIdState, setWidgetIdState] = useState<number | undefined>(
+    widgetId ? parseInt(widgetId) : undefined,
+  );
   const lastSavedConfig = useRef<WidgetConfig>(defaultConfig);
 
   // Use unified loading state management
   const saveLoading = useOperationLoading("widget-save");
+  const loadLoading = useOperationLoading("widget-load");
+  const validateLoading = useOperationLoading("widget-validate");
 
   // Track changes for undo/redo
   const updateConfig = useCallback(
@@ -119,6 +126,35 @@ export function useWidgetConfiguration(widgetId?: string) {
       toastUtils.operationSuccess("Redo");
     }
   }, [historyIndex, history]);
+
+  // Real-time validation
+  const validateField = useCallback(
+    async (fieldName: string, value: any) => {
+      validateLoading.start(`Validating ${fieldName}...`);
+      try {
+        // Create a temporary config with the updated field
+        const tempConfig = { ...config, [fieldName]: value };
+        const validation = await widgetService.validateConfig(tempConfig);
+
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          if (validation.errors[fieldName]) {
+            newErrors[fieldName] = validation.errors[fieldName];
+          } else {
+            delete newErrors[fieldName];
+          }
+          return newErrors;
+        });
+
+        return !validation.errors[fieldName];
+      } catch (error) {
+        return true; // Don't block on validation errors
+      } finally {
+        validateLoading.stop();
+      }
+    },
+    [config],
+  );
 
   // Validation
   const validateConfig = useCallback(() => {
@@ -188,6 +224,30 @@ export function useWidgetConfiguration(widgetId?: string) {
     }, 100);
   }, []);
 
+  // Load widget configuration
+  const loadConfig = useCallback(async (id: number) => {
+    loadLoading.start("Loading widget configuration...");
+    try {
+      const loadedConfig = await widgetService.getWidget(id);
+      setConfig(loadedConfig);
+      lastSavedConfig.current = { ...loadedConfig };
+      setHistory([loadedConfig]);
+      setHistoryIndex(0);
+      setHasUnsavedChanges(false);
+      setErrors({});
+      setWidgetIdState(id);
+
+      toastUtils.operationSuccess("Widget loaded");
+      return true;
+    } catch (error) {
+      const errorMessage = handleWidgetError(error);
+      toastUtils.operationError("Load widget", errorMessage);
+      return false;
+    } finally {
+      loadLoading.stop();
+    }
+  }, []);
+
   // Save configuration
   const saveConfig = useCallback(async () => {
     if (!validateConfig()) {
@@ -196,28 +256,49 @@ export function useWidgetConfiguration(widgetId?: string) {
 
     saveLoading.start("Saving configuration...");
     try {
-      // Simulate API call with progress
       saveLoading.updateMessage("Validating configuration...");
-      await new Promise((resolve) => setTimeout(resolve, 750));
+      const validation = await widgetService.validateConfig(config);
+
+      if (!validation.isValid) {
+        setErrors(validation.errors);
+        toastUtils.validationError(Object.keys(validation.errors).length);
+        return false;
+      }
 
       saveLoading.updateProgress(50);
       saveLoading.updateMessage("Saving to server...");
-      await new Promise((resolve) => setTimeout(resolve, 750));
+
+      let result;
+      if (widgetIdState) {
+        // Update existing widget
+        const updatedConfig = await widgetService.updateWidget(
+          widgetIdState,
+          config,
+        );
+        result = { id: widgetIdState, config: updatedConfig };
+      } else {
+        // Create new widget
+        result = await widgetService.createWidget(config);
+        setWidgetIdState(result.id);
+      }
 
       saveLoading.updateProgress(100);
 
-      lastSavedConfig.current = { ...config };
+      lastSavedConfig.current = { ...result.config };
+      setConfig(result.config);
       setHasUnsavedChanges(false);
+      setErrors({});
 
       toastUtils.configSaved();
       return true;
     } catch (error) {
-      toastUtils.operationError("Save configuration");
+      const errorMessage = handleWidgetError(error);
+      toastUtils.operationError("Save configuration", errorMessage);
       return false;
     } finally {
       saveLoading.stop();
     }
-  }, [config, validateConfig]);
+  }, [config, validateConfig, widgetIdState]);
 
   // Reset to last saved state
   const resetConfig = useCallback(() => {
@@ -227,6 +308,13 @@ export function useWidgetConfiguration(widgetId?: string) {
 
     toastUtils.configReset();
   }, []);
+
+  // Load widget on mount if widgetId is provided
+  useEffect(() => {
+    if (widgetId && !isNaN(parseInt(widgetId))) {
+      loadConfig(parseInt(widgetId));
+    }
+  }, [widgetId, loadConfig]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -249,6 +337,51 @@ export function useWidgetConfiguration(widgetId?: string) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [undo, redo, saveConfig]);
 
+  // Test widget configuration
+  const testConfig = useCallback(async () => {
+    if (!validateConfig()) {
+      return false;
+    }
+
+    try {
+      const result = await widgetService.testWidget(config);
+      if (result.success) {
+        toastUtils.operationSuccess("Widget test");
+      } else {
+        toastUtils.operationError("Widget test", result.message);
+      }
+      return result.success;
+    } catch (error) {
+      const errorMessage = handleWidgetError(error);
+      toastUtils.operationError("Widget test", errorMessage);
+      return false;
+    }
+  }, [config, validateConfig]);
+
+  // Duplicate widget
+  const duplicateConfig = useCallback(
+    async (newName: string) => {
+      if (!widgetIdState) {
+        toastUtils.operationError("Duplicate widget", "No widget to duplicate");
+        return false;
+      }
+
+      try {
+        const result = await widgetService.duplicateWidget(
+          widgetIdState,
+          newName,
+        );
+        toastUtils.operationSuccess("Widget duplicated");
+        return result;
+      } catch (error) {
+        const errorMessage = handleWidgetError(error);
+        toastUtils.operationError("Duplicate widget", errorMessage);
+        return false;
+      }
+    },
+    [widgetIdState],
+  );
+
   return {
     config,
     updateConfig,
@@ -258,12 +391,18 @@ export function useWidgetConfiguration(widgetId?: string) {
     canRedo: historyIndex < history.length - 1,
     hasUnsavedChanges,
     isSaving: saveLoading.isLoading,
+    isLoading: loadLoading.isLoading || isLoading,
     errors,
     activeTab,
     setActiveTab,
     validateConfig,
+    validateField,
     saveConfig,
+    loadConfig,
     resetConfig,
+    testConfig,
+    duplicateConfig,
     focusErrorField,
+    widgetId: widgetIdState,
   };
 }

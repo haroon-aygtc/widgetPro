@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -9,6 +9,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { widgetValidation } from "@/services/widgetService";
+import { toastUtils } from "@/components/ui/use-toast";
 
 interface Template {
   id: string;
@@ -22,6 +24,7 @@ interface TemplateSelectorProps {
   widgetName: string;
   onWidgetNameChange: (name: string) => void;
   errors?: Record<string, string>;
+  onFieldValidation?: (fieldName: string, value: any) => Promise<boolean>;
 }
 
 const templates: Template[] = [
@@ -53,7 +56,46 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   widgetName,
   onWidgetNameChange,
   errors = {},
+  onFieldValidation,
 }) => {
+  // Handle widget name change with validation
+  const handleWidgetNameChange = useCallback(
+    async (name: string) => {
+      // Real-time validation
+      if (name.length > 100) {
+        toastUtils.formError("Widget name must be less than 100 characters");
+        return;
+      }
+
+      if (name.length >= 2 && !widgetValidation.isValidWidgetName(name)) {
+        toastUtils.formError(
+          "Widget name can only contain letters, numbers, spaces, hyphens, and underscores",
+        );
+        return;
+      }
+
+      onWidgetNameChange(name);
+
+      // Trigger field validation if provided
+      if (onFieldValidation && name.length >= 2) {
+        await onFieldValidation("name", name);
+      }
+    },
+    [onWidgetNameChange, onFieldValidation],
+  );
+
+  // Handle template change with validation
+  const handleTemplateChange = useCallback(
+    async (templateId: string) => {
+      onTemplateChange(templateId);
+
+      // Trigger field validation if provided
+      if (onFieldValidation) {
+        await onFieldValidation("template", templateId);
+      }
+    },
+    [onTemplateChange, onFieldValidation],
+  );
   return (
     <Card className="bg-gradient-to-br from-card to-card/80">
       <CardHeader>
@@ -73,7 +115,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   ? "border-primary bg-primary/5 shadow-md"
                   : "hover:border-primary/50",
               )}
-              onClick={() => onTemplateChange(template.id)}
+              onClick={() => handleTemplateChange(template.id)}
             >
               <div className="h-32 bg-muted rounded-md mb-4 flex items-center justify-center">
                 <span className="text-muted-foreground text-sm">
@@ -99,13 +141,17 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
             id="widget-name"
             data-field="name"
             value={widgetName}
-            onChange={(e) => onWidgetNameChange(e.target.value)}
+            onChange={(e) => handleWidgetNameChange(e.target.value)}
             placeholder="Enter widget name"
             className={cn(
               errors.name &&
                 "border-destructive focus-visible:ring-destructive",
             )}
+            maxLength={100}
           />
+          <div className="text-xs text-muted-foreground mt-1">
+            {widgetName.length}/100 characters
+          </div>
           {errors.name && (
             <p className="text-xs text-destructive mt-1">{errors.name}</p>
           )}
