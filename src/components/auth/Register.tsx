@@ -109,8 +109,8 @@ const Register = () => {
         {/* Left Column - Benefits & Social Proof */}
         <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 via-purple-600 to-violet-700 relative overflow-hidden">
           {/* Background Pattern */}
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%23ffffff" fill-opacity="0.03"%3E%3Cpath d="M20 20c0 11.046-8.954 20-20 20v20h40V20H20z"/%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
-          
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=40 height=40 viewBox=0 0 40 40 xmlns=http://www.w3.org/2000/svg%3E%3Cg fill=%23ffffff fill-opacity=0.03%3E%3Cpath d=M20 20c0 11.046-8.954 20-20 20v20h40V20H20z%2F%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
+
           {/* Content */}
           <div className="relative z-10 flex flex-col justify-center px-12 py-16 text-white">
             {/* Logo */}
@@ -148,7 +148,7 @@ const Register = () => {
                   <p className="text-indigo-200">Full access to all features, no limitations</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="flex-shrink-0 w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
                   <Users className="h-6 w-6 text-blue-300" />
@@ -158,7 +158,7 @@ const Register = () => {
                   <p className="text-indigo-200">Collaborate with your entire team from day one</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="flex-shrink-0 w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
                   <TrendingUp className="h-6 w-6 text-purple-300" />
@@ -168,7 +168,7 @@ const Register = () => {
                   <p className="text-indigo-200">Track performance and optimize conversations</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="flex-shrink-0 w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
                   <Globe className="h-6 w-6 text-cyan-300" />
@@ -183,9 +183,9 @@ const Register = () => {
             {/* Testimonial */}
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
               <div className="flex items-center mb-4">
-                <img 
-                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=testimonial" 
-                  alt="Customer" 
+                <img
+                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=testimonial"
+                  alt="Customer"
                   className="w-12 h-12 rounded-full mr-4"
                 />
                 <div>
@@ -472,6 +472,7 @@ const Register = () => {
           </div>
         </div>
       </div>
+
     </ErrorBoundary>
   );
 };
