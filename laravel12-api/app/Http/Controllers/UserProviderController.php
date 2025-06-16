@@ -18,20 +18,20 @@ class UserProviderController extends Controller
     {
         $result = $this->userProviderService->getUserProvider($request->all());
 
-    return response()->json([
-        'success' => $result['success'],
-        'data' => $result['data'],
-        'message' => $result['message']
-    ]);
+        return response()->json([
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'User providers retrieved successfully'
+        ]);
     }
     public function configureProvider(Request $request)
     {
         $result = $this->userProviderService->storeUserProvider($request->all());
 
         return response()->json([
-            'success' => $result['success'],
-            'data' => $result['data'],
-            'message' => $result['message']
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'Provider configured successfully'
         ]);
     }
 
@@ -40,9 +40,9 @@ class UserProviderController extends Controller
         $result = $this->userProviderService->updateUserProviderStatus($request->all());
 
         return response()->json([
-            'success' => $result['success'],
-            'data' => $result['data'],
-            'message' => $result['message']
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'Provider status updated successfully'
         ]);
     }
 
@@ -51,9 +51,9 @@ class UserProviderController extends Controller
         $result = $this->userProviderService->deleteUserProvider($providerId);
 
         return response()->json([
-            'success' => $result['success'],
-            'data' => $result['data'],
-            'message' => $result['message']
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'Provider deleted successfully'
         ]);
     }
 }

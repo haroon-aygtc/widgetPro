@@ -53,19 +53,37 @@ const AIProviders = () => {
   };
 
   const handleAddModel = async (model: AIModel) => {
-    const provider = userProviders.find((p) => p.provider_id === model.provider_id);
+    const userProvidersArray = Array.isArray(userProviders) ? userProviders : [];
+    const provider = userProvidersArray.find((p) => p.provider_id === model.provider_id);
     if (!provider) return;
     await addUserModel(model.id, provider.id);
   };
 
   return (
     <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-violet-700 dark:text-violet-300 mb-2">
+          AI Providers
+        </h1>
+        <p className="text-muted-foreground">
+          Connect and manage AI providers to power your widgets with advanced language models
+        </p>
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="providers">Providers</TabsTrigger>
-          <TabsTrigger value="user-providers">User Providers</TabsTrigger>
-          <TabsTrigger value="models">Models</TabsTrigger>
-          <TabsTrigger value="configured">My Setup</TabsTrigger>
+        <TabsList className="mb-6 bg-violet-50/50 dark:bg-violet-950/50 border border-violet-200/50 dark:border-violet-800/50">
+          <TabsTrigger value="providers" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
+            Providers
+          </TabsTrigger>
+          <TabsTrigger value="user-providers" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
+            User Providers
+          </TabsTrigger>
+          <TabsTrigger value="models" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
+            Models
+          </TabsTrigger>
+          <TabsTrigger value="configured" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
+            My Setup
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="providers">
@@ -74,7 +92,7 @@ const AIProviders = () => {
           ) : (
             <ProvidersTab
               providers={Array.isArray(providers) ? providers : []}
-              userProviders={userProviders}
+              userProviders={Array.isArray(userProviders) ? userProviders : []}
               selectedProviderId={selectedProvider?.id}
               onSelectProvider={setSelectedProvider}
               searchTerm={searchTerm}
@@ -90,7 +108,7 @@ const AIProviders = () => {
         </TabsContent>
 
         <TabsContent value="user-providers">
-          {userProviders.length === 0 ? (
+          {!Array.isArray(userProviders) || userProviders.length === 0 ? (
             <SkeletonGrid count={6} />
           ) : (
             <div>
@@ -118,7 +136,7 @@ const AIProviders = () => {
               availableModels={availableModels}
               userModels={userModels}
               modelSearchTerm={modelSearchTerm}
-              userProviders={userProviders}
+              userProviders={Array.isArray(userProviders) ? userProviders : []}
               loading={loading.loadModelsLoading.isLoading}
               onSearch={setModelSearchTerm}
               onLoadModels={loadModelsForProvider}
@@ -130,7 +148,7 @@ const AIProviders = () => {
 
         <TabsContent value="configured">
           <ConfiguredList
-            userProviders={userProviders}
+            userProviders={Array.isArray(userProviders) ? userProviders : []}
             userModels={userModels}
           />
         </TabsContent>

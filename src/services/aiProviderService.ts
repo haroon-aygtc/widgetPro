@@ -4,7 +4,8 @@ import { aiProviderApi } from "@/lib/api/aiproviderAPI";
 class AIProviderService {
   async getProviders(search?: string): Promise<AIProvider[]> {
     const response = await aiProviderApi.getProviders(search);
-    return response.data || [];
+    // Handle paginated response structure: response.data.data contains the actual providers array
+    return response.data?.data || [];
   }
 
   async testApiKey(

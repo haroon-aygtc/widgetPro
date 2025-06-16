@@ -26,17 +26,12 @@ class AIProviderController extends Controller
     public function getProviders(Request $request): JsonResponse
     {
         $result = $this->aiProviderService->getProviders($request->all(), 15);
-        $providers = $result['data'];
 
         return response()->json([
-            'success' => $result['success'],
-            'data' => $providers,
-            'meta' => [
-                'current_page' => $providers->currentPage(),
-                'last_page' => $providers->lastPage(),
-                'per_page' => $providers->perPage(),
-                'total' => $providers->total(),
-            ]
+            'success' => $result['success'] ?? true ,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'Providers retrieved successfully',
+            'pagination' => $result['pagination'] ?? $result
         ]);
     }
 
@@ -45,9 +40,9 @@ class AIProviderController extends Controller
         $result = $this->aiProviderService->testProvider($request->provider_id, $request->api_key);
 
         return response()->json([
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'data' => $result['data']
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'Provider tested successfully'
         ]);
     }
 
@@ -56,10 +51,9 @@ class AIProviderController extends Controller
         $result = $this->aiProviderService->fetchModels($request->all(), 15, $providerId);
 
         return response()->json([
-            'success' => $result['success'],
-            'data' => $result['data'],
-            'message' => $result['message'],
-            'pagination' => $result['pagination']
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'Models retrieved successfully'
         ]);
     }
 

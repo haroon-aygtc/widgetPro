@@ -10,6 +10,8 @@ class UserAIModel extends Model
 {
     use HasFactory;
 
+    protected $table = 'user_ai_models';
+
     protected $fillable = [
         'user_id',
         'model_id',

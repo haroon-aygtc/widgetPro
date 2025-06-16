@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Services\UserModelService;
 
 class UserModelController extends Controller
 {
@@ -13,15 +14,14 @@ class UserModelController extends Controller
         $this->userModelService = $userModelService;
     }
 
-    public function getUserModels(Request $request, $providerId)
+    public function getUserModels(Request $request)
     {
-        $result = $this->userModelService->getUserModels($request->all(), 15, $providerId);
+        $result = $this->userModelService->getUserModels($request->all());
 
         return response()->json([
-            'success' => $result['success'],
-            'data' => $result['data'],
-            'message' => $result['message'],
-            'pagination' => $result['pagination']
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'User models retrieved successfully'
         ]);
     }
 
@@ -30,9 +30,9 @@ class UserModelController extends Controller
         $result = $this->userModelService->storeUserModel($request->all());
 
         return response()->json([
-            'success' => $result['success'],
-            'data' => $result['data'],
-            'message' => $result['message']
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'User model stored successfully'
         ]);
     }
 
@@ -41,9 +41,9 @@ class UserModelController extends Controller
         $result = $this->userModelService->updateUserModel($request->all(), $modelId);
 
         return response()->json([
-            'success' => $result['success'],
-            'data' => $result['data'],
-            'message' => $result['message']
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'User model updated successfully'
         ]);
     }
 
@@ -52,9 +52,9 @@ class UserModelController extends Controller
         $result = $this->userModelService->deleteUserModel($modelId);
 
         return response()->json([
-            'success' => $result['success'],
-            'data' => $result['data'],
-            'message' => $result['message']
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'User model deleted successfully'
         ]);
     }
 
@@ -63,9 +63,9 @@ class UserModelController extends Controller
         $result = $this->userModelService->updateUserModelStatus($modelId, $request->all());
 
         return response()->json([
-            'success' => $result['success'],
-            'data' => $result['data'],
-            'message' => $result['message']
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'User model status updated successfully'
         ]);
     }
 
@@ -74,9 +74,9 @@ class UserModelController extends Controller
         $result = $this->userModelService->isDefultUserModel($modelId);
 
         return response()->json([
-            'success' => $result['success'],
-            'data' => $result['data'],
-            'message' => $result['message']
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'User model is default successfully'
         ]);
     }
 

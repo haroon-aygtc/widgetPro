@@ -12,14 +12,21 @@ use App\Models\UserAIProvider;
 
 class UserModelService
 {
-    public function getUserModels(array $filters = [], int $perPage = 15, $providerId)
+    public function getUserModels($filters = [])
     {
-        return DB::transaction(function () use ($filters, $perPage, $providerId) {
-            $userModels = UserAIModel::with('model.provider', 'userProvider.provider')
+        return DB::transaction(function () use ($filters) {
+            $query = UserAIModel::with('model.provider', 'userProvider.provider')
                 ->forUser(Auth::id())
-                ->active()
-                ->where('provider_id', $providerId)
-                ->paginate($perPage);
+                ->active();
+
+            // Apply provider filter if specified
+            if (!empty($filters['provider_id'])) {
+                $query->whereHas('userProvider', function($q) use ($filters) {
+                    $q->where('provider_id', $filters['provider_id']);
+                });
+            }
+
+            $userModels = $query->get();
 
             return [
                 'success' => true,

@@ -1,5 +1,5 @@
 import { BaseApiClient } from "@/lib/api/config/BaseApiClient";
-import type { ApiResponse } from "@/types/api";
+import type { ApiResponse, LaravelPaginatedResponse } from "@/types/api";
 import type {
   AIProvider,
   AIModel,
@@ -16,24 +16,24 @@ class AIProviderApiClient extends BaseApiClient {
 
   constructor() {
     super();
-    this.apiUrl = "/ai-providers/provider";
+    this.apiUrl = "/ai-providers";
   }
 
-  async getProviders(search?: string): Promise<ApiResponse<AIProvider[]>> {
+  async getProviders(search?: string): Promise<ApiResponse<LaravelPaginatedResponse<AIProvider>>> {
     const searchParams = new URLSearchParams();
     if (search) searchParams.append("search", search);
     const query = searchParams.toString();
 
-    return super.request<ApiResponse<AIProvider[]>>(
+    return super.request<ApiResponse<LaravelPaginatedResponse<AIProvider>>>(
       "GET",
-        `${this.apiUrl}${query ? `?${query}` : ""}`
+      `${this.apiUrl}/provider${query ? `?${query}` : ""}`
     );
   }
 
   async testProvider(data: AIProviderTestRequest): Promise<ApiResponse<AIProviderTestResponse>> {
     return super.request<ApiResponse<AIProviderTestResponse>>(
       "POST",
-      `${this.apiUrl}/test`,
+      `${this.apiUrl}/provider/test`,
       data
     );
   }
@@ -114,7 +114,7 @@ class AIProviderApiClient extends BaseApiClient {
     );
   }
 
-  async addUserProvider(providerId: number, apiKey: string): Promise<UserAIProvider> {  
+  async addUserProvider(providerId: number, apiKey: string): Promise<UserAIProvider> {
     return super.request<UserAIProvider>(
       "POST",
       `${this.apiUrl}/provider/configure`,
