@@ -79,13 +79,26 @@ const WidgetPreview = memo(
       setCurrentMessage("");
       setIsTyping(true);
 
-      // Simulate bot response
+      // Simulate bot response based on AI model configuration
       setTimeout(() => {
         setIsTyping(false);
+        let responseText;
+
+        // Check if AI model is configured (this would normally check actual AI service)
+        const hasAIModel = false; // This should be replaced with actual AI model check
+
+        if (hasAIModel) {
+          responseText =
+            "AI-powered response would appear here when an AI model is configured.";
+        } else {
+          responseText =
+            "⚠️ No AI model configured. Please configure an AI model in the settings to enable intelligent responses. This is a fallback message.";
+        }
+
         setMessages([
           ...newMessages,
           {
-            text: "This is a simulated response from the AI assistant. The widget is working perfectly!",
+            text: responseText,
             sender: "bot" as const,
             timestamp: new Date(),
           },

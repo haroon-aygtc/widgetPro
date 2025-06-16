@@ -54,6 +54,8 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
     testConfig,
     duplicateConfig,
     widgetId: currentWidgetId,
+    hasAIModel,
+    getAIModelStatus,
   } = useWidgetConfiguration(widgetId);
 
   const modal = useModal();
@@ -82,7 +84,6 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
   };
 
   const handleModalSave = async () => {
-    console.log("💾 Modal save clicked - starting save with loading");
     setResetModal((prev) => ({
       ...prev,
       isLoading: true,
@@ -91,11 +92,9 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
 
     try {
       const saveResult = await saveConfig();
-      console.log("💾 Save completed:", saveResult);
 
       if (saveResult) {
         // Save successful, now reset
-        console.log("✅ Save successful, now resetting");
         setResetModal((prev) => ({
           ...prev,
           message: "Resetting to factory defaults...",
@@ -130,7 +129,6 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
         }, 3000);
       }
     } catch (error) {
-      console.error("❌ Save failed:", error);
       setResetModal((prev) => ({
         ...prev,
         isLoading: false,
@@ -148,7 +146,6 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
   };
 
   const handleModalReset = async () => {
-    console.log("🔄 Modal reset clicked");
     setResetModal((prev) => ({
       ...prev,
       isLoading: true,
@@ -184,7 +181,6 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
         }, 3000);
       }
     } catch (error) {
-      console.error("❌ Reset failed:", error);
       setResetModal((prev) => ({
         ...prev,
         isLoading: false,
@@ -202,7 +198,6 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
   };
 
   const handleModalCancel = () => {
-    console.log("❌ Modal cancelled");
     setResetModal({
       isOpen: false,
       isLoading: false,
@@ -362,6 +357,21 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                 errorCount={errorCount}
               />
               <div className="flex items-center gap-3">
+                {/* AI Model Status Indicator */}
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border">
+                  {hasAIModel() ? (
+                    <>
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-green-700">AI Ready</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                      <span className="text-yellow-700">No AI Model</span>
+                    </>
+                  )}
+                </div>
+
                 <Button
                   variant="outline"
                   size="sm"

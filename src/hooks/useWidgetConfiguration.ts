@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { toastUtils } from "@/components/ui/use-toast";
 import { useOperationLoading } from "@/contexts/LoadingContext";
 import {
@@ -51,14 +51,22 @@ export function useWidgetConfiguration(widgetId?: string) {
   const validateLoading = useOperationLoading("widget-validate");
   const resetLoading = useOperationLoading("widget-reset");
 
+  // Memoized config for performance optimization
+  const memoizedConfig = useMemo(() => config, [config]);
+
   // Optimized config updates with efficient history management
   const updateConfig = useCallback(
     (updates: Partial<WidgetConfig>) => {
       const newConfig = {
         ...defaultConfig,
-        ...config,
+        ...memoizedConfig,
         ...updates,
       };
+
+      // Prevent unnecessary updates if config hasn't changed
+      if (JSON.stringify(newConfig) === JSON.stringify(memoizedConfig)) {
+        return;
+      }
 
       setConfig(newConfig);
 
@@ -72,40 +80,14 @@ export function useWidgetConfiguration(widgetId?: string) {
       setHistoryIndex((prev) => Math.min(prev + 1, 19)); // Cap at 19 for 20 total items
       setHasUnsavedChanges(true);
     },
-    [config, historyIndex],
+    [memoizedConfig, historyIndex],
   );
 
-  // Enhanced undo functionality with template debugging
+  // Enhanced undo functionality
   const undo = useCallback(() => {
-    console.log(
-      "⏪ Undo called. Current index:",
-      historyIndex,
-      "History length:",
-      history.length,
-    );
-    console.log(
-      "📚 Current history:",
-      history.map((h, i) => ({
-        index: i,
-        template: h.selectedTemplate,
-        name: h.widgetName,
-        isCurrent: i === historyIndex,
-      })),
-    );
-
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       const targetConfig = history[newIndex];
-      const currentConfig = history[historyIndex];
-
-      console.log("🎯 Undoing from:", {
-        template: currentConfig?.selectedTemplate,
-        name: currentConfig?.widgetName,
-      });
-      console.log("🎯 Undoing to:", {
-        template: targetConfig?.selectedTemplate,
-        name: targetConfig?.widgetName,
-      });
 
       if (targetConfig) {
         // Set config directly without triggering updateConfig
@@ -117,52 +99,18 @@ export function useWidgetConfiguration(widgetId?: string) {
           JSON.stringify(lastSavedConfig.current);
         setHasUnsavedChanges(hasChanges);
 
-        console.log("✅ Undo successful. New index:", newIndex);
-        console.log("📋 Config after undo:", {
-          selectedTemplate: targetConfig.selectedTemplate,
-          widgetName: targetConfig.widgetName,
-        });
         toastUtils.operationSuccess("Undo");
-      } else {
-        console.log("❌ Target config is null/undefined");
       }
     } else {
-      console.log("❌ Nothing to undo");
       toastUtils.operationError("Undo", "Nothing to undo");
     }
   }, [historyIndex, history, lastSavedConfig]);
 
-  // Enhanced redo functionality with template debugging
+  // Enhanced redo functionality
   const redo = useCallback(() => {
-    console.log(
-      "⏩ Redo called. Current index:",
-      historyIndex,
-      "History length:",
-      history.length,
-    );
-    console.log(
-      "📚 Current history:",
-      history.map((h, i) => ({
-        index: i,
-        template: h.selectedTemplate,
-        name: h.widgetName,
-        isCurrent: i === historyIndex,
-      })),
-    );
-
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1;
       const targetConfig = history[newIndex];
-      const currentConfig = history[historyIndex];
-
-      console.log("🎯 Redoing from:", {
-        template: currentConfig?.selectedTemplate,
-        name: currentConfig?.widgetName,
-      });
-      console.log("🎯 Redoing to:", {
-        template: targetConfig?.selectedTemplate,
-        name: targetConfig?.widgetName,
-      });
 
       if (targetConfig) {
         // Set config directly without triggering updateConfig
@@ -174,17 +122,9 @@ export function useWidgetConfiguration(widgetId?: string) {
           JSON.stringify(lastSavedConfig.current);
         setHasUnsavedChanges(hasChanges);
 
-        console.log("✅ Redo successful. New index:", newIndex);
-        console.log("📋 Config after redo:", {
-          selectedTemplate: targetConfig.selectedTemplate,
-          widgetName: targetConfig.widgetName,
-        });
         toastUtils.operationSuccess("Redo");
-      } else {
-        console.log("❌ Target config is null/undefined");
       }
     } else {
-      console.log("❌ Nothing to redo");
       toastUtils.operationError("Redo", "Nothing to redo");
     }
   }, [historyIndex, history, lastSavedConfig]);
@@ -274,8 +214,6 @@ export function useWidgetConfiguration(widgetId?: string) {
         welcomeMessage: config.welcomeMessage,
         placeholder: config.placeholder,
         autoTrigger: config.autoTrigger,
-        aiModel: config.aiModel || "default",
-        knowledgeBase: config.knowledgeBase,
       };
 
       widgetConfigSchema.parse(validationData);
@@ -302,10 +240,8 @@ export function useWidgetConfiguration(widgetId?: string) {
     }
   }, [config]);
 
-  // Focus error field and switch to appropriate tab with enhanced mapping
+  // Focus error field and switch to appropriate tab
   const focusErrorField = useCallback((fieldPath: string) => {
-    console.log(`🎯 Focusing error field: ${fieldPath}`);
-
     const tabMapping: Record<string, string> = {
       // Templates tab
       name: "templates",
@@ -325,7 +261,6 @@ export function useWidgetConfiguration(widgetId?: string) {
       botAvatar: "behavior",
       autoTrigger: "behavior",
       autoTriggerMessage: "behavior",
-      aiModel: "behavior",
       autoOpen: "behavior",
 
       // Controls tab
@@ -335,10 +270,9 @@ export function useWidgetConfiguration(widgetId?: string) {
     };
 
     const targetTab = tabMapping[fieldPath] || "templates";
-    console.log(`📂 Switching to tab: ${targetTab}`);
     setActiveTab(targetTab);
 
-    // Focus the field after tab switch with enhanced selector
+    // Focus the field after tab switch
     setTimeout(() => {
       const selectors = [
         `[data-field="${fieldPath}"]`,
@@ -351,7 +285,6 @@ export function useWidgetConfiguration(widgetId?: string) {
       for (const selector of selectors) {
         fieldElement = document.querySelector(selector) as HTMLElement;
         if (fieldElement) {
-          console.log(`✅ Found field element with selector: ${selector}`);
           break;
         }
       }
@@ -373,13 +306,6 @@ export function useWidgetConfiguration(widgetId?: string) {
             "ring-offset-2",
           );
         }, 3000);
-
-        console.log(
-          `🎯 Successfully focused and highlighted field: ${fieldPath}`,
-        );
-      } else {
-        console.warn(`❌ Could not find field element for: ${fieldPath}`);
-        console.warn(`Tried selectors:`, selectors);
       }
     }, 150);
   }, []);
@@ -555,27 +481,18 @@ export function useWidgetConfiguration(widgetId?: string) {
     }
   }, [config, validateConfig, widgetIdState]);
 
-  // Professional Reset to Factory Defaults with enhanced UX
+  // Reset to Factory Defaults
   const resetConfig = useCallback(async () => {
-    console.log("🏭 PROFESSIONAL RESET TO FACTORY DEFAULTS INITIATED");
-
     resetLoading.start("Resetting to factory defaults...");
 
     try {
       // Create fresh factory defaults
       const factoryDefaults = { ...defaultConfig };
 
-      console.log("🎯 Resetting to factory defaults:", {
-        widgetName: factoryDefaults.widgetName,
-        selectedTemplate: factoryDefaults.selectedTemplate,
-        primaryColor: factoryDefaults.primaryColor,
-        botName: factoryDefaults.botName,
-      });
-
       // Progressive loading with micro-interactions
       resetLoading.updateMessage("Clearing current configuration...");
       resetLoading.updateProgress(20);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Smooth transition
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       resetLoading.updateMessage("Applying factory defaults...");
       resetLoading.updateProgress(50);
@@ -603,13 +520,6 @@ export function useWidgetConfiguration(widgetId?: string) {
       resetLoading.updateMessage("Reset completed successfully!");
       resetLoading.updateProgress(100);
 
-      console.log("✅ Factory reset completed successfully");
-      console.log("📋 New config state:", {
-        widgetName: factoryDefaults.widgetName,
-        selectedTemplate: factoryDefaults.selectedTemplate,
-        primaryColor: factoryDefaults.primaryColor,
-      });
-
       // Show success message with details
       toastUtils.operationSuccess(
         "Reset Complete",
@@ -618,7 +528,6 @@ export function useWidgetConfiguration(widgetId?: string) {
 
       return true;
     } catch (error) {
-      console.error("❌ Reset failed:", error);
       toastUtils.operationError(
         "Reset Failed",
         "Failed to reset widget configuration. Please try again.",
@@ -664,9 +573,21 @@ export function useWidgetConfiguration(widgetId?: string) {
     }
 
     try {
+      // Check if AI model is configured
+      if (!config.aiModel || config.aiModel.trim() === "") {
+        toastUtils.operationError(
+          "Widget Test",
+          "⚠️ No AI model configured. The widget will show fallback messages instead of AI responses. Please configure an AI model for full functionality.",
+        );
+        return false;
+      }
+
       const result = await widgetService.testWidget(config);
       if (result.success) {
-        toastUtils.operationSuccess("Widget test");
+        toastUtils.operationSuccess(
+          "Widget test",
+          "Widget is properly configured and ready to use!",
+        );
       } else {
         toastUtils.operationError("Widget test", result.message);
       }
@@ -702,6 +623,30 @@ export function useWidgetConfiguration(widgetId?: string) {
     [widgetIdState],
   );
 
+  // Check if AI model is properly configured
+  const hasAIModel = useCallback(() => {
+    return config.aiModel && config.aiModel.trim() !== "";
+  }, [config.aiModel]);
+
+  // Get AI model status for UI feedback
+  const getAIModelStatus = useCallback(() => {
+    if (!config.aiModel || config.aiModel.trim() === "") {
+      return {
+        configured: false,
+        status: "not_configured",
+        message: "No AI model configured. Widget will show fallback messages.",
+        severity: "warning",
+      };
+    }
+
+    return {
+      configured: true,
+      status: "configured",
+      message: `AI model "${config.aiModel}" is configured.`,
+      severity: "success",
+    };
+  }, [config.aiModel]);
+
   return {
     config,
     updateConfig,
@@ -726,6 +671,8 @@ export function useWidgetConfiguration(widgetId?: string) {
     duplicateConfig,
     focusErrorField,
     widgetId: widgetIdState,
+    hasAIModel,
+    getAIModelStatus,
   };
 }
 
