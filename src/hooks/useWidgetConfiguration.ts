@@ -8,6 +8,7 @@ import {
 import { widgetService, handleWidgetError } from "@/services/widgetService";
 import { z } from "zod";
 import type { WidgetConfig } from "@/types/widget";
+import { widgetFieldValidation } from "@/lib/validation";
 
 const defaultConfig: WidgetConfig = {
   widgetName: "My Chat Widget",
@@ -54,7 +55,12 @@ export function useWidgetConfiguration(widgetId?: string) {
   const updateConfig = useCallback(
     (updates: Partial<WidgetConfig>) => {
       console.log("🔄 updateConfig called with:", updates);
-      console.log("📊 Current historyIndex:", historyIndex, "History length:", history.length);
+      console.log(
+        "📊 Current historyIndex:",
+        historyIndex,
+        "History length:",
+        history.length,
+      );
 
       // Special logging for template changes
       if (updates.selectedTemplate) {
@@ -65,14 +71,14 @@ export function useWidgetConfiguration(widgetId?: string) {
       const newConfig = {
         ...defaultConfig,
         ...config,
-        ...updates
+        ...updates,
       };
 
       console.log("📋 New config created:", {
         selectedTemplate: newConfig.selectedTemplate,
         widgetName: newConfig.widgetName,
         primaryColor: newConfig.primaryColor,
-        botName: newConfig.botName
+        botName: newConfig.botName,
       });
 
       setConfig(newConfig);
@@ -82,11 +88,14 @@ export function useWidgetConfiguration(widgetId?: string) {
         const newHistory = prevHistory.slice(0, historyIndex + 1);
         newHistory.push(newConfig);
         console.log("📝 Added to history. New length:", newHistory.length);
-        console.log("📚 History preview:", newHistory.map((h, i) => ({
-          index: i,
-          template: h.selectedTemplate,
-          name: h.widgetName
-        })));
+        console.log(
+          "📚 History preview:",
+          newHistory.map((h, i) => ({
+            index: i,
+            template: h.selectedTemplate,
+            name: h.widgetName,
+          })),
+        );
         return newHistory.slice(-50);
       });
 
@@ -97,18 +106,26 @@ export function useWidgetConfiguration(widgetId?: string) {
       });
       setHasUnsavedChanges(true);
     },
-    [config, historyIndex]
+    [config, historyIndex],
   );
 
   // Enhanced undo functionality with template debugging
   const undo = useCallback(() => {
-    console.log("⏪ Undo called. Current index:", historyIndex, "History length:", history.length);
-    console.log("📚 Current history:", history.map((h, i) => ({
-      index: i,
-      template: h.selectedTemplate,
-      name: h.widgetName,
-      isCurrent: i === historyIndex
-    })));
+    console.log(
+      "⏪ Undo called. Current index:",
+      historyIndex,
+      "History length:",
+      history.length,
+    );
+    console.log(
+      "📚 Current history:",
+      history.map((h, i) => ({
+        index: i,
+        template: h.selectedTemplate,
+        name: h.widgetName,
+        isCurrent: i === historyIndex,
+      })),
+    );
 
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
@@ -117,11 +134,11 @@ export function useWidgetConfiguration(widgetId?: string) {
 
       console.log("🎯 Undoing from:", {
         template: currentConfig?.selectedTemplate,
-        name: currentConfig?.widgetName
+        name: currentConfig?.widgetName,
       });
       console.log("🎯 Undoing to:", {
         template: targetConfig?.selectedTemplate,
-        name: targetConfig?.widgetName
+        name: targetConfig?.widgetName,
       });
 
       if (targetConfig) {
@@ -137,7 +154,7 @@ export function useWidgetConfiguration(widgetId?: string) {
         console.log("✅ Undo successful. New index:", newIndex);
         console.log("📋 Config after undo:", {
           selectedTemplate: targetConfig.selectedTemplate,
-          widgetName: targetConfig.widgetName
+          widgetName: targetConfig.widgetName,
         });
         toastUtils.operationSuccess("Undo");
       } else {
@@ -151,13 +168,21 @@ export function useWidgetConfiguration(widgetId?: string) {
 
   // Enhanced redo functionality with template debugging
   const redo = useCallback(() => {
-    console.log("⏩ Redo called. Current index:", historyIndex, "History length:", history.length);
-    console.log("📚 Current history:", history.map((h, i) => ({
-      index: i,
-      template: h.selectedTemplate,
-      name: h.widgetName,
-      isCurrent: i === historyIndex
-    })));
+    console.log(
+      "⏩ Redo called. Current index:",
+      historyIndex,
+      "History length:",
+      history.length,
+    );
+    console.log(
+      "📚 Current history:",
+      history.map((h, i) => ({
+        index: i,
+        template: h.selectedTemplate,
+        name: h.widgetName,
+        isCurrent: i === historyIndex,
+      })),
+    );
 
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1;
@@ -166,11 +191,11 @@ export function useWidgetConfiguration(widgetId?: string) {
 
       console.log("🎯 Redoing from:", {
         template: currentConfig?.selectedTemplate,
-        name: currentConfig?.widgetName
+        name: currentConfig?.widgetName,
       });
       console.log("🎯 Redoing to:", {
         template: targetConfig?.selectedTemplate,
-        name: targetConfig?.widgetName
+        name: targetConfig?.widgetName,
       });
 
       if (targetConfig) {
@@ -186,7 +211,7 @@ export function useWidgetConfiguration(widgetId?: string) {
         console.log("✅ Redo successful. New index:", newIndex);
         console.log("📋 Config after redo:", {
           selectedTemplate: targetConfig.selectedTemplate,
-          widgetName: targetConfig.widgetName
+          widgetName: targetConfig.widgetName,
         });
         toastUtils.operationSuccess("Redo");
       } else {
@@ -234,22 +259,47 @@ export function useWidgetConfiguration(widgetId?: string) {
     [config],
   );
 
-  // Enhanced real-time field validation - SIMPLIFIED
+  // Enhanced real-time field validation with improved error handling
   const validateFieldRealTime = useCallback(
     async (fieldName: string, value: any): Promise<boolean> => {
-      // Only clear errors immediately, don't trigger API validation on every change
-      if (value && value.toString().trim()) {
-        setErrors((prev) => {
-          const newErrors = { ...prev };
-          delete newErrors[fieldName];
-          return newErrors;
-        });
-      }
+      try {
+        // Clear errors immediately for non-empty values
+        if (value && value.toString().trim()) {
+          setErrors((prev) => {
+            const newErrors = { ...prev };
+            delete newErrors[fieldName];
+            return newErrors;
+          });
+        }
 
-      // No API calls on every change - only validate on save
-      return true;
+        // Client-side validation for immediate feedback
+        const fieldSchema =
+          widgetFieldValidation[
+            fieldName as keyof typeof widgetFieldValidation
+          ];
+        if (fieldSchema) {
+          const result = fieldSchema.safeParse(value);
+          if (!result.success) {
+            const errorMessage =
+              result.error.errors[0]?.message || "Invalid value";
+            setErrors((prev) => ({
+              ...prev,
+              [fieldName]: errorMessage,
+            }));
+
+            // Show user-friendly toast for validation errors
+            toastUtils.validationError(1, [errorMessage]);
+            return false;
+          }
+        }
+
+        return true;
+      } catch (error) {
+        console.warn(`Real-time validation failed for ${fieldName}:`, error);
+        return true; // Don't block on validation errors
+      }
     },
-    []
+    [],
   );
 
   // Validation
@@ -364,7 +414,9 @@ export function useWidgetConfiguration(widgetId?: string) {
           );
         }, 3000);
 
-        console.log(`🎯 Successfully focused and highlighted field: ${fieldPath}`);
+        console.log(
+          `🎯 Successfully focused and highlighted field: ${fieldPath}`,
+        );
       } else {
         console.warn(`❌ Could not find field element for: ${fieldPath}`);
         console.warn(`Tried selectors:`, selectors);
@@ -383,7 +435,10 @@ export function useWidgetConfiguration(widgetId?: string) {
       // Initialize history properly - keep current history and add loaded config
       setHistory((prevHistory) => {
         // If we have existing history, preserve it and add the loaded config
-        const newHistory = prevHistory.length > 1 ? [...prevHistory, loadedConfig] : [defaultConfig, loadedConfig];
+        const newHistory =
+          prevHistory.length > 1
+            ? [...prevHistory, loadedConfig]
+            : [defaultConfig, loadedConfig];
         return newHistory.slice(-50); // Keep last 50 changes
       });
       setHistoryIndex((prevIndex) => prevIndex + 1);
@@ -403,7 +458,7 @@ export function useWidgetConfiguration(widgetId?: string) {
     }
   }, []);
 
-  // Save configuration with enhanced error handling
+  // Save configuration with enhanced error handling and user feedback
   const saveConfig = useCallback(async () => {
     if (!validateConfig()) {
       return false;
@@ -423,18 +478,34 @@ export function useWidgetConfiguration(widgetId?: string) {
           focusErrorField(firstErrorField);
         }
 
-        // Show specific validation errors
+        // Show specific validation errors with user-friendly messages
         const errorFields = Object.keys(validation.errors);
-        toastUtils.validationError(errorFields.length, errorFields);
+        const errorMessages = Object.values(validation.errors);
+
+        // Check for specific error types and show appropriate messages
+        if (errorMessages.some((msg) => msg.includes("already exists"))) {
+          toastUtils.operationError(
+            "Save Failed",
+            "Widget name already exists. Please choose another name.",
+          );
+        } else if (errorMessages.some((msg) => msg.includes("required"))) {
+          toastUtils.operationError(
+            "Save Failed",
+            "Please fill in all required fields before saving.",
+          );
+        } else {
+          toastUtils.validationError(errorFields.length, errorMessages);
+        }
         return false;
       }
 
-      saveLoading.updateProgress(50);
+      saveLoading.updateProgress(30);
       saveLoading.updateMessage("Saving to server...");
 
       let result;
       if (widgetIdState) {
         // Update existing widget
+        saveLoading.updateMessage("Updating widget configuration...");
         const updatedConfig = await widgetService.updateWidget(
           widgetIdState,
           config,
@@ -442,21 +513,29 @@ export function useWidgetConfiguration(widgetId?: string) {
         result = { id: widgetIdState, config: updatedConfig };
       } else {
         // Create new widget
+        saveLoading.updateMessage("Creating new widget...");
         result = await widgetService.createWidget(config);
         setWidgetIdState(result.id);
       }
 
-      saveLoading.updateProgress(100);
+      saveLoading.updateProgress(80);
+      saveLoading.updateMessage("Finalizing changes...");
 
       lastSavedConfig.current = { ...result.config };
       setConfig(result.config);
       setHasUnsavedChanges(false);
       setErrors({});
 
-      toastUtils.configSaved();
+      saveLoading.updateProgress(100);
+
+      // Show success message with widget name
+      toastUtils.operationSuccess(
+        "Widget Saved",
+        `"${config.widgetName}" has been saved successfully.`,
+      );
       return true;
     } catch (error: any) {
-      // Handle backend validation errors
+      // Handle backend validation errors with enhanced user feedback
       if (error.response?.data?.errors) {
         const backendErrors: Record<string, string> = {};
         Object.entries(error.response.data.errors).forEach(
@@ -474,10 +553,41 @@ export function useWidgetConfiguration(widgetId?: string) {
           focusErrorField(firstErrorField);
         }
 
-        toastUtils.validationError(Object.keys(backendErrors).length);
+        // Show user-friendly error messages
+        const errorMessages = Object.values(backendErrors);
+        if (
+          errorMessages.some(
+            (msg) => msg.includes("name") && msg.includes("taken"),
+          )
+        ) {
+          toastUtils.operationError(
+            "Save Failed",
+            "Widget name already exists. Please choose another name.",
+          );
+        } else if (errorMessages.some((msg) => msg.includes("invalid"))) {
+          toastUtils.operationError(
+            "Save Failed",
+            "Please check your input values and try again.",
+          );
+        } else {
+          toastUtils.validationError(
+            Object.keys(backendErrors).length,
+            errorMessages,
+          );
+        }
+      } else if (error.response?.status === 422) {
+        toastUtils.operationError(
+          "Save Failed",
+          "Please check your input and try again.",
+        );
+      } else if (error.response?.status === 409) {
+        toastUtils.operationError(
+          "Save Failed",
+          "Widget name already exists. Please choose another name.",
+        );
       } else {
         const errorMessage = handleWidgetError(error);
-        toastUtils.operationError("Save configuration", errorMessage);
+        toastUtils.operationError("Save Failed", errorMessage);
       }
       return false;
     } finally {
@@ -485,58 +595,74 @@ export function useWidgetConfiguration(widgetId?: string) {
     }
   }, [config, validateConfig, widgetIdState]);
 
-  // Professional Reset to Factory Defaults - COMPLETELY REWRITTEN
+  // Professional Reset to Factory Defaults with enhanced UX
   const resetConfig = useCallback(async () => {
     console.log("🏭 PROFESSIONAL RESET TO FACTORY DEFAULTS INITIATED");
 
     resetLoading.start("Resetting to factory defaults...");
 
     try {
-      // ALWAYS reset to defaultConfig - this is what "reset to default" means
-      // Not to last saved state, not to anything else - FACTORY DEFAULTS
+      // Create fresh factory defaults
       const factoryDefaults = { ...defaultConfig };
 
       console.log("🎯 Resetting to factory defaults:", {
         widgetName: factoryDefaults.widgetName,
         selectedTemplate: factoryDefaults.selectedTemplate,
         primaryColor: factoryDefaults.primaryColor,
-        botName: factoryDefaults.botName
+        botName: factoryDefaults.botName,
       });
 
+      // Progressive loading with micro-interactions
+      resetLoading.updateMessage("Clearing current configuration...");
+      resetLoading.updateProgress(20);
+      await new Promise((resolve) => setTimeout(resolve, 300)); // Smooth transition
+
       resetLoading.updateMessage("Applying factory defaults...");
+      resetLoading.updateProgress(50);
 
       // Set configuration to factory defaults
       setConfig(factoryDefaults);
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       resetLoading.updateMessage("Resetting history...");
+      resetLoading.updateProgress(70);
 
       // Reset history to factory defaults only
       setHistory([factoryDefaults]);
       setHistoryIndex(0);
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-      resetLoading.updateMessage("Clearing unsaved changes...");
+      resetLoading.updateMessage("Clearing validation errors...");
+      resetLoading.updateProgress(90);
 
       // Clear all unsaved changes and errors
       setHasUnsavedChanges(false);
       setErrors({});
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       resetLoading.updateMessage("Reset completed successfully!");
+      resetLoading.updateProgress(100);
 
       console.log("✅ Factory reset completed successfully");
       console.log("📋 New config state:", {
         widgetName: factoryDefaults.widgetName,
         selectedTemplate: factoryDefaults.selectedTemplate,
-        primaryColor: factoryDefaults.primaryColor
+        primaryColor: factoryDefaults.primaryColor,
       });
 
-      // Show success message
-      toastUtils.operationSuccess("Reset to factory defaults");
+      // Show success message with details
+      toastUtils.operationSuccess(
+        "Reset Complete",
+        "Widget configuration has been reset to factory defaults.",
+      );
 
       return true;
-
     } catch (error) {
       console.error("❌ Reset failed:", error);
-      toastUtils.apiError("Failed to reset widget configuration");
+      toastUtils.operationError(
+        "Reset Failed",
+        "Failed to reset widget configuration. Please try again.",
+      );
       return false;
     } finally {
       resetLoading.stop();

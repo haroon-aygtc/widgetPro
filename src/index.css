@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import custom animations */
+@import "./styles/animations.css";
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -156,7 +159,6 @@
 
   /* Premium animations and effects */
   @keyframes float {
-
     0%,
     100% {
       transform: translateY(0px);
@@ -240,7 +242,6 @@
   }
 
   @keyframes glow {
-
     0%,
     100% {
       box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
@@ -277,10 +278,12 @@
   }
 
   .animate-shimmer {
-    background: linear-gradient(90deg,
-        transparent,
-        rgba(255, 255, 255, 0.4),
-        transparent);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
   }
@@ -315,10 +318,12 @@
 
   /* Premium gradients */
   .premium-gradient {
-    background: linear-gradient(135deg,
-        rgba(59, 130, 246, 0.1) 0%,
-        rgba(139, 92, 246, 0.1) 50%,
-        rgba(168, 85, 247, 0.1) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.1) 0%,
+      rgba(139, 92, 246, 0.1) 50%,
+      rgba(168, 85, 247, 0.1) 100%
+    );
   }
 
   /* Smooth transitions */
@@ -337,17 +342,21 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg,
-        hsl(var(--primary)),
-        hsl(var(--primary) / 0.8));
+    background: linear-gradient(
+      45deg,
+      hsl(var(--primary)),
+      hsl(var(--primary) / 0.8)
+    );
     border-radius: 4px;
     transition: background 0.3s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(45deg,
-        hsl(var(--primary) / 0.9),
-        hsl(var(--primary) / 0.7));
+    background: linear-gradient(
+      45deg,
+      hsl(var(--primary) / 0.9),
+      hsl(var(--primary) / 0.7)
+    );
   }
 
   /* Improved focus styles */
