@@ -26,7 +26,8 @@ import {
   Target,
   Zap,
   CheckCircle2,
-  Star,
+  Star, 
+  Activity,
   TrendingUp,
 } from "lucide-react";
 
@@ -74,58 +75,11 @@ const Dashboard = () => {
     (Object.values(setupProgress).filter(Boolean).length /
       Object.keys(setupProgress).length) *
     100;
-  // Mock data for widgets
-  const widgets = [
-    {
-      id: 1,
-      name: "Customer Support",
-      status: "active",
-      conversations: 245,
-      model: "GPT-4",
-      lastUpdated: "2 hours ago",
-    },
-    {
-      id: 2,
-      name: "Sales Assistant",
-      status: "active",
-      conversations: 128,
-      model: "Claude 3",
-      lastUpdated: "1 day ago",
-    },
-    {
-      id: 3,
-      name: "Product FAQ",
-      status: "draft",
-      conversations: 0,
-      model: "GPT-3.5",
-      lastUpdated: "5 days ago",
-    },
-  ];
+  // Widget data - to be replaced with real API calls
+  const widgets: any[] = [];
 
-  // Mock data for recent activity
-  const recentActivity = [
-    {
-      id: 1,
-      type: "conversation",
-      widget: "Customer Support",
-      time: "10 minutes ago",
-      user: "john@example.com",
-    },
-    {
-      id: 2,
-      type: "config",
-      widget: "Sales Assistant",
-      time: "2 hours ago",
-      user: "admin@company.com",
-    },
-    {
-      id: 3,
-      type: "knowledge",
-      widget: "Product FAQ",
-      time: "1 day ago",
-      user: "sarah@example.com",
-    },
-  ];
+  // Recent activity data - to be replaced with real API calls
+  const recentActivity: any[] = [];
 
   return (
     <div className="flex-1 overflow-auto">
@@ -152,7 +106,7 @@ const Dashboard = () => {
       <div className="p-6">
         {/* Progress Tracking */}
         {progressPercentage < 100 && (
-          <Alert className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <Alert className="mb-6 bg-gradient-to-r from-cyan-50 to-teal-50 border-cyan-200">
             <Target className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
               <div>
@@ -226,9 +180,9 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">373</div>
+              <div className="text-3xl font-bold">0</div>
               <p className="text-xs text-muted-foreground mt-1">
-                +24% from last month
+                No conversations yet
               </p>
             </CardContent>
           </Card>
@@ -239,9 +193,9 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">3</div>
+              <div className="text-3xl font-bold">0</div>
               <p className="text-xs text-muted-foreground mt-1">
-                GPT-4, Claude 3, GPT-3.5
+                No models configured
               </p>
             </CardContent>
           </Card>
@@ -267,44 +221,52 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {widgets.map((widget) => (
-                  <div
-                    key={widget.id}
-                    className="flex items-center justify-between p-3 border rounded-md"
-                  >
-                    <div className="flex items-center">
-                      <Avatar className="h-9 w-9 mr-3">
-                        <AvatarImage
-                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${widget.name}`}
-                          alt={widget.name}
-                        />
-                        <AvatarFallback>
-                          {widget.name.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{widget.name}</p>
-                        <div className="flex items-center text-xs text-muted-foreground">
-                          <Badge
-                            variant={
-                              widget.status === "active" ? "default" : "outline"
-                            }
-                            className="mr-2"
-                          >
-                            {widget.status}
-                          </Badge>
-                          <span>{widget.conversations} conversations</span>
+                {widgets.length > 0 ? (
+                  widgets.map((widget) => (
+                    <div
+                      key={widget.id}
+                      className="flex items-center justify-between p-3 border rounded-md"
+                    >
+                      <div className="flex items-center">
+                        <Avatar className="h-9 w-9 mr-3">
+                          <AvatarImage
+                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${widget.name}`}
+                            alt={widget.name}
+                          />
+                          <AvatarFallback>
+                            {widget.name.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{widget.name}</p>
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            <Badge
+                              variant={
+                                widget.status === "active" ? "default" : "outline"
+                              }
+                              className="mr-2"
+                            >
+                              {widget.status}
+                            </Badge>
+                            <span>{widget.conversations} conversations</span>
+                          </div>
                         </div>
                       </div>
+                      <div className="text-right">
+                        <p className="text-sm">{widget.model}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Updated {widget.lastUpdated}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm">{widget.model}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Updated {widget.lastUpdated}
-                      </p>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-sm">No widgets created yet</p>
+                    <p className="text-xs">Create your first widget to get started</p>
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
             <CardFooter>
@@ -322,39 +284,47 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start">
-                    <div className="mr-3 mt-0.5">
-                      {activity.type === "conversation" ? (
-                        <MessageSquare className="h-5 w-5 text-blue-500" />
-                      ) : activity.type === "config" ? (
-                        <Settings className="h-5 w-5 text-amber-500" />
-                      ) : (
-                        <Database className="h-5 w-5 text-green-500" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {activity.type === "conversation"
-                          ? "New conversation"
-                          : activity.type === "config"
-                            ? "Widget configured"
-                            : "Knowledge base updated"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {activity.widget}
-                      </p>
-                      <div className="flex items-center mt-1 text-xs text-muted-foreground">
-                        <span>{activity.time}</span>
-                        <Separator
-                          orientation="vertical"
-                          className="mx-2 h-3"
-                        />
-                        <span>{activity.user}</span>
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex items-start">
+                      <div className="mr-3 mt-0.5">
+                        {activity.type === "conversation" ? (
+                          <MessageSquare className="h-5 w-5 text-blue-500" />
+                        ) : activity.type === "config" ? (
+                          <Settings className="h-5 w-5 text-amber-500" />
+                        ) : (
+                          <Database className="h-5 w-5 text-green-500" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {activity.type === "conversation"
+                            ? "New conversation"
+                            : activity.type === "config"
+                              ? "Widget configured"
+                              : "Knowledge base updated"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {activity.widget}
+                        </p>
+                        <div className="flex items-center mt-1 text-xs text-muted-foreground">
+                          <span>{activity.time}</span>
+                          <Separator
+                            orientation="vertical"
+                            className="mx-2 h-3"
+                          />
+                          <span>{activity.user}</span>
+                        </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-sm">No recent activity</p>
+                    <p className="text-xs">Activity will appear here as you use the system</p>
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
             <CardFooter>

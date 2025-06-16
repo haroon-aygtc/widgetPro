@@ -121,7 +121,7 @@ export function UnifiedModal(props: UnifiedModalProps) {
   // Alert Dialog for confirmations
   if (type === "alert" && "onConfirm" in props) {
     const { confirmText = "Confirm", cancelText = "Cancel", onConfirm, onCancel } = props;
-    
+
     const handleConfirm = () => {
       onConfirm();
       onOpenChange(false);
@@ -153,7 +153,7 @@ export function UnifiedModal(props: UnifiedModalProps) {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirm}
-              variant={variant === "destructive" ? "destructive" : "default"}
+              className={variant === "destructive" ? "bg-red-600 hover:bg-red-700 focus:ring-red-600" : ""}
             >
               {confirmText}
             </AlertDialogAction>

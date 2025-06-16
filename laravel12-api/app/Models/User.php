@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
@@ -110,6 +110,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    /**
      * Scope a query to search users.
      */
     public function scopeSearch($query, $search)
@@ -136,5 +144,21 @@ class User extends Authenticatable
     public function scopeStatus($query, $status)
     {
         return $query->where('status', $status);
+    }
+
+    /**
+     * Scope a query to only include active users.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    /**
+     * Scope a query to only include verified users.
+     */
+    public function scopeVerified($query)
+    {
+        return $query->whereNotNull('email_verified_at');
     }
 }

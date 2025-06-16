@@ -1,9 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -11,60 +9,51 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Key,
-  Search,
-  Filter,
-  CheckCircle,
-  AlertCircle,
   Loader2,
+  Mail,
+  Plus,
+  Minus,
+  CheckCircle,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { useUserManagement } from "@/hooks/useUserManagement";
 import { usePermissionManagement } from "@/hooks/usePermissionManagement";
+import { userService } from "@/services/userService";
+import { useToast } from "@/components/ui/use-toast";
+import { User } from "@/lib/api";
 
-const AssignPermission = () => {
+interface AssignPermissionProps {
+  preSelectedUser?: User | null;
+  onUserAssigned?: () => void;
+}
+
+const AssignPermission: React.FC<AssignPermissionProps> = ({ preSelectedUser, onUserAssigned }) => {
   const {
-    users,
-    roles,
-    searchTerm,
-    filterRole,
     isLoading,
-    setSearchTerm,
-    setFilterRole,
+    refetchUsers,
   } = useUserManagement();
 
   const { permissions } = usePermissionManagement();
+  const { toast } = useToast();
 
-  const [isManagePermissionsOpen, setIsManagePermissionsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  // Handle preSelectedUser prop
+  useEffect(() => {
+    if (preSelectedUser) {
+      setSelectedUser(preSelectedUser);
+      // Only select direct permissions, not those from roles
+      setSelectedPermissions(
+        preSelectedUser.permissions?.map((p: any) => p.id.toString()) || [],
+      );
+    }
+  }, [preSelectedUser]);
 
   const getRoleBadgeColor = (roleName: string) => {
     switch (roleName.toLowerCase()) {
@@ -81,6 +70,43 @@ const AssignPermission = () => {
     }
   };
 
+  const getCategoryColor = (category: string) => {
+    const colors = {
+      "User Management": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+      "Content Management": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      "System Administration": "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
+      "Analytics": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+      "Settings": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
+    };
+    return colors[category as keyof typeof colors] || "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
+  };
+
+  // Get all permissions that the user has (both direct and through roles)
+  const getUserAllPermissions = (user: any) => {
+    const directPermissions = user.permissions || [];
+    const rolePermissions = user.roles?.flatMap((role: any) => role.permissions || []) || [];
+
+    // Combine and deduplicate permissions
+    const allPermissions = [...directPermissions, ...rolePermissions];
+    const uniquePermissions = allPermissions.filter((permission, index, self) =>
+      index === self.findIndex(p => p.id === permission.id)
+    );
+
+    return {
+      direct: directPermissions,
+      fromRoles: rolePermissions,
+      all: uniquePermissions
+    };
+  };
+
+  const handleAssignPermissions = (user: any) => {
+    setSelectedUser(user);
+    // Only select direct permissions, not those from roles
+    setSelectedPermissions(
+      user.permissions?.map((p: any) => p.id.toString()) || [],
+    );
+  };
+
   const handlePermissionChange = (permissionId: string, checked: boolean) => {
     if (checked) {
       setSelectedPermissions([...selectedPermissions, permissionId]);
@@ -91,27 +117,109 @@ const AssignPermission = () => {
     }
   };
 
-  const handleSavePermissions = async () => {
+  // Select all permissions
+  const handleSelectAll = () => {
+    const allPermissionIds = permissions.map(p => p.id.toString());
+    setSelectedPermissions(allPermissionIds);
+  };
+
+  // Deselect all permissions
+  const handleDeselectAll = () => {
+    setSelectedPermissions([]);
+  };
+
+  // Select all permissions in a category
+  const handleSelectAllInCategory = (category: string) => {
+    const categoryPermissions = permissions.filter(p => p.category === category);
+    const categoryPermissionIds = categoryPermissions.map(p => p.id.toString());
+
+    // Add category permissions to selected permissions (avoid duplicates)
+    const newSelectedPermissions = [...new Set([...selectedPermissions, ...categoryPermissionIds])];
+    setSelectedPermissions(newSelectedPermissions);
+  };
+
+  // Deselect all permissions in a category
+  const handleDeselectAllInCategory = (category: string) => {
+    const categoryPermissions = permissions.filter(p => p.category === category);
+    const categoryPermissionIds = categoryPermissions.map(p => p.id.toString());
+
+    // Remove category permissions from selected permissions
+    const newSelectedPermissions = selectedPermissions.filter(id => !categoryPermissionIds.includes(id));
+    setSelectedPermissions(newSelectedPermissions);
+  };
+
+  // Check if all permissions in a category are selected
+  const areAllCategoryPermissionsSelected = (category: string) => {
+    const categoryPermissions = permissions.filter(p => p.category === category);
+    const categoryPermissionIds = categoryPermissions.map(p => p.id.toString());
+    return categoryPermissionIds.every(id => selectedPermissions.includes(id));
+  };
+
+  // Check if user has permission through roles (not directly assigned)
+  const hasPermissionThroughRole = (permissionId: string) => {
+    if (!selectedUser) return false;
+    const userPermissions = getUserAllPermissions(selectedUser);
+    const rolePermissionIds = userPermissions.fromRoles.map(p => p.id.toString());
+    return rolePermissionIds.includes(permissionId);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!selectedUser) return;
 
     try {
       setSubmitting(true);
-      // Note: This would need to be implemented in the userService
-      // For now, we'll just close the dialog
-      setIsManagePermissionsOpen(false);
-      setSelectedUser(null);
-      setSelectedPermissions([]);
+
+      // Convert string IDs to numbers
+      const permissionIds = selectedPermissions.map(id => parseInt(id));
+
+      // Call the user service to assign permissions
+      const result = await userService.assignPermissionsToUser(selectedUser.id, permissionIds);
+
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: `Permissions assigned successfully to ${selectedUser.name}`,
+          variant: "success",
+        });
+
+        // Refresh users data to show updated permissions
+        await refetchUsers();
+
+        // If this was triggered from parent component, call the callback
+        if (onUserAssigned) {
+          onUserAssigned();
+        } else {
+          // Otherwise, reset to list view
+          setSelectedUser(null);
+          setSelectedPermissions([]);
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to assign permissions",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error assigning permissions:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while assigning permissions",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const openPermissionsDialog = (user: any) => {
-    setSelectedUser(user);
-    setSelectedPermissions(
-      user.permissions?.map((p: any) => p.id.toString()) || [],
-    );
-    setIsManagePermissionsOpen(true);
+  const resetForm = () => {
+    if (onUserAssigned) {
+      onUserAssigned();
+    } else {
+      setSelectedUser(null);
+      setSelectedPermissions([]);
+    }
   };
 
   const permissionsByCategory = permissions.reduce(
@@ -123,307 +231,221 @@ const AssignPermission = () => {
     {} as Record<string, any[]>,
   );
 
-  return (
-    <>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-violet-700 dark:text-violet-300">
-            Assign Permission to User
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Manage individual user permissions and access controls
-          </p>
-        </div>
-      </div>
-
-      {/* Info Alert */}
-      <Alert className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200/50 dark:from-blue-950/50 dark:to-indigo-950/50 dark:border-blue-800">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Permission Management:</strong> Individual permissions
-          override role-based permissions. Use carefully to maintain security
-          and access control.
-        </AlertDescription>
-      </Alert>
-
-      {/* Filters and Search */}
-      <Card className="mb-6 bg-card/80 backdrop-blur-xl border-violet-200/50 dark:border-violet-800/50">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Select value={filterRole} onValueChange={setFilterRole}>
-                <SelectTrigger className="w-[150px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  {roles.map((role) => (
-                    <SelectItem key={role.id} value={role.name}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+  if (isLoading) {
+    return (
+      <Card className="bg-card/80 backdrop-blur-xl border-violet-200/50 dark:border-violet-800/50">
+        <CardContent className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+          <span className="ml-2 text-muted-foreground">Loading users...</span>
         </CardContent>
       </Card>
+    );
+  }
 
-      {/* Users Table */}
-      <Card className="bg-card/80 backdrop-blur-xl border-violet-200/50 dark:border-violet-800/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5 text-violet-600" />
-            User Permission Management ({users.length})
+  return (
+    <Card className="bg-card/80 backdrop-blur-xl border-violet-200/50 dark:border-violet-800/50">
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
+        <div>
+          <CardTitle className="text-2xl font-bold text-violet-700 dark:text-violet-300">
+            Permission Assignment
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-muted-foreground mt-1">
             Manage individual user permissions and access controls
           </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Permissions</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Updated</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-violet-600 mx-auto" />
-                    <span className="ml-2 text-muted-foreground">
-                      Loading users...
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ) : users.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center py-8 text-muted-foreground"
-                  >
-                    No users found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users.map((user) => (
-                  <TableRow
-                    key={user.id}
-                    className="hover:bg-violet-50/50 dark:hover:bg-violet-950/50"
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
-                          <AvatarImage
-                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
-                            alt={user.name}
-                          />
-                          <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white">
-                            {user.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium text-violet-700 dark:text-violet-300">
-                            {user.name}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {user.email}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {user.roles?.map((role) => (
-                          <Badge
-                            key={role.id}
-                            className={getRoleBadgeColor(role.name)}
-                          >
-                            {role.name}
-                          </Badge>
-                        )) || <Badge variant="outline">No Role</Badge>}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {user.permissions?.slice(0, 3).map((permission) => (
-                          <Badge
-                            key={permission.id}
-                            variant="outline"
-                            className="text-xs bg-violet-50 dark:bg-violet-950/50 border-violet-200 dark:border-violet-800"
-                          >
-                            {permission.display_name}
-                          </Badge>
-                        )) || []}
-                        {(user.permissions?.length || 0) > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{(user.permissions?.length || 0) - 3} more
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          user.status === "active" ? "default" : "secondary"
-                        }
-                      >
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(user.updated_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openPermissionsDialog(user)}
-                      >
-                        <Key className="h-4 w-4 mr-2" />
-                        Manage Permissions
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        </div>
+      </CardHeader>
+      <CardContent>
 
-      {/* Manage Permissions Dialog */}
-      <Dialog
-        open={isManagePermissionsOpen}
-        onOpenChange={setIsManagePermissionsOpen}
-      >
-        <DialogContent className="max-w-4xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>
-              Manage Permissions for {selectedUser?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Select the permissions you want to assign to this user. Changes
-              will override role-based permissions.
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh] pr-4">
-            <div className="space-y-6">
-              {Object.entries(permissionsByCategory).map(
-                ([category, permissions]) => (
-                  <div key={category} className="space-y-3">
-                    <h3 className="text-lg font-semibold text-violet-700 dark:text-violet-300 border-b border-violet-200 dark:border-violet-800 pb-2">
-                      {category}
+        {selectedUser && (
+          <div className="w-full bg-gradient-to-br from-white to-violet-50/30 dark:from-gray-900 dark:to-violet-950/30 border-2 border-violet-200/50 dark:border-violet-800/50 shadow-xl rounded-lg">
+            <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-b border-violet-200/50 dark:border-violet-800/50 p-6">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-16 w-16 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
+                  <AvatarImage
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUser.name}`}
+                    alt={selectedUser.name}
+                  />
+                  <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-lg">
+                    {selectedUser.name.split(" ").map((n: string) => n[0]).join("")}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h2 className="text-2xl font-bold text-violet-700 dark:text-violet-300">
+                    Assign Permissions to {selectedUser.name}
+                  </h2>
+                  <p className="text-muted-foreground mt-1 flex items-center gap-1">
+                    <Mail className="h-4 w-4" />
+                    {selectedUser.email}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-8">
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div>
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="h-1 w-8 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full"></div>
+                    <h3 className="text-lg font-semibold text-violet-700 dark:text-violet-300">
+                      Available Permissions
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {permissions.map((permission) => {
-                        const IconComponent = permission.icon;
-                        const isChecked = selectedPermissions.includes(
-                          permission.id.toString(),
-                        );
-                        return (
-                          <div
-                            key={permission.id}
-                            className={`group relative flex items-start space-x-3 p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer hover:shadow-md ${
-                              isChecked
-                                ? "bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/50 dark:to-purple-950/50 border-violet-300 dark:border-violet-700 shadow-sm"
-                                : "bg-white dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 hover:border-violet-200 dark:hover:border-violet-800"
-                            }`}
-                            onClick={() =>
-                              handlePermissionChange(
-                                permission.id.toString(),
-                                !isChecked,
-                              )
-                            }
-                          >
-                            <Checkbox
-                              id={permission.id.toString()}
-                              checked={isChecked}
-                              onCheckedChange={(checked) =>
-                                handlePermissionChange(
-                                  permission.id.toString(),
-                                  checked as boolean,
-                                )
-                              }
-                              className="mt-0.5 border-2 border-violet-300 dark:border-violet-700 data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <Label
-                                htmlFor={permission.id.toString()}
-                                className="font-semibold text-violet-700 dark:text-violet-300 cursor-pointer group-hover:text-violet-800 dark:group-hover:text-violet-200 transition-colors block mb-1 text-sm"
-                              >
-                                {permission.display_name}
-                              </Label>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                {permission.description}
-                              </p>
-                            </div>
-                            {isChecked && (
-                              <div className="absolute top-2 right-2">
-                                <CheckCircle className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                  </div>
+
+                  {/* Permission Controls */}
+                  <div className="flex flex-wrap gap-2 p-4 bg-gradient-to-r from-violet-50/50 to-purple-50/50 dark:from-violet-950/30 dark:to-purple-950/30 rounded-lg border border-violet-200/50 dark:border-violet-800/50 mb-6">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSelectAll}
+                      className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700 dark:bg-green-950/50 dark:hover:bg-green-900/50 dark:border-green-800 dark:text-green-300"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Select All
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeselectAll}
+                      className="bg-red-50 hover:bg-red-100 border-red-200 text-red-700 dark:bg-red-950/50 dark:hover:bg-red-900/50 dark:border-red-800 dark:text-red-300"
+                    >
+                      <Minus className="h-4 w-4 mr-1" />
+                      Deselect All
+                    </Button>
+                    <div className="ml-auto text-sm text-muted-foreground flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      {selectedPermissions.length} of {permissions.length} permissions selected
                     </div>
                   </div>
-                ),
-              )}
+                  <div className="space-y-6">
+                    {Object.entries(permissionsByCategory).map(([category, categoryPermissions]) => {
+                      const allCategorySelected = areAllCategoryPermissionsSelected(category);
+                      return (
+                        <div key={category} className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-lg font-medium text-violet-700 dark:text-violet-300">
+                                {category}
+                              </h3>
+                              <Badge className={getCategoryColor(category)}>
+                                {categoryPermissions.length} permissions
+                              </Badge>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => allCategorySelected
+                                  ? handleDeselectAllInCategory(category)
+                                  : handleSelectAllInCategory(category)
+                                }
+                                className="text-xs"
+                              >
+                                {allCategorySelected ? (
+                                  <>
+                                    <Square className="h-3 w-3 mr-1" />
+                                    Deselect All
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckSquare className="h-3 w-3 mr-1" />
+                                    Select All
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="grid gap-3">
+                            {categoryPermissions.map((permission) => {
+                              const isSelected = selectedPermissions.includes(permission.id.toString());
+                              const hasViaRole = hasPermissionThroughRole(permission.id.toString());
+
+                              return (
+                                <div
+                                  key={permission.id}
+                                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${hasViaRole
+                                    ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-950/50 cursor-not-allowed opacity-75"
+                                    : isSelected
+                                      ? "border-violet-500 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/50 dark:to-purple-950/50 shadow-lg shadow-violet-500/20 ring-2 ring-violet-200 dark:ring-violet-800"
+                                      : "border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50/30 dark:hover:bg-violet-950/20"
+                                    }`}
+                                  onClick={() => !hasViaRole && handlePermissionChange(permission.id.toString(), !isSelected)}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div className="p-2 rounded-lg bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-200/50 dark:border-violet-800/50">
+                                        <Key className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <div className="font-medium text-violet-700 dark:text-violet-300">
+                                            {permission.display_name}
+                                          </div>
+                                          {hasViaRole && (
+                                            <Badge variant="outline" className="text-xs bg-blue-100 dark:bg-blue-900 border-blue-300 dark:border-blue-700">
+                                              Via Role
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
+                                          {permission.description || 'No description'}
+                                        </p>
+                                        <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded mt-1 inline-block">
+                                          {permission.name}
+                                        </code>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      {isSelected && !hasViaRole && (
+                                        <CheckCircle className="h-5 w-5 text-violet-600 dark:text-violet-400 drop-shadow-sm" />
+                                      )}
+                                      {hasViaRole && (
+                                        <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 drop-shadow-sm" />
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-violet-200/50 dark:border-violet-800/50">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetForm}
+                    disabled={submitting}
+                    className="px-6 border-2 border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-8 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Assigning Permissions...
+                      </>
+                    ) : (
+                      "Assign Permissions"
+                    )}
+                  </Button>
+                </div>
+              </form>
             </div>
-          </ScrollArea>
-          <DialogFooter className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              {selectedPermissions.length} of {permissions.length} permissions
-              selected
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsManagePermissionsOpen(false);
-                  setSelectedUser(null);
-                  setSelectedPermissions([]);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleSavePermissions} disabled={submitting}>
-                {submitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Permissions"
-                )}
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

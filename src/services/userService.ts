@@ -1,22 +1,10 @@
-import { userApi, User, handleApiError } from "@/lib/api";
+import { userApi, User, handleApiError, isValidationError, getValidationErrors } from "@/lib/api";
+import { createUserSchema, updateUserSchema, changePasswordSchema } from "@/lib/validation";
 import { z } from "zod";
-
-// Validation schemas
-export const createUserSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  role_ids: z.array(z.number()).optional(),
-});
-
-export const updateUserSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  role_ids: z.array(z.number()).optional(),
-});
 
 export type CreateUserData = z.infer<typeof createUserSchema>;
 export type UpdateUserData = z.infer<typeof updateUserSchema>;
+export type ChangePasswordData = z.infer<typeof changePasswordSchema>;
 
 // User service class
 export class UserService {
@@ -40,9 +28,16 @@ export class UserService {
 
   async createUser(data: CreateUserData) {
     try {
-      // Validate data
+      // Validate data on frontend first
       const validatedData = createUserSchema.parse(data);
-      const response = await userApi.createUser(validatedData);
+      const response = await userApi.createUser(validatedData as {
+        name: string;
+        email: string;
+        password: string;
+        password_confirmation: string;
+        role_ids?: number[];
+        status?: string;
+      });
       return { success: true, data: response.data, error: null };
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -59,13 +54,25 @@ export class UserService {
           fieldErrors,
         };
       }
+
+      // Handle API validation errors
+      if (isValidationError(error)) {
+        const fieldErrors = getValidationErrors(error);
+        return {
+          success: false,
+          data: null,
+          error: "Validation failed",
+          fieldErrors,
+        };
+      }
+
       return { success: false, data: null, error: handleApiError(error) };
     }
   }
 
   async updateUser(id: number, data: UpdateUserData) {
     try {
-      // Validate data
+      // Validate data on frontend first
       const validatedData = updateUserSchema.parse(data);
       const response = await userApi.updateUser(id, validatedData);
       return { success: true, data: response.data, error: null };
@@ -84,6 +91,58 @@ export class UserService {
           fieldErrors,
         };
       }
+
+      // Handle API validation errors
+      if (isValidationError(error)) {
+        const fieldErrors = getValidationErrors(error);
+        return {
+          success: false,
+          data: null,
+          error: "Validation failed",
+          fieldErrors,
+        };
+      }
+
+      return { success: false, data: null, error: handleApiError(error) };
+    }
+  }
+
+  async changePassword(id: number, data: ChangePasswordData) {
+    try {
+      // Validate data on frontend first
+      const validatedData = changePasswordSchema.parse(data);
+      const response = await userApi.changeUserPassword(id, validatedData as {
+        password: string;
+        password_confirmation: string;
+      });
+      return { success: true, data: response.data, error: null };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path.length > 0) {
+            fieldErrors[err.path[0] as string] = err.message;
+          }
+        });
+        return {
+          success: false,
+          data: null,
+          error: "Validation failed",
+          fieldErrors,
+        };
+      }
+
+      // Handle API validation errors
+      if (isValidationError(error)) {
+        const fieldErrors = getValidationErrors(error);
+        return {
+          success: false,
+          data: null,
+          error: "Validation failed",
+          fieldErrors,
+        };
+      }
+
       return { success: false, data: null, error: handleApiError(error) };
     }
   }

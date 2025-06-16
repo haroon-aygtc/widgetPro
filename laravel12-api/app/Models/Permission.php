@@ -46,7 +46,19 @@ class Permission extends Model
      */
     public function getUsersCountAttribute(): int
     {
-        return $this->users()->count();
+        // Users with this permission directly
+        $directUserIds = $this->users()->pluck('users.id')->toArray();
+
+        // Users with this permission via roles
+        $roleIds = $this->roles()->pluck('roles.id')->toArray();
+        $viaRoleUserIds = User::whereHas('roles', function($q) use ($roleIds) {
+            $q->whereIn('roles.id', $roleIds);
+        })->pluck('id')->toArray();
+
+        // Merge and get unique user IDs count
+        $allUserIds = array_unique(array_merge($directUserIds, $viaRoleUserIds));
+
+        return count($allUserIds);
     }
 
     /**

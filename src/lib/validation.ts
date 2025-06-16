@@ -108,30 +108,32 @@ export const formValidationPatterns = {
 
 // Validation utilities
 export const validationUtils = {
-  createPasswordConfirmation: () => ({ confirmPassword: z.string() }),
+  createPasswordConfirmation: () => ({ password_confirmation: z.string() }),
 
   addPasswordConfirmationRefine: <T extends Record<string, any>>(
     schema: z.ZodObject<T>,
   ) =>
-    schema.refine((data: any) => data.password === data.confirmPassword, {
-      message: "Passwords don't match",
-      path: ["confirmPassword"],
+    schema.refine((data: any) => data.password === data.password_confirmation, {
+      message: "Password confirmation does not match",
+      path: ["password_confirmation"],
     }),
 
   createFormValidator: <T>(schema: z.ZodSchema<T>) => {
     return {
       validate: (data: unknown) => {
         try {
-          return { success: true, data: schema.parse(data), errors: {} };
-        } catch (error) {
-          if (error instanceof z.ZodError) {
+          const result = schema.safeParse(data);
+          if (result.success) {
+            return { success: true, data: result.data, errors: {} };
+          } else {
             const errors: Record<string, string> = {};
-            error.errors.forEach((err) => {
+            result.error.errors.forEach((err) => {
               const path = err.path.join(".");
               errors[path] = err.message;
             });
             return { success: false, data: null, errors };
           }
+        } catch (error) {
           return {
             success: false,
             data: null,
@@ -144,17 +146,18 @@ export const validationUtils = {
         try {
           const fieldSchema = (schema as any).shape[fieldName];
           if (fieldSchema) {
-            fieldSchema.parse(value);
-            return { success: true, error: null };
+            const result = fieldSchema.safeParse(value);
+            if (result.success) {
+              return { success: true, error: null };
+            } else {
+              return {
+                success: false,
+                error: result.error.errors[0]?.message || "Invalid value",
+              };
+            }
           }
           return { success: true, error: null };
         } catch (error) {
-          if (error instanceof z.ZodError) {
-            return {
-              success: false,
-              error: error.errors[0]?.message || "Invalid value",
-            };
-          }
           return { success: false, error: "Validation failed" };
         }
       },
@@ -194,7 +197,11 @@ export const registerSchema = validationUtils.addPasswordConfirmationRefine(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
         "Password must contain at least one uppercase letter, one lowercase letter, and one number",
       ),
-    confirmPassword: z.string().min(1, "Please confirm your password"),
+    password_confirmation: z.string().min(1, "Please confirm your password when creating an account"),
+    remember: z.boolean().optional(),
+    terms: z.boolean().refine((val) => val === true, {
+      message: "You must agree to the Terms of Service and Privacy Policy",
+    }),
   }),
 );
 
@@ -365,19 +372,59 @@ export const settingsSchema = z.object({
 });
 
 // User Management Schemas
-export const createUserSchema = z.object({
-  name: commonValidation.name,
-  email: commonValidation.email,
-  password: commonValidation.strongPassword,
-  role_ids: z.array(z.number().int().positive()).optional(),
-});
+export const createUserSchema = validationUtils.addPasswordConfirmationRefine(
+  z.object({
+    name: z
+      .string()
+      .min(1, "Full name is required")
+      .min(2, "Name must be at least 2 characters")
+      .max(255, "Name must be less than 255 characters"),
+    email: z
+      .string()
+      .min(1, "Email address is required")
+      .email("Please enter a valid email address")
+      .max(255, "Email must be less than 255 characters"),
+    password: z
+      .string()
+      .min(1, "Password is required")
+      .min(8, "Password must be at least 8 characters")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+      ),
+    password_confirmation: z.string().min(1, "Please confirm your password when creating an account"),
+    role_ids: z.array(z.number().int().positive()).optional(),
+  }),
+);
 
 export const updateUserSchema = z.object({
-  name: commonValidation.name.optional(),
-  email: commonValidation.email.optional(),
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(255, "Name must be less than 255 characters")
+    .optional(),
+  email: z
+    .string()
+    .email("Please enter a valid email address")
+    .max(255, "Email must be less than 255 characters")
+    .optional(),
   status: z.enum(["active", "inactive"]).optional(),
   role_ids: z.array(z.number().int().positive()).optional(),
 });
+
+export const changePasswordSchema = validationUtils.addPasswordConfirmationRefine(
+  z.object({
+    password: z
+      .string()
+      .min(1, "Password is required")
+      .min(8, "Password must be at least 8 characters")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+      ),
+    password_confirmation: z.string().min(1, "Please confirm your password"),
+  }),
+);
 
 // Role Management Schemas
 export const createRoleSchema = z.object({
@@ -427,6 +474,7 @@ export type KnowledgeBaseFormData = z.infer<typeof knowledgeBaseSchema>;
 export type SettingsFormData = z.infer<typeof settingsSchema>;
 export type CreateUserFormData = z.infer<typeof createUserSchema>;
 export type UpdateUserFormData = z.infer<typeof updateUserSchema>;
+export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 export type CreateRoleFormData = z.infer<typeof createRoleSchema>;
 export type UpdateRoleFormData = z.infer<typeof updateRoleSchema>;
 export type CreatePermissionFormData = z.infer<typeof createPermissionSchema>;

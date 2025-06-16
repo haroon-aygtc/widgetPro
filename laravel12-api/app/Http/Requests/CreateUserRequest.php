@@ -26,6 +26,7 @@ class CreateUserRequest extends FormRequest
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', Password::min(8)->letters()->mixedCase()->numbers()],
+            'password_confirmation' => ['required', 'string', 'same:password'],
             'role_ids' => ['sometimes', 'array'],
             'role_ids.*' => ['integer', 'exists:roles,id'],
         ];
@@ -37,12 +38,18 @@ class CreateUserRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Name is required',
+            'name.required' => 'Full name is required',
             'name.min' => 'Name must be at least 2 characters',
-            'email.required' => 'Email is required',
+            'name.max' => 'Name must be less than 255 characters',
+            'email.required' => 'Email address is required',
             'email.email' => 'Please enter a valid email address',
-            'email.unique' => 'This email is already registered',
+            'email.unique' => 'This email address is already registered',
+            'email.max' => 'Email must be less than 255 characters',
             'password.required' => 'Password is required',
+            'password.min' => 'Password must be at least 8 characters',
+            'password_confirmation.required' => 'Please confirm your password',
+            'password_confirmation.same' => 'Password confirmation does not match',
+            'role_ids.array' => 'Roles must be an array',
             'role_ids.*.exists' => 'Selected role does not exist',
         ];
     }

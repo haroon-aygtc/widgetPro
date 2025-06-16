@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -33,24 +34,26 @@ import {
 } from "@/hooks/useFormValidation";
 import { useOperationLoading } from "@/contexts/LoadingContext";
 import { registerSchema } from "@/lib/validation";
-import { handleApiError } from "@/lib/api";
+import { validationUtils } from "@/lib/validation";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Register = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    confirmPassword: "",
+    password_confirmation: "",
+    terms: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   // Use unified loading state management
   const registerLoading = useOperationLoading("register");
 
   const {
-    errors,
     validateForm,
     validateField,
     setFieldTouched,
@@ -66,6 +69,10 @@ const Register = () => {
     validateField(name, value);
   };
 
+  const handleCheckboxChange = (field: string, checked: boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: checked }));
+  };
+
   const handleBlur = (fieldName: string) => {
     setFieldTouched(fieldName, true);
   };
@@ -79,45 +86,45 @@ const Register = () => {
 
     const validation = await validateForm(formData);
     if (!validation.success) {
-      const errorCount = Object.keys(errors).filter(
-        (key) => errors[key],
-      ).length;
-      toastUtils.validationError(errorCount);
+      // Mark all fields as touched to show validation errors
+      Object.keys(formData).forEach((field) => {
+        setFieldTouched(field, true);
+      });
+
+      const errorMessages = Object.keys(validation.errors)
+        .filter((key) => validation.errors[key])
+        .map((key) => validation.errors[key]);
+      const errorCount = errorMessages.length;
+      toastUtils.validationError(errorCount, errorMessages);
       return;
     }
 
     registerLoading.start("Creating your account...");
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await authApi.register(formData);
+      // Transform data to match backend expectations
+      const registerData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        password_confirmation: formData.password_confirmation,
+        terms: formData.terms,
+      };
 
-      // Simulate registration process with progress updates
       registerLoading.updateMessage("Validating information...");
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          registerLoading.updateProgress(50);
-          registerLoading.updateMessage("Creating account...");
-          setTimeout(() => {
-            // Simulate random success/failure for demo
-            if (Math.random() > 0.15) {
-              registerLoading.updateProgress(100);
-              resolve(true);
-            } else {
-              reject(new Error("Email address is already registered"));
-            }
-          }, 750);
-        }, 750);
-      });
+      registerLoading.updateProgress(30);
 
-      toastUtils.operationSuccess("Account created successfully");
+      await register(registerData);
+
+      registerLoading.updateProgress(100);
+      registerLoading.updateMessage("Account created successfully!");
 
       setTimeout(() => {
         navigate("/admin");
       }, 500);
     } catch (error) {
-      const errorMessage = handleApiError(error);
-      toastUtils.operationError("Registration failed", errorMessage);
+      // Error handling is done in AuthContext
+      console.error("Registration error:", error);
     } finally {
       registerLoading.stop();
     }
@@ -127,7 +134,7 @@ const Register = () => {
     <ErrorBoundary>
       <div className="min-h-screen bg-background flex">
         {/* Left Column - Benefits & Social Proof */}
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 via-purple-600 to-violet-700 relative overflow-hidden">
+        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-700 via-teal-700 to-emerald-800 relative overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=40 height=40 viewBox=0 0 40 40 xmlns=http://www.w3.org/2000/svg%3E%3Cg fill=%23ffffff fill-opacity=0.03%3E%3Cpath d=M20 20c0 11.046-8.954 20-20 20v20h40V20H20z%2F%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
 
@@ -146,7 +153,7 @@ const Register = () => {
             <div className="mb-12">
               <h2 className="text-5xl font-bold leading-tight mb-6">
                 Join thousands of
-                <span className="block bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">
+                <span className="block bg-gradient-to-r from-teal-300 to-emerald-300 bg-clip-text text-transparent">
                   successful businesses
                 </span>
               </h2>
@@ -258,16 +265,16 @@ const Register = () => {
             <div className="lg:hidden flex items-center justify-center mb-8">
               <div className="relative">
                 <MessageSquare className="h-10 w-10 mr-3 text-violet-600" />
-                <div className="absolute inset-0 h-10 w-10 mr-3 bg-gradient-to-r from-violet-500 to-purple-600 rounded-sm blur-sm opacity-20"></div>
+                <div className="absolute inset-0 h-10 w-10 mr-3 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-sm blur-sm opacity-20"></div>
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
                 HelixChat
               </h1>
             </div>
 
             <Card className="border-0 shadow-2xl shadow-violet-500/10 bg-card/80 backdrop-blur-xl">
               <CardHeader className="text-center pb-6">
-                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-slate-700 to-slate-800 bg-clip-text text-transparent mb-2">
                   Create Account
                 </CardTitle>
                 <CardDescription className="text-base text-muted-foreground">
@@ -292,7 +299,6 @@ const Register = () => {
                         onChange={handleChange}
                         onBlur={() => handleBlur("name")}
                         className={`pl-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${getFieldError("name") ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20" : ""}`}
-                        required
                       />
                       {getFieldError("name") && (
                         <p className="text-sm text-red-500 mt-1">
@@ -311,13 +317,12 @@ const Register = () => {
                       <Input
                         id="email"
                         name="email"
-                        type="email"
+                        type="text"
                         placeholder="Enter your email"
                         value={formData.email}
                         onChange={handleChange}
                         onBlur={() => handleBlur("email")}
                         className={`pl-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${getFieldError("email") ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20" : ""}`}
-                        required
                       />
                       {getFieldError("email") && (
                         <p className="text-sm text-red-500 mt-1">
@@ -342,7 +347,6 @@ const Register = () => {
                         onChange={handleChange}
                         onBlur={() => handleBlur("password")}
                         className={`pl-10 pr-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${getFieldError("password") ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20" : ""}`}
-                        required
                       />
                       {getFieldError("password") && (
                         <p className="text-sm text-red-500 mt-1">
@@ -365,7 +369,7 @@ const Register = () => {
 
                   <div className="space-y-2">
                     <Label
-                      htmlFor="confirmPassword"
+                      htmlFor="password_confirmation"
                       className="text-sm font-medium"
                     >
                       Confirm Password
@@ -373,19 +377,18 @@ const Register = () => {
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        id="confirmPassword"
-                        name="confirmPassword"
+                        id="password_confirmation"
+                        name="password_confirmation"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm your password"
-                        value={formData.confirmPassword}
+                        value={formData.password_confirmation}
                         onChange={handleChange}
-                        onBlur={() => handleBlur("confirmPassword")}
-                        className={`pl-10 pr-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${getFieldError("confirmPassword") ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20" : ""}`}
-                        required
+                        onBlur={() => handleBlur("password_confirmation")}
+                        className={`pl-10 pr-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${getFieldError("password_confirmation") ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20" : ""}`}
                       />
-                      {getFieldError("confirmPassword") && (
+                      {getFieldError("password_confirmation") && (
                         <p className="text-sm text-red-500 mt-1">
-                          {getFieldError("confirmPassword")}
+                          {getFieldError("password_confirmation")}
                         </p>
                       )}
                       <button
@@ -404,42 +407,50 @@ const Register = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-start space-x-3 pt-2">
-                    <input
-                      id="terms"
-                      type="checkbox"
-                      className="mt-1 rounded border-violet-200 dark:border-violet-800"
-                      required
-                    />
-                    <Label
-                      htmlFor="terms"
-                      className="text-sm text-muted-foreground leading-relaxed"
-                    >
-                      I agree to the{" "}
-                      <Link
-                        to="#"
-                        className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 underline"
+
+                  <div className="space-y-2">
+                    <div className="flex items-start space-x-3 pt-2">
+                      <Checkbox
+                        id="terms"
+                        checked={formData.terms}
+                        onCheckedChange={(checked) => handleCheckboxChange("terms", checked as boolean)}
+                        className={`mt-1 rounded border-violet-200 dark:border-violet-800 ${getFieldError("terms") ? "border-red-500" : ""}`}
+                      />
+                      <Label
+                        htmlFor="terms"
+                        className="text-sm text-muted-foreground leading-relaxed cursor-pointer"
                       >
-                        Terms of Service
-                      </Link>{" "}
-                      and{" "}
-                      <Link
-                        to="#"
-                        className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 underline"
-                      >
-                        Privacy Policy
-                      </Link>
-                    </Label>
+                        I agree to the{" "}
+                        <Link
+                          to="#"
+                          className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 underline"
+                        >
+                          Terms of Service
+                        </Link>{" "}
+                        and{" "}
+                        <Link
+                          to="#"
+                          className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 underline"
+                        >
+                          Privacy Policy
+                        </Link>
+                      </Label>
+                    </div>
+                    {getFieldError("terms") && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {getFieldError("terms")}
+                      </p>
+                    )}
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25 hover:shadow-xl hover:shadow-violet-500/30 transition-all duration-300 text-base font-semibold"
+                    className="w-full h-12 bg-gradient-to-r from-teal-600 to-emerald-700 hover:from-teal-700 hover:to-emerald-800 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 transition-all duration-300 text-base font-semibold"
                     disabled={registerLoading.isLoading}
                   >
                     {registerLoading.isLoading
                       ? registerLoading.loadingState?.message ||
-                        "Creating account..."
+                      "Creating account..."
                       : "Start Free Trial"}
                   </Button>
                 </form>

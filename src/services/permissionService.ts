@@ -107,6 +107,14 @@ export class PermissionService {
       return { success: false, error: handleApiError(error) };
     }
   }
+
+  async getPermissionUsers(permissionId: number) {
+    return userApi.getPermissionUsers(permissionId);
+  }
+
+  async getPermissionRoles(permissionId: number) {
+    return userApi.getPermissionRoles(permissionId);
+  }
 }
 
 // Export singleton instance

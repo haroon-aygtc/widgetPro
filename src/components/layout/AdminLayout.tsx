@@ -1,8 +1,9 @@
 import React from "react";
-import { Link, useLocation, Outlet } from "react-router-dom";
+import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   BarChart3,
   MessageSquare,
@@ -28,7 +29,20 @@ import {
 
 const AdminLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
   const [expandedModules, setExpandedModules] = React.useState<string[]>([]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Still navigate to login even if logout fails
+      navigate('/login');
+    }
+  };
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -90,7 +104,7 @@ const AdminLayout = () => {
       path: "/admin/user-management",
       label: "User Management",
       icon: Users,
-    },  
+    },
     {
       path: "/admin/settings",
       label: "Settings",
@@ -100,7 +114,7 @@ const AdminLayout = () => {
 
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-background via-background to-violet-50/30 dark:to-violet-950/30">
+    <div className="flex h-screen bg-gradient-to-br from-background via-background to-slate-50/20 dark:to-slate-950/20">
       {/* Mobile Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t shadow-lg">
         <div className="grid grid-cols-4 gap-1 p-2">
@@ -110,11 +124,10 @@ const AdminLayout = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center p-3 rounded-lg transition-all duration-200 min-h-[60px] ${
-                  isActive(item.path)
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                }`}
+                className={`flex flex-col items-center p-3 rounded-lg transition-all duration-200 min-h-[60px] ${isActive(item.path)
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 <Icon className="h-5 w-5 mb-1" />
                 <span className="text-xs font-medium truncate">
@@ -132,10 +145,10 @@ const AdminLayout = () => {
         <div className="p-4 border-b border-violet-200/20 dark:border-violet-800/20">
           <div className="flex items-center">
             <div className="relative">
-              <MessageSquare className="h-6 w-6 mr-2 text-transparent bg-gradient-to-r from-violet-500 to-purple-600 bg-clip-text" />
-              <div className="absolute inset-0 h-6 w-6 mr-2 bg-gradient-to-r from-violet-500 to-purple-600 rounded-sm blur-sm opacity-20"></div>
+              <MessageSquare className="h-6 w-6 mr-2 text-transparent bg-gradient-to-r from-teal-600 to-emerald-700 bg-clip-text" />
+              <div className="absolute inset-0 h-6 w-6 mr-2 bg-gradient-to-r from-teal-600 to-emerald-700 rounded-sm blur-sm opacity-20"></div>
             </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-slate-700 to-slate-800 bg-clip-text text-transparent">
               ChatWidget Pro
             </h1>
           </div>
@@ -150,11 +163,10 @@ const AdminLayout = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
-                    isActive(item.path)
-                      ? "bg-gradient-to-r from-violet-500/10 to-purple-500/10 text-violet-700 dark:text-violet-300 border border-violet-200/50 dark:border-violet-800/50 shadow-sm"
-                      : "hover:bg-gradient-to-r hover:from-violet-500/5 hover:to-purple-500/5 hover:text-violet-600 dark:hover:text-violet-400 hover:translate-x-1"
-                  }`}
+                  className={`flex items-center px-3 py-2 text-sm rounded-lg transition-all duration-200 ${isActive(item.path)
+                    ? "bg-gradient-to-r from-teal-500/10 to-emerald-500/10 text-teal-700 dark:text-teal-300 border border-teal-200/50 dark:border-teal-800/50 shadow-sm"
+                    : "hover:bg-gradient-to-r hover:from-teal-500/5 hover:to-emerald-500/5 hover:text-teal-600 dark:hover:text-teal-400 hover:translate-x-1"
+                    }`}
                 >
                   <Icon className="h-4 w-4 mr-2" />
                   {item.label}
@@ -162,30 +174,41 @@ const AdminLayout = () => {
               );
             })}
 
-       
+
           </nav>
         </div>
 
         {/* User Profile */}
         <div className="p-4 border-t border-violet-200/20 dark:border-violet-800/20">
-          <div className="flex items-center p-3 rounded-xl bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-200/50 dark:border-violet-800/50 backdrop-blur-sm">
-            <Avatar className="h-8 w-8 mr-2 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
-              <AvatarImage
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
-                alt="User"
-              />
-              <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-semibold">
-                AD
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-sm font-medium text-violet-700 dark:text-violet-300">
-                Admin User
-              </p>
-              <p className="text-xs text-violet-500/70 dark:text-violet-400/70">
-                admin@company.com
-              </p>
+          <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-teal-500/10 to-emerald-500/10 border border-teal-200/50 dark:border-teal-800/50 backdrop-blur-sm">
+            <div className="flex items-center">
+              <Avatar className="h-8 w-8 mr-2 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
+                <AvatarImage
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'admin'}`}
+                  alt="User"
+                />
+                <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-semibold">
+                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium text-violet-700 dark:text-violet-300">
+                  {user?.name || 'User'}
+                </p>
+                <p className="text-xs text-violet-500/70 dark:text-violet-400/70">
+                  {user?.email || 'Loading...'}
+                </p>
+              </div>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              className="hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
@@ -260,17 +283,19 @@ const AdminLayout = () => {
               <div className="flex items-center space-x-2 pl-2 border-l border-violet-200/50 dark:border-violet-800/50">
                 <Avatar className="h-8 w-8 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
                   <AvatarImage
-                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'admin'}`}
                     alt="User"
                   />
-                  <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-semibold">
-                    AD
+                  <AvatarFallback className="bg-gradient-to-r from-teal-500 to-emerald-600 text-white text-xs font-semibold">
+                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hover:bg-violet-50 dark:hover:bg-violet-950/50"
+                  onClick={handleLogout}
+                  className="hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  title="Logout"
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>

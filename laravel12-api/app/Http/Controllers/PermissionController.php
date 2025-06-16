@@ -122,4 +122,36 @@ class PermissionController extends Controller
             'data' => $categories
         ]);
     }
+
+    /**
+     * Get users with this permission.
+     */
+    public function users(Permission $permission): \Illuminate\Http\JsonResponse
+    {
+        // Users with this permission directly
+        $directUserIds = $permission->users()->pluck('users.id')->toArray();
+
+        // Users with this permission via roles
+        $roleIds = $permission->roles()->pluck('roles.id')->toArray();
+        $viaRoleUserIds = \App\Models\User::whereHas('roles', function($q) use ($roleIds) {
+            $q->whereIn('roles.id', $roleIds);
+        })->pluck('id')->toArray();
+
+        // Merge and get unique user IDs
+        $allUserIds = array_unique(array_merge($directUserIds, $viaRoleUserIds));
+
+        // Fetch users with their roles
+        $users = \App\Models\User::whereIn('id', $allUserIds)->with('roles')->get();
+
+        return response()->json(['success' => true, 'data' => $users]);
+    }
+
+    /**
+     * Get roles with this permission.
+     */
+    public function roles(Permission $permission): \Illuminate\Http\JsonResponse
+    {
+        $roles = $permission->roles()->withCount('users')->get();
+        return response()->json(['success' => true, 'data' => $roles]);
+    }
 }

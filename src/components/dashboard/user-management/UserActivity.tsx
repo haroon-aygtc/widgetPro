@@ -356,7 +356,7 @@ const UserActivity = () => {
                             <div className="text-xs text-muted-foreground">
                               <Badge
                                 className={getRoleBadgeColor(
-                                  activity.user?.role || "User",
+                                  activity.user?.roles[0]?.name || "User",
                                 )}
                                 variant="outline"
                               >
@@ -414,7 +414,7 @@ const UserActivity = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="text-xs text-muted-foreground max-w-[200px] truncate">
-                          {activity.details || "No details"}
+                          {activity.description || "No details"}
                         </div>
                       </TableCell>
                     </TableRow>

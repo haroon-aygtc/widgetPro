@@ -84,7 +84,7 @@ const ConfirmationDialog = ({
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
-            variant={getConfirmVariant()}
+            className={variant === "destructive" ? "bg-red-600 hover:bg-red-700 focus:ring-red-600" : ""}
           >
             {confirmText}
           </AlertDialogAction>

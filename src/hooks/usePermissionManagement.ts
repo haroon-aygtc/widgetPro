@@ -109,13 +109,20 @@ export function usePermissionManagement() {
   // Get unique categories
   const categories = [...new Set(permissions.map((p) => p.category))];
 
-  // Debounced permission fetching
+  // Initial fetch - only once on mount
   useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      fetchPermissions();
-    }, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [fetchPermissions]);
+    fetchPermissions();
+  }, []); // Empty dependency array for one-time fetch
+
+  // Debounced permission fetching - only when search term or filter changes
+  useEffect(() => {
+    if (searchTerm || filterCategory !== "all") {
+      const debounceTimer = setTimeout(() => {
+        fetchPermissions();
+      }, 300);
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [searchTerm, filterCategory]); // Only refetch when search/filter changes
 
   return {
     // State

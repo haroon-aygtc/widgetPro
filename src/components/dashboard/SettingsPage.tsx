@@ -164,10 +164,10 @@ const SettingsPage = () => {
 
   // Profile settings state
   const [profileData, setProfileData] = useState({
-    name: "Admin User",
-    email: "admin@company.com",
-    company: "ChatWidget Pro",
-    timezone: "UTC-8",
+    name: "",
+    email: "",
+    company: "",
+    timezone: "UTC",
     language: "en",
   });
 
@@ -247,12 +247,12 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-violet-50/20 dark:to-violet-950/20">
+    <div className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-teal-50/20 dark:to-teal-950/20">
       {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-xl p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
               Settings
             </h1>
             <p className="text-muted-foreground mt-2">

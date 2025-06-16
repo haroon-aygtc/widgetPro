@@ -50,10 +50,20 @@ class UserController extends Controller
                 'data' => $user,
                 'message' => 'User created successfully'
             ], 201);
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create user: ' . $e->getMessage()
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('User creation failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create user. Please try again.'
             ], 500);
         }
     }
@@ -84,10 +94,21 @@ class UserController extends Controller
                 'data' => $user,
                 'message' => 'User updated successfully'
             ]);
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update user: ' . $e->getMessage()
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('User update failed: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update user. Please try again.'
             ], 500);
         }
     }

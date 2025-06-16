@@ -8,20 +8,18 @@ import React, {
 import {
   authService,
   type AuthUser,
-  handleAuthError,
+  type LoginCredentials,
+  type RegisterData,
 } from "@/services/authService";
+import { handleApiError } from "@/lib/axios";
 import { toastUtils } from "@/components/ui/use-toast";
 
 interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: {
-    name: string;
-    email: string;
-    password: string;
-  }) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   checkPermission: (permission: string) => boolean;
@@ -49,34 +47,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       setUser(null);
       // Don't show error toast on initial load if not authenticated
+      console.debug('User not authenticated');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (credentials: LoginCredentials) => {
     try {
-      const response = await authService.login({ email, password });
-      setUser(response.user);
-      toastUtils.loginSuccess();
+      const response = await authService.login(credentials);
+      if (response.success && response.data) {
+        setUser(response.data);
+        toastUtils.loginSuccess();
+      } else {
+        throw new Error(response.message || 'Login failed');
+      }
     } catch (error) {
-      const errorMessage = handleAuthError(error);
+      const errorMessage = handleApiError(error);
       toastUtils.loginError(errorMessage);
       throw error;
     }
   };
 
-  const register = async (data: {
-    name: string;
-    email: string;
-    password: string;
-  }) => {
+  const register = async (data: RegisterData) => {
     try {
       const response = await authService.register(data);
-      setUser(response.user);
-      toastUtils.registerSuccess();
+      if (response.success && response.data) {
+        setUser(response.data);
+        toastUtils.registerSuccess();
+      } else {
+        throw new Error(response.message || 'Registration failed');
+      }
     } catch (error) {
-      const errorMessage = handleAuthError(error);
+      const errorMessage = handleApiError(error);
       toastUtils.registerError(errorMessage);
       throw error;
     }
@@ -85,12 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await authService.logout();
-      setUser(null);
-      toastUtils.logoutSuccess();
     } catch (error) {
       // Even if logout fails on server, clear local state
+      console.warn("Logout error:", handleApiError(error));
+    } finally {
       setUser(null);
-      console.warn("Logout error:", error);
+      toastUtils.logoutSuccess();
     }
   };
 

@@ -4,6 +4,7 @@ import {
   userService,
   CreateUserData,
   UpdateUserData,
+  ChangePasswordData,
 } from "@/services/userService";
 import { roleService } from "@/services/roleService";
 import { useOperationLoading } from "@/contexts/LoadingContext";
@@ -61,7 +62,7 @@ export function useUserManagement() {
         return { success: true };
       } else {
         if (result.fieldErrors) {
-          setErrors(result.fieldErrors);
+          setErrors(result.fieldErrors as Record<string, string>);
         } else {
           toastUtils.apiError("Failed to create user");
         }
@@ -85,7 +86,7 @@ export function useUserManagement() {
         return { success: true };
       } else {
         if (result.fieldErrors) {
-          setErrors(result.fieldErrors);
+          setErrors(result.fieldErrors as Record<string, string>);
         } else {
           toastUtils.apiError("Failed to update user");
         }
@@ -94,6 +95,29 @@ export function useUserManagement() {
       stopLoading();
     },
     [fetchUsers, startLoading, stopLoading],
+  );
+
+  // Change user password
+  const changePassword = useCallback(
+    async (id: number, data: ChangePasswordData) => {
+      startLoading("Changing password...");
+      const result = await userService.changePassword(id, data);
+
+      if (result.success) {
+        toastUtils.apiSuccess("Password changed successfully");
+        setErrors({});
+        return { success: true };
+      } else {
+        if (result.fieldErrors) {
+          setErrors(result.fieldErrors as Record<string, string>);
+        } else {
+          toastUtils.apiError("Failed to change password");
+        }
+        return { success: false, error: result.error };
+      }
+      stopLoading();
+    },
+    [startLoading, stopLoading],
   );
 
   // Delete user
@@ -135,18 +159,25 @@ export function useUserManagement() {
     setErrors({});
   }, []);
 
-  // Initialize data
+  // Initialize data - fetch roles once on mount
   useEffect(() => {
     fetchRoles();
-  }, [fetchRoles]);
+  }, []); // Empty dependency array for one-time fetch
 
-  // Debounced user fetching
+  // Initial user fetch - only once on mount
   useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      fetchUsers();
-    }, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [fetchUsers]);
+    fetchUsers();
+  }, []); // Empty dependency array for one-time fetch
+
+  // Debounced user fetching - only when search term or filter changes
+  useEffect(() => {
+    if (searchTerm || filterRole !== "all") {
+      const debounceTimer = setTimeout(() => {
+        fetchUsers();
+      }, 300);
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [searchTerm, filterRole]); // Only refetch when search/filter changes
 
   return {
     // State
@@ -162,6 +193,7 @@ export function useUserManagement() {
     setFilterRole,
     createUser,
     updateUser,
+    changePassword,
     deleteUser,
     assignRolesToUser,
     clearErrors,

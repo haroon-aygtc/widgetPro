@@ -85,12 +85,12 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
       )}
 
       <ErrorBoundary>
-        <div className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-violet-50/20 dark:to-violet-950/20">
+        <div className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-teal-50/20 dark:to-teal-950/20">
           {/* Header */}
           <header className="border-b bg-card/80 backdrop-blur-xl p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
                   Widget Configuration
                 </h1>
                 <p className="text-muted-foreground mt-2">
@@ -121,7 +121,7 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                 </Button>
                 <button
                   onClick={() => setShowQuickSetup(true)}
-                  className="group flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+                  className="group flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-600 text-white hover:from-teal-600 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
                 >
                   <Zap className="h-4 w-4 group-hover:animate-pulse" />
                   <span className="font-medium">Quick Setup</span>

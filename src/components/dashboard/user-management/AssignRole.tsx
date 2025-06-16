@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -10,386 +9,246 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  UserCheck,
-  Search,
-  Filter,
   Shield,
   CheckCircle,
-  AlertCircle,
   Loader2,
+  Mail,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { useUserManagement } from "@/hooks/useUserManagement";
 import { useRoleManagement } from "@/hooks/useRoleManagement";
+import { User } from "@/lib/api";
 
-const AssignRole = () => {
+interface AssignRoleProps {
+  preSelectedUser?: User | null;
+  onUserAssigned?: () => void;
+}
+
+const AssignRole: React.FC<AssignRoleProps> = ({ preSelectedUser, onUserAssigned }) => {
   const {
-    users,
-    searchTerm,
-    filterRole,
     isLoading,
-    setSearchTerm,
-    setFilterRole,
     assignRolesToUser,
   } = useUserManagement();
 
   const { roles } = useRoleManagement();
 
-  const [isAssignRoleOpen, setIsAssignRoleOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [selectedRole, setSelectedRole] = useState("");
+  const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const getRoleBadgeColor = (roleName: string) => {
-    switch (roleName.toLowerCase()) {
-      case "super admin":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      case "admin":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
-      case "manager":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-      case "user":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
+  // Handle preSelectedUser prop
+  useEffect(() => {
+    if (preSelectedUser) {
+      setSelectedUser(preSelectedUser);
+      setSelectedRoleIds(preSelectedUser.roles?.map((role: any) => role.id) || []);
     }
-  };
+  }, [preSelectedUser]);
 
-  const handleAssignRole = async () => {
-    if (!selectedUser || !selectedRole) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
 
     try {
       setSubmitting(true);
-      await assignRolesToUser(selectedUser.id, [parseInt(selectedRole)]);
-      setIsAssignRoleOpen(false);
-      setSelectedUser(null);
-      setSelectedRole("");
+      await assignRolesToUser(selectedUser.id, selectedRoleIds);
+
+      // If this was triggered from parent component, call the callback
+      if (onUserAssigned) {
+        onUserAssigned();
+      } else {
+        // Otherwise, reset form
+        setSelectedUser(null);
+        setSelectedRoleIds([]);
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
-  return (
-    <>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-violet-700 dark:text-violet-300">
-            Assign Role to User
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Assign or modify user roles and access levels
-          </p>
-        </div>
-      </div>
+  const resetForm = () => {
+    if (onUserAssigned) {
+      onUserAssigned();
+    } else { // its not a callback, so reset the form
+      setSelectedUser(null);
+      setSelectedRoleIds([]);
+    }
+  };
 
-      {/* Info Alert */}
-      <Alert className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-950/50 dark:to-indigo-950/50 dark:border-blue-800">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Role Assignment Guidelines:</strong> Ensure users have
-          appropriate roles based on their responsibilities. Higher-level roles
-          inherit permissions from lower-level roles.
-        </AlertDescription>
-      </Alert>
+  const handleRoleToggle = (roleId: number) => {
+    setSelectedRoleIds(prev =>
+      prev.includes(roleId)
+        ? prev.filter(id => id !== roleId)
+        : [...prev, roleId]
+    );
+  };
 
-      {/* Filters and Search */}
-      <Card className="mb-6 bg-card/80 backdrop-blur-xl border-violet-200/50 dark:border-violet-800/50">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Select value={filterRole} onValueChange={setFilterRole}>
-                <SelectTrigger className="w-[150px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  {roles.map((role) => (
-                    <SelectItem key={role.id} value={role.name}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+  const handleSelectAll = () => {
+    setSelectedRoleIds(roles.map((role) => role.id));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedRoleIds([]);
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="bg-card/80 backdrop-blur-xl border-violet-200/50 dark:border-violet-800/50">
+        <CardContent className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+          <span className="ml-2 text-muted-foreground">Loading users...</span>
         </CardContent>
       </Card>
+    );
+  }
 
-      {/* Users Table */}
-      <Card className="bg-card/80 backdrop-blur-xl border-violet-200/50 dark:border-violet-800/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserCheck className="h-5 w-5 text-violet-600" />
-            User Role Assignments ({users.length})
+  return (
+    <Card className="bg-card/80 backdrop-blur-xl border-violet-200/50 dark:border-violet-800/50">
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
+        <div>
+          <CardTitle className="text-2xl font-bold text-violet-700 dark:text-violet-300">
+            Role Assignment
           </CardTitle>
-          <CardDescription>
-            Manage user role assignments and access levels
+          <CardDescription className="text-muted-foreground mt-1">
+            Assign or modify user roles and access levels
           </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Current Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Role Assigned</TableHead>
-                <TableHead>Assigned By</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-violet-600 mx-auto" />
-                    <span className="ml-2 text-muted-foreground">
-                      Loading users...
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ) : users.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center py-8 text-muted-foreground"
-                  >
-                    No users found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users.map((user) => (
-                  <TableRow
-                    key={user.id}
-                    className="hover:bg-violet-50/50 dark:hover:bg-violet-950/50"
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
-                          <AvatarImage
-                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
-                            alt={user.name}
-                          />
-                          <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white">
-                            {user.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium text-violet-700 dark:text-violet-300">
-                            {user.name}
+        </div>
+      </CardHeader>
+      <CardContent>
+
+
+        {selectedUser && (
+          <div className="w-full bg-gradient-to-br from-white to-violet-50/30 dark:from-gray-900 dark:to-violet-950/30 border-2 border-violet-200/50 dark:border-violet-800/50 shadow-xl rounded-lg">
+            <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-b border-violet-200/50 dark:border-violet-800/50 p-6">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-16 w-16 ring-2 ring-violet-200/50 dark:ring-violet-800/50">
+                  <AvatarImage
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUser.name}`}
+                    alt={selectedUser.name}
+                  />
+                  <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-lg">
+                    {selectedUser.name.split(" ").map((n: string) => n[0]).join("")}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h2 className="text-2xl font-bold text-violet-700 dark:text-violet-300">
+                    Assign Roles to {selectedUser.name}
+                  </h2>
+                  <p className="text-muted-foreground mt-1 flex items-center gap-1">
+                    <Mail className="h-4 w-4" />
+                    {selectedUser.email}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-8">
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div>
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="h-1 w-8 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full"></div>
+                    <h3 className="text-lg font-semibold text-violet-700 dark:text-violet-300">
+                      Available Roles
+                    </h3>
+                  </div>
+
+                  {/* Role Controls */}
+                  <div className="flex flex-wrap gap-2 p-4 bg-gradient-to-r from-violet-50/50 to-purple-50/50 dark:from-violet-950/30 dark:to-purple-950/30 rounded-lg border border-violet-200/50 dark:border-violet-800/50 mb-6">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSelectAll}
+                      className="bg-green-50 hover:bg-green-100 border-green-200 text-green-700 dark:bg-green-950/50 dark:hover:bg-green-900/50 dark:border-green-800 dark:text-green-300"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Select All
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeselectAll}
+                      className="bg-red-50 hover:bg-red-100 border-red-200 text-red-700 dark:bg-red-950/50 dark:hover:bg-red-900/50 dark:border-red-800 dark:text-red-300"
+                    >
+                      <Minus className="h-4 w-4 mr-1" />
+                      Deselect All
+                    </Button>
+                    <div className="ml-auto text-sm text-muted-foreground flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      {selectedRoleIds.length} of {roles.length} roles selected
+                    </div>
+                  </div>
+                  <div className="grid gap-4">
+                    {roles.map((role) => (
+                      <div
+                        key={role.id}
+                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${selectedRoleIds.includes(role.id)
+                          ? "border-violet-500 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/50 dark:to-purple-950/50 shadow-lg shadow-violet-500/20 ring-2 ring-violet-200 dark:ring-violet-800"
+                          : "border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50/30 dark:hover:bg-violet-950/20"
+                          }`}
+                        onClick={() => handleRoleToggle(role.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-200/50 dark:border-violet-800/50">
+                              <Shield className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-violet-700 dark:text-violet-300">
+                                {role.name}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {role.description || 'No description'}
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {user.email}
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {role.permissions?.length || 0} permissions
+                            </Badge>
+                            {selectedRoleIds.includes(role.id) && (
+                              <CheckCircle className="h-5 w-5 text-violet-600 dark:text-violet-400 drop-shadow-sm" />
+                            )}
                           </div>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {user.roles?.map((role) => (
-                          <Badge
-                            key={role.id}
-                            className={getRoleBadgeColor(role.name)}
-                          >
-                            {role.name}
-                          </Badge>
-                        )) || <Badge variant="outline">No Role</Badge>}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          user.status === "active" ? "default" : "secondary"
-                        }
-                      >
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      System
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Dialog
-                        open={isAssignRoleOpen && selectedUser?.id === user.id}
-                        onOpenChange={(open) => {
-                          setIsAssignRoleOpen(open);
-                          if (!open) {
-                            setSelectedUser(null);
-                            setSelectedRole("");
-                          }
-                        }}
-                      >
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setSelectedRole("");
-                            }}
-                          >
-                            <Shield className="h-4 w-4 mr-2" />
-                            Change Role
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>
-                              Assign Role to {user.name}
-                            </DialogTitle>
-                            <DialogDescription>
-                              Select a new role for this user. This will update
-                              their permissions and access levels.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <Label className="text-right">
-                                Current Roles
-                              </Label>
-                              <div className="col-span-3 flex flex-wrap gap-1">
-                                {user.roles?.map((role) => (
-                                  <Badge
-                                    key={role.id}
-                                    className={getRoleBadgeColor(role.name)}
-                                  >
-                                    {role.name}
-                                  </Badge>
-                                )) || <Badge variant="outline">No Role</Badge>}
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="newRole" className="text-right">
-                                New Role
-                              </Label>
-                              <Select
-                                value={selectedRole}
-                                onValueChange={setSelectedRole}
-                              >
-                                <SelectTrigger className="col-span-3">
-                                  <SelectValue placeholder="Select a role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {roles.map((role) => (
-                                    <SelectItem
-                                      key={role.id}
-                                      value={role.id.toString()}
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <span>{role.name}</span>
-                                        <Badge
-                                          variant="outline"
-                                          className="ml-auto text-xs"
-                                        >
-                                          {role.permissions?.length || 0} perms
-                                        </Badge>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            {selectedRole && (
-                              <div className="col-span-4">
-                                <Alert className="bg-green-50 border-green-200 dark:bg-green-950/50 dark:border-green-800">
-                                  <CheckCircle className="h-4 w-4" />
-                                  <AlertDescription>
-                                    <strong>Role Assignment:</strong>{" "}
-                                    {user.name} will be assigned the{" "}
-                                    {
-                                      roles.find(
-                                        (r) => r.id.toString() === selectedRole,
-                                      )?.name
-                                    }{" "}
-                                    role with{" "}
-                                    {roles.find(
-                                      (r) => r.id.toString() === selectedRole,
-                                    )?.permissions?.length || 0}{" "}
-                                    permissions.
-                                  </AlertDescription>
-                                </Alert>
-                              </div>
-                            )}
-                          </div>
-                          <DialogFooter>
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                setIsAssignRoleOpen(false);
-                                setSelectedUser(null);
-                                setSelectedRole("");
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              onClick={handleAssignRole}
-                              disabled={!selectedRole || submitting}
-                            >
-                              {submitting ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Assigning...
-                                </>
-                              ) : (
-                                "Assign Role"
-                              )}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-violet-200/50 dark:border-violet-800/50">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetForm}
+                    disabled={submitting}
+                    className="px-6 border-2 border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-8 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Assigning Roles...
+                      </>
+                    ) : (
+                      "Assign Roles"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

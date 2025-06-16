@@ -31,21 +31,21 @@ type ActionType = typeof actionTypes;
 
 type Action =
   | {
-      type: ActionType["ADD_TOAST"];
-      toast: ToasterToast;
-    }
+    type: ActionType["ADD_TOAST"];
+    toast: ToasterToast;
+  }
   | {
-      type: ActionType["UPDATE_TOAST"];
-      toast: Partial<ToasterToast>;
-    }
+    type: ActionType["UPDATE_TOAST"];
+    toast: Partial<ToasterToast>;
+  }
   | {
-      type: ActionType["DISMISS_TOAST"];
-      toastId?: ToasterToast["id"];
-    }
+    type: ActionType["DISMISS_TOAST"];
+    toastId?: ToasterToast["id"];
+  }
   | {
-      type: ActionType["REMOVE_TOAST"];
-      toastId?: ToasterToast["id"];
-    };
+    type: ActionType["REMOVE_TOAST"];
+    toastId?: ToasterToast["id"];
+  };
 
 interface State {
   toasts: ToasterToast[];
@@ -103,9 +103,9 @@ export const reducer = (state: State, action: Action): State => {
         toasts: state.toasts.map((t) =>
           t.id === toastId || toastId === undefined
             ? {
-                ...t,
-                open: false,
-              }
+              ...t,
+              open: false,
+            }
             : t,
         ),
       };
@@ -212,10 +212,11 @@ const toastInfo = createStandardizedToast("info");
 // Common toast message patterns to reduce duplication
 const toastMessages = {
   success: {
-    saved: { title: "Success", description: "Changes saved successfully" },
+    saved: { title: "Saved", description: "Changes saved successfully" },
     created: { title: "Created", description: "Item created successfully" },
     updated: { title: "Updated", description: "Item updated successfully" },
     deleted: { title: "Deleted", description: "Item deleted successfully" },
+    generic: { title: "Success", description: "Operation completed successfully" },
   },
   error: {
     generic: {
@@ -256,7 +257,7 @@ const toastMessages = {
 
 // Quick access functions for common toast patterns
 const showSuccessToast = (
-  type: keyof typeof toastMessages.success = "saved",
+  type: keyof typeof toastMessages.success = "generic",
 ) => {
   return toastSuccess(toastMessages.success[type]);
 };
@@ -309,6 +310,30 @@ export const toastUtils = {
       description: "Please sign in again to continue.",
     }),
 
+  // Password reset operations
+  passwordResetSent: () =>
+    toastSuccess({
+      title: "Password Reset Email Sent",
+      description: "Please check your email for password reset instructions.",
+    }),
+  passwordResetError: (message?: string) =>
+    toastError({
+      title: "Password Reset Failed",
+      description: message || "Unable to send password reset email. Please try again.",
+    }),
+
+  // Email verification operations
+  verificationSent: () =>
+    toastSuccess({
+      title: "Verification Email Sent",
+      description: "Please check your email for verification instructions.",
+    }),
+  verificationError: (message?: string) =>
+    toastError({
+      title: "Email Verification Failed",
+      description: message || "Unable to send verification email. Please try again.",
+    }),
+
   // Form operations
   formSaved: () => showSuccessToast("saved"),
   formError: (message?: string) =>
@@ -316,11 +341,12 @@ export const toastUtils = {
       title: "Form Error",
       description: message || "Please check your input and try again.",
     }),
-  validationError: (errorCount: number = 1) =>
+  validationError: (errorCount: number = 1, specificErrors?: string[]) =>
     toastError({
       title: "Validation Error",
-      description:
-        errorCount === 1
+      description: specificErrors && specificErrors.length > 0
+        ? `Please fix: ${specificErrors.join(", ")}`
+        : errorCount === 1
           ? "Please fix the error in the form."
           : `Please fix ${errorCount} errors in the form.`,
     }),
@@ -352,7 +378,7 @@ export const toastUtils = {
         ? `${filename} uploaded successfully.`
         : "File uploaded successfully.",
     }),
-  fileUploadError: () => showErrorToast("upload"),
+  fileUploadError: () => showErrorToast("generic"),
 
   // Configuration operations
   configSaved: () => showSuccessToast("saved"),
@@ -363,12 +389,12 @@ export const toastUtils = {
     }),
 
   // Generic operations
-  operationSuccess: (operation: string) =>
+  operationSuccess: (operation: string = "Operation") =>
     toastSuccess({
       title: "Success",
       description: `${operation} completed successfully.`,
     }),
-  operationError: (operation: string, error?: string) =>
+  operationError: (operation: string = "Operation", error?: string) =>
     toastError({
       title: "Error",
       description: error || `${operation} failed. Please try again.`,

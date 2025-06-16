@@ -1,152 +1,103 @@
-import { userApi, handleApiError, type ApiResponse } from "@/lib/api";
+import api, { getCsrfCookie, handleApiError } from "@/lib/axios";
 
 // Authentication types
 export interface LoginCredentials {
   email: string;
   password: string;
+  remember?: boolean;
 }
 
 export interface RegisterData {
   name: string;
   email: string;
   password: string;
-  confirmPassword: string;
+  password_confirmation: string;
+  remember?: boolean;
+}
+
+export interface ForgotPasswordData {
+  email: string;
+}
+
+export interface ResetPasswordData {
+  email: string;
+  password: string;
+  password_confirmation: string;
+  token: string;
 }
 
 export interface AuthUser {
   id: number;
   name: string;
   email: string;
-  email_verified_at?: string;
+  status: string;
   roles?: Array<{
     id: number;
     name: string;
-    display_name: string;
+    description?: string;
   }>;
   permissions?: Array<{
     id: number;
     name: string;
     display_name: string;
+    category: string;
   }>;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AuthResponse {
-  user: AuthUser;
-  token?: string;
-  message?: string;
+  success: boolean;
+  message: string;
+  data?: AuthUser;
+  errors?: Record<string, string[]>;
 }
 
-// Authentication service class
+// Authentication service class using pure Sanctum SPA authentication
 class AuthService {
-  private baseURL: string;
-
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
-  }
-
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {},
-  ): Promise<ApiResponse<T>> {
-    const url = `${this.baseURL}${endpoint}`;
-    const config: RequestInit = {
-      credentials: "include", // Include cookies for session-based auth
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest", // Laravel CSRF requirement
-        ...options.headers,
-      },
-      ...options,
-    };
-
-    try {
-      const response = await fetch(url, config);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw {
-          response: {
-            status: response.status,
-            data: data,
-          },
-          message: data.message || "An error occurred",
-        };
-      }
-
-      return data;
-    } catch (error: any) {
-      if (error.response) {
-        throw error;
-      }
-      throw {
-        message: "Network error occurred",
-        response: { status: 500, data: {} },
-      };
-    }
-  }
-
-  // Get CSRF token
+  // Get CSRF token for SPA authentication
   async getCsrfToken(): Promise<void> {
-    try {
-      await fetch(`${this.baseURL}/sanctum/csrf-cookie`, {
-        credentials: "include",
-        headers: {
-          Accept: "application/json",
-        },
-      });
-    } catch (error) {
-      console.warn("Failed to get CSRF token:", error);
-    }
+    await getCsrfCookie();
   }
 
   // Login user
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    // Get CSRF token first
+    // Get CSRF token first for SPA authentication
     await this.getCsrfToken();
 
-    const response = await this.request<AuthResponse>("/login", {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    });
-
+    const response = await api.post<AuthResponse>("/api/login", credentials);
     return response.data;
   }
 
   // Register user
-  async register(
-    userData: Omit<RegisterData, "confirmPassword">,
-  ): Promise<AuthResponse> {
-    // Get CSRF token first
+  async register(userData: RegisterData): Promise<AuthResponse> {
+    // Get CSRF token first for SPA authentication
     await this.getCsrfToken();
 
-    const response = await this.request<AuthResponse>("/register", {
-      method: "POST",
-      body: JSON.stringify(userData),
-    });
-
+    const response = await api.post<AuthResponse>("/api/register", userData);
     return response.data;
   }
 
   // Logout user
   async logout(): Promise<void> {
     try {
-      await this.request<void>("/logout", {
-        method: "POST",
-      });
+      await api.post("/api/logout");
     } catch (error) {
-      // Even if logout fails on server, clear local state
-      console.warn("Logout request failed:", error);
+      // Log error but don't throw - we want to clear local state regardless
+      console.warn('Logout API call failed:', handleApiError(error));
     }
   }
 
   // Get current user
   async getCurrentUser(): Promise<AuthUser> {
-    const response = await this.request<AuthUser>("/user");
-    return response.data;
+    const response = await api.get<AuthResponse>("/api/user");
+    if (!response.data.success || !response.data.data) {
+      throw new Error(response.data.message || 'User not authenticated');
+    }
+    return response.data.data;
   }
 
-  // Refresh user data
+  // Refresh user data (same as getCurrentUser for SPA)
   async refreshUser(): Promise<AuthUser> {
     return this.getCurrentUser();
   }
@@ -162,40 +113,42 @@ class AuthService {
   }
 
   // Password reset request
-  async requestPasswordReset(email: string): Promise<void> {
+  async requestPasswordReset(data: ForgotPasswordData): Promise<void> {
     await this.getCsrfToken();
-
-    await this.request<void>("/forgot-password", {
-      method: "POST",
-      body: JSON.stringify({ email }),
-    });
+    const response = await api.post<AuthResponse>("/api/forgot-password", data);
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to send password reset email');
+    }
   }
 
   // Reset password
-  async resetPassword(data: {
-    token: string;
-    email: string;
-    password: string;
-    password_confirmation: string;
-  }): Promise<void> {
+  async resetPassword(data: ResetPasswordData): Promise<void> {
     await this.getCsrfToken();
-
-    await this.request<void>("/reset-password", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    const response = await api.post<AuthResponse>("/api/reset-password", data);
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to reset password');
+    }
   }
 
   // Email verification
-  async resendEmailVerification(): Promise<void> {
-    await this.request<void>("/email/verification-notification", {
-      method: "POST",
-    });
-  }
+  // async resendEmailVerification(): Promise<void> {
+  //   const response = await api.post<AuthResponse>("/api/email/verification-notification");
+  //   if (!response.data.success) {
+  //     throw new Error(response.data.message || 'Failed to send verification email');
+  //   }
+  // }
+
+  // // Verify email (this would typically be handled by a link in email)
+  // async verifyEmail(id: string, hash: string): Promise<void> {
+  //   const response = await api.get<AuthResponse>(`/api/email/verify/${id}/${hash}`);
+  //   if (!response.data.success) {
+  //     throw new Error(response.data.message || 'Failed to verify email');
+  //   }
+  // }
 }
 
 // Create auth service instance
-export const authService = new AuthService("http://localhost:8000");
+export const authService = new AuthService();
 
 // Auth error handler
 export const handleAuthError = (error: any): string => {

@@ -28,12 +28,17 @@ import { toastUtils } from "@/components/ui/use-toast";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { useOperationLoading } from "@/contexts/LoadingContext";
 import { loginSchema } from "@/lib/validation";
-import { handleApiError } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    remember: false,
+  });
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   // Use unified loading state management
   const loginLoading = useOperationLoading("login");
@@ -49,9 +54,11 @@ const Login = () => {
     validateOnBlur: true,
   });
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    validateField(field, value);
+    if (field !== "remember") {
+      validateField(field, value);
+    }
   };
 
   const handleInputBlur = (field: string) => {
@@ -73,35 +80,22 @@ const Login = () => {
     loginLoading.start("Signing you in...");
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await authApi.login(formData);
-
-      // Simulate login process with progress updates
       loginLoading.updateMessage("Verifying credentials...");
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          loginLoading.updateProgress(50);
-          loginLoading.updateMessage("Establishing session...");
-          setTimeout(() => {
-            // Simulate random success/failure for demo
-            if (Math.random() > 0.2) {
-              loginLoading.updateProgress(100);
-              resolve(true);
-            } else {
-              reject(new Error("Invalid email or password"));
-            }
-          }, 500);
-        }, 500);
+      await login({
+        email: formData.email,
+        password: formData.password,
+        remember: formData.remember || false,
       });
 
-      toastUtils.operationSuccess("Login successful");
+      loginLoading.updateProgress(100);
+      loginLoading.updateMessage("Login successful!");
 
       setTimeout(() => {
         navigate("/admin");
       }, 500);
     } catch (error) {
-      const errorMessage = handleApiError(error);
-      toastUtils.operationError("Login failed", errorMessage);
+      // Error handling is done in AuthContext
+      console.error("Login error:", error);
     } finally {
       loginLoading.stop();
     }
@@ -111,7 +105,7 @@ const Login = () => {
     <ErrorBoundary>
       <div className="min-h-screen bg-background flex">
         {/* Left Column - Branding & Features */}
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 relative overflow-hidden">
+        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-700 via-teal-700 to-emerald-800 relative overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=60 height=60 viewBox=0 0 60 60 xmlns=http://www.w3.org/2000/svg%3E%3Cg fill=none fill-rule=evenodd%3E%3Cg fill=%23ffffff fill-opacity=0.05%3E%3Ccircle cx=30 cy=30 r=2/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
 
@@ -130,7 +124,7 @@ const Login = () => {
             <div className="mb-12">
               <h2 className="text-5xl font-bold leading-tight mb-6">
                 Welcome back to the future of
-                <span className="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+                <span className="block bg-gradient-to-r from-teal-300 to-emerald-300 bg-clip-text text-transparent">
                   customer engagement
                 </span>
               </h2>
@@ -224,16 +218,16 @@ const Login = () => {
             <div className="lg:hidden flex items-center justify-center mb-8">
               <div className="relative">
                 <MessageSquare className="h-10 w-10 mr-3 text-violet-600" />
-                <div className="absolute inset-0 h-10 w-10 mr-3 bg-gradient-to-r from-violet-500 to-purple-600 rounded-sm blur-sm opacity-20"></div>
+                <div className="absolute inset-0 h-10 w-10 mr-3 bg-gradient-to-r from-teal-600 to-emerald-700 rounded-sm blur-sm opacity-20"></div>
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-700 to-slate-800 bg-clip-text text-transparent">
                 HelixChat
               </h1>
             </div>
 
             <Card className="border-0 shadow-2xl shadow-violet-500/10 bg-card/80 backdrop-blur-xl">
               <CardHeader className="text-center pb-6">
-                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-slate-700 to-slate-800 bg-clip-text text-transparent mb-2">
                   Welcome Back
                 </CardTitle>
                 <CardDescription className="text-base text-muted-foreground">
@@ -257,11 +251,10 @@ const Login = () => {
                           handleInputChange("email", e.target.value)
                         }
                         onBlur={() => handleInputBlur("email")}
-                        className={`pl-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${
-                          getFieldError("email")
-                            ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20"
-                            : ""
-                        }`}
+                        className={`pl-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${getFieldError("email")
+                          ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20"
+                          : ""
+                          }`}
                         required
                       />
                       {getFieldError("email") && (
@@ -287,11 +280,10 @@ const Login = () => {
                           handleInputChange("password", e.target.value)
                         }
                         onBlur={() => handleInputBlur("password")}
-                        className={`pl-10 pr-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${
-                          getFieldError("password")
-                            ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20"
-                            : ""
-                        }`}
+                        className={`pl-10 pr-10 h-12 border-violet-200/50 dark:border-violet-800/50 focus:border-violet-400 dark:focus:border-violet-600 transition-colors ${getFieldError("password")
+                          ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-950/20"
+                          : ""
+                          }`}
                         required
                       />
                       {getFieldError("password") && (
@@ -318,6 +310,8 @@ const Login = () => {
                       <input
                         id="remember"
                         type="checkbox"
+                        checked={formData.remember}
+                        onChange={(e) => handleInputChange("remember", e.target.checked)}
                         className="rounded border-violet-200 dark:border-violet-800"
                       />
                       <Label
@@ -328,7 +322,7 @@ const Login = () => {
                       </Label>
                     </div>
                     <Link
-                      to="#"
+                      to="/forgot-password"
                       className="text-sm text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 font-medium"
                     >
                       Forgot password?
@@ -337,7 +331,7 @@ const Login = () => {
 
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25 hover:shadow-xl hover:shadow-violet-500/30 transition-all duration-300 text-base font-semibold"
+                    className="w-full h-12 bg-gradient-to-r from-teal-600 to-emerald-700 hover:from-teal-700 hover:to-emerald-800 shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/25 transition-all duration-300 text-base font-semibold"
                     disabled={loginLoading.isLoading}
                   >
                     {loginLoading.isLoading

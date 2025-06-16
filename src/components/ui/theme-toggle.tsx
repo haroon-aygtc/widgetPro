@@ -18,7 +18,7 @@ export function ThemeToggle() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative h-9 w-9 rounded-full bg-gradient-to-r from-violet-500/10 to-purple-500/10 hover:from-violet-500/20 hover:to-purple-500/20 border border-violet-200/50 dark:border-violet-800/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-violet-500/25"
+          className="relative h-9 w-9 rounded-full bg-gradient-to-r from-teal-500/10 to-emerald-500/10 hover:from-teal-500/20 hover:to-emerald-500/20 border border-teal-200/50 dark:border-teal-800/50 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-teal-500/25"
         >
           <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-amber-500" />
           <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-violet-400" />
@@ -46,7 +46,7 @@ export function ThemeToggle() {
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setTheme("dark")}
-          className="cursor-pointer hover:bg-gradient-to-r hover:from-violet-50 hover:to-purple-50 dark:hover:from-violet-900/20 dark:hover:to-purple-900/20 transition-all duration-200"
+          className="cursor-pointer hover:bg-gradient-to-r hover:from-teal-50 hover:to-emerald-50 dark:hover:from-teal-900/20 dark:hover:to-emerald-900/20 transition-all duration-200"
         >
           <Moon className="mr-2 h-4 w-4 text-violet-500" />
           <span
