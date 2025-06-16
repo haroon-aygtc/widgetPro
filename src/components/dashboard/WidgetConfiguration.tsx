@@ -58,27 +58,24 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
 
   const modal = useModal();
 
-  const [resetModalState, setResetModalState] = useState({
+  // Simplified modal state management
+  const [resetModal, setResetModal] = useState({
     isOpen: false,
     isLoading: false,
-    loadingMessage: "",
+    message: "",
+    action: null as (() => Promise<void>) | null,
   });
 
   const handleReset = async () => {
-    console.log("🔄 HANDLE RESET CALLED");
-    console.log("💾 hasUnsavedChanges:", hasUnsavedChanges);
-
     if (hasUnsavedChanges) {
-      console.log("📋 Showing unsaved changes dialog...");
-      // Show custom modal with loading support
-      setResetModalState({
+      setResetModal({
         isOpen: true,
         isLoading: false,
-        loadingMessage: "",
+        message:
+          "You have unsaved changes that will be lost if you reset to factory defaults.",
+        action: null,
       });
     } else {
-      // No unsaved changes, just reset directly
-      console.log("🔄 No unsaved changes, resetting directly");
       await resetConfig();
       setActiveTab("templates");
     }
@@ -86,10 +83,10 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
 
   const handleModalSave = async () => {
     console.log("💾 Modal save clicked - starting save with loading");
-    setResetModalState((prev) => ({
+    setResetModal((prev) => ({
       ...prev,
       isLoading: true,
-      loadingMessage: "Saving changes...",
+      message: "Saving changes...",
     }));
 
     try {
@@ -99,9 +96,9 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
       if (saveResult) {
         // Save successful, now reset
         console.log("✅ Save successful, now resetting");
-        setResetModalState((prev) => ({
+        setResetModal((prev) => ({
           ...prev,
-          loadingMessage: "Resetting to factory defaults...",
+          message: "Resetting to factory defaults...",
         }));
 
         // Add a small delay for better UX
@@ -110,40 +107,41 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
         setActiveTab("templates");
 
         // Close modal with success feedback
-        setResetModalState({
+        setResetModal({
           isOpen: false,
           isLoading: false,
-          loadingMessage: "",
+          message: "",
+          action: null,
         });
       } else {
         // Save failed, keep modal open and show error state
-        setResetModalState((prev) => ({
+        setResetModal((prev) => ({
           ...prev,
           isLoading: false,
-          loadingMessage: "Save failed. Please try again.",
+          message: "Save failed. Please try again.",
         }));
 
         // Auto-hide error message after 3 seconds
         setTimeout(() => {
-          setResetModalState((prev) => ({
+          setResetModal((prev) => ({
             ...prev,
-            loadingMessage: "",
+            message: "",
           }));
         }, 3000);
       }
     } catch (error) {
       console.error("❌ Save failed:", error);
-      setResetModalState((prev) => ({
+      setResetModal((prev) => ({
         ...prev,
         isLoading: false,
-        loadingMessage: "Save failed. Please check your input and try again.",
+        message: "Save failed. Please check your input and try again.",
       }));
 
       // Auto-hide error message after 3 seconds
       setTimeout(() => {
-        setResetModalState((prev) => ({
+        setResetModal((prev) => ({
           ...prev,
-          loadingMessage: "",
+          message: "",
         }));
       }, 3000);
     }
@@ -151,10 +149,10 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
 
   const handleModalReset = async () => {
     console.log("🔄 Modal reset clicked");
-    setResetModalState((prev) => ({
+    setResetModal((prev) => ({
       ...prev,
       isLoading: true,
-      loadingMessage: "Resetting to factory defaults...",
+      message: "Resetting to factory defaults...",
     }));
 
     try {
@@ -163,40 +161,41 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
         setActiveTab("templates");
 
         // Close modal with success feedback
-        setResetModalState({
+        setResetModal({
           isOpen: false,
           isLoading: false,
-          loadingMessage: "",
+          message: "",
+          action: null,
         });
       } else {
         // Reset failed, show error state
-        setResetModalState((prev) => ({
+        setResetModal((prev) => ({
           ...prev,
           isLoading: false,
-          loadingMessage: "Reset failed. Please try again.",
+          message: "Reset failed. Please try again.",
         }));
 
         // Auto-hide error message after 3 seconds
         setTimeout(() => {
-          setResetModalState((prev) => ({
+          setResetModal((prev) => ({
             ...prev,
-            loadingMessage: "",
+            message: "",
           }));
         }, 3000);
       }
     } catch (error) {
       console.error("❌ Reset failed:", error);
-      setResetModalState((prev) => ({
+      setResetModal((prev) => ({
         ...prev,
         isLoading: false,
-        loadingMessage: "Reset failed. Please try again.",
+        message: "Reset failed. Please try again.",
       }));
 
       // Auto-hide error message after 3 seconds
       setTimeout(() => {
-        setResetModalState((prev) => ({
+        setResetModal((prev) => ({
           ...prev,
-          loadingMessage: "",
+          message: "",
         }));
       }, 3000);
     }
@@ -204,10 +203,11 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
 
   const handleModalCancel = () => {
     console.log("❌ Modal cancelled");
-    setResetModalState({
+    setResetModal({
       isOpen: false,
       isLoading: false,
-      loadingMessage: "",
+      message: "",
+      action: null,
     });
   };
 
@@ -251,14 +251,14 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
 
       {/* Enhanced Reset Modal with Modern Design and Micro-interactions */}
       <UnifiedModal
-        open={resetModalState.isOpen}
+        open={resetModal.isOpen}
         onOpenChange={(open) =>
-          !resetModalState.isLoading && !open && handleModalCancel()
+          !resetModal.isLoading && !open && handleModalCancel()
         }
         title="Unsaved Changes Detected"
         description={
-          resetModalState.isLoading
-            ? resetModalState.loadingMessage
+          resetModal.isLoading
+            ? resetModal.message
             : "You have unsaved changes that will be lost if you reset to factory defaults. What would you like to do?"
         }
         type="dialog"
@@ -268,7 +268,7 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
       >
         <div className="space-y-4">
           {/* Progress indicator for loading states */}
-          {resetModalState.isLoading && (
+          {resetModal.isLoading && (
             <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
               <div
                 className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full animate-pulse transition-all duration-300"
@@ -282,7 +282,7 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
             <Button
               variant="outline"
               onClick={handleModalCancel}
-              disabled={resetModalState.isLoading}
+              disabled={resetModal.isLoading}
               className="transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
             >
               Cancel
@@ -291,11 +291,11 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
             <Button
               variant="outline"
               onClick={handleModalReset}
-              disabled={resetModalState.isLoading}
+              disabled={resetModal.isLoading}
               className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
             >
-              {resetModalState.isLoading &&
-              resetModalState.loadingMessage.includes("Resetting") ? (
+              {resetModal.isLoading &&
+              resetModal.message.includes("Resetting") ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   <span className="animate-pulse">Resetting...</span>
@@ -310,11 +310,10 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
 
             <Button
               onClick={handleModalSave}
-              disabled={resetModalState.isLoading}
+              disabled={resetModal.isLoading}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
             >
-              {resetModalState.isLoading &&
-              resetModalState.loadingMessage.includes("Saving") ? (
+              {resetModal.isLoading && resetModal.message.includes("Saving") ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   <span className="animate-pulse">Saving...</span>
@@ -329,12 +328,11 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
           </div>
 
           {/* Error message display */}
-          {resetModalState.loadingMessage &&
-            resetModalState.loadingMessage.includes("failed") && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200 animate-fade-in">
-                {resetModalState.loadingMessage}
-              </div>
-            )}
+          {resetModal.message && resetModal.message.includes("failed") && (
+            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200 animate-fade-in">
+              {resetModal.message}
+            </div>
+          )}
         </div>
       </UnifiedModal>
 
@@ -367,19 +365,8 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={async () => {
-                    console.log("🖱️ Test Widget button clicked!");
-                    const testResult = await testConfig();
-                    if (testResult) {
-                      toastUtils.operationSuccess(
-                        "Widget Test",
-                        "Widget configuration is valid and working correctly.",
-                      );
-                    }
-                  }}
-                  disabled={
-                    isSaving || isLoading || Object.keys(errors).length > 0
-                  }
+                  onClick={testConfig}
+                  disabled={isSaving || isLoading || errorCount > 0}
                   className="transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
                 >
                   {isLoading ? (

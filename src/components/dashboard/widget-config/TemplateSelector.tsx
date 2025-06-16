@@ -87,7 +87,8 @@ const templates: Template[] = [
       widgetName: "Enterprise Support Portal",
       primaryColor: "#1f2937",
       widgetPosition: "bottom-right",
-      welcomeMessage: "Welcome to our support center. How may we assist you today?",
+      welcomeMessage:
+        "Welcome to our support center. How may we assist you today?",
       botName: "Business Assistant",
       botAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=enterprise",
       placeholder: "Describe your inquiry...",
@@ -109,7 +110,8 @@ const templates: Template[] = [
       widgetName: "Shopping Assistant",
       primaryColor: "#f59e0b",
       widgetPosition: "bottom-right",
-      welcomeMessage: "Hi! Looking for something specific? I can help you find it! 🛍️",
+      welcomeMessage:
+        "Hi! Looking for something specific? I can help you find it! 🛍️",
       botName: "Shopping Helper",
       botAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=shopping",
       placeholder: "What are you looking for?",
@@ -131,7 +133,8 @@ const templates: Template[] = [
       widgetName: "Patient Support Chat",
       primaryColor: "#10b981",
       widgetPosition: "bottom-right",
-      welcomeMessage: "Hello! I'm here to help with your healthcare questions and appointments.",
+      welcomeMessage:
+        "Hello! I'm here to help with your healthcare questions and appointments.",
       botName: "Health Assistant",
       botAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=healthcare",
       placeholder: "How can I help with your health needs?",
@@ -153,7 +156,8 @@ const templates: Template[] = [
       widgetName: "Learning Support Chat",
       primaryColor: "#8b5cf6",
       widgetPosition: "bottom-right",
-      welcomeMessage: "Welcome, student! I'm here to help with your learning journey 📚",
+      welcomeMessage:
+        "Welcome, student! I'm here to help with your learning journey 📚",
       botName: "Study Buddy",
       botAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=education",
       placeholder: "Ask about courses, assignments, or anything!",
@@ -217,35 +221,24 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     [onWidgetNameChange, onFieldValidation],
   );
 
-  // Handle template change with validation and auto-apply
+  // Simplified template change handler
   const handleTemplateChange = useCallback(
     async (templateId: string) => {
-      console.log("🎨 Template change initiated:", templateId);
+      const template = templates.find((t) => t.id === templateId);
+      if (!template) return;
 
-      // Find the selected template
-      const template = templates.find(t => t.id === templateId);
-      if (!template) {
-        console.warn("Template not found:", templateId);
-        return;
-      }
-
-      // FIXED: Combine both selectedTemplate and template config into single update
-      // This prevents double history entries that break undo/redo
       const combinedUpdate = {
         selectedTemplate: templateId,
-        ...template.config
+        ...template.config,
       };
 
-      console.log("🔄 Applying combined template update:", combinedUpdate);
-
-      // Use onTemplateApply with combined update if available, otherwise fallback to separate calls
       if (onTemplateApply) {
         onTemplateApply(combinedUpdate);
       } else {
         onTemplateChange(templateId);
       }
 
-      // Trigger field validation if provided
+      // Validate template selection
       if (onFieldValidation) {
         try {
           await onFieldValidation("template", templateId);
@@ -257,14 +250,17 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     [onTemplateChange, onTemplateApply, onFieldValidation],
   );
 
-  const selectedTemplateConfig = templates.find(t => t.id === selectedTemplate);
+  const selectedTemplateConfig = templates.find(
+    (t) => t.id === selectedTemplate,
+  );
 
   return (
     <Card className="bg-gradient-to-br from-card to-card/80">
       <CardHeader>
         <CardTitle>Widget Templates</CardTitle>
         <CardDescription>
-          Choose a pre-configured template to get started quickly. Each template includes optimized settings for different use cases.
+          Choose a pre-configured template to get started quickly. Each template
+          includes optimized settings for different use cases.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -284,30 +280,42 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               {selectedTemplate === template.id && (
                 <div className="absolute -top-2 -right-2 z-10">
                   <div className="bg-primary text-primary-foreground rounded-full p-1.5 shadow-lg animate-pulse">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                 </div>
               )}
 
               {/* Enhanced Preview Area */}
-              <div className={cn(
-                "h-24 bg-gradient-to-br from-muted to-muted/50 rounded-md mb-3 flex items-center justify-center text-2xl transition-all duration-300",
-                selectedTemplate === template.id
-                  ? "bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20"
-                  : "group-hover:from-primary/10 group-hover:to-primary/5"
-              )}>
+              <div
+                className={cn(
+                  "h-24 bg-gradient-to-br from-muted to-muted/50 rounded-md mb-3 flex items-center justify-center text-2xl transition-all duration-300",
+                  selectedTemplate === template.id
+                    ? "bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20"
+                    : "group-hover:from-primary/10 group-hover:to-primary/5",
+                )}
+              >
                 {template.preview}
               </div>
 
               {/* Template Title with Selection Highlight */}
-              <h3 className={cn(
-                "font-medium text-sm mb-1 transition-colors duration-300",
-                selectedTemplate === template.id
-                  ? "text-primary font-semibold"
-                  : "group-hover:text-primary"
-              )}>
+              <h3
+                className={cn(
+                  "font-medium text-sm mb-1 transition-colors duration-300",
+                  selectedTemplate === template.id
+                    ? "text-primary font-semibold"
+                    : "group-hover:text-primary",
+                )}
+              >
                 {template.name}
                 {selectedTemplate === template.id && (
                   <span className="ml-2 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
@@ -321,28 +329,38 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               </p>
 
               {/* Enhanced Template Preview Details */}
-              <div className={cn(
-                "text-xs space-y-1 transition-opacity duration-300",
-                selectedTemplate === template.id ? "opacity-100" : "opacity-75"
-              )}>
+              <div
+                className={cn(
+                  "text-xs space-y-1 transition-opacity duration-300",
+                  selectedTemplate === template.id
+                    ? "opacity-100"
+                    : "opacity-75",
+                )}
+              >
                 <div className="flex items-center gap-1">
                   <div
                     className={cn(
                       "w-3 h-3 rounded-full border transition-all duration-300",
-                      selectedTemplate === template.id ? "ring-1 ring-primary/30" : ""
+                      selectedTemplate === template.id
+                        ? "ring-1 ring-primary/30"
+                        : "",
                     )}
                     style={{ backgroundColor: template.config.primaryColor }}
                   />
-                  <span className={cn(
-                    selectedTemplate === template.id ? "font-medium" : ""
-                  )}>
+                  <span
+                    className={cn(
+                      selectedTemplate === template.id ? "font-medium" : "",
+                    )}
+                  >
                     {template.config.botName}
                   </span>
                 </div>
-                <div className={cn(
-                  "truncate transition-colors duration-300",
-                  selectedTemplate === template.id ? "text-foreground" : ""
-                )}>
+                <div
+                  className={cn(
+                    "truncate transition-colors duration-300",
+                    selectedTemplate === template.id ? "text-foreground" : "",
+                  )}
+                >
                   "{template.config.welcomeMessage}"
                 </div>
               </div>
@@ -362,20 +380,27 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               ✨ {selectedTemplateConfig.name} Template Applied
             </h4>
             <p className="text-xs text-muted-foreground mb-3">
-              This template has been automatically configured with optimized settings. You can customize any field below.
+              This template has been automatically configured with optimized
+              settings. You can customize any field below.
             </p>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span className="font-medium">Bot Name:</span> {selectedTemplateConfig.config.botName}
+                <span className="font-medium">Bot Name:</span>{" "}
+                {selectedTemplateConfig.config.botName}
               </div>
               <div>
-                <span className="font-medium">Theme:</span> {selectedTemplateConfig.config.widgetTheme}
+                <span className="font-medium">Theme:</span>{" "}
+                {selectedTemplateConfig.config.widgetTheme}
               </div>
               <div>
-                <span className="font-medium">Position:</span> {selectedTemplateConfig.config.widgetPosition}
+                <span className="font-medium">Position:</span>{" "}
+                {selectedTemplateConfig.config.widgetPosition}
               </div>
               <div>
-                <span className="font-medium">Auto-trigger:</span> {selectedTemplateConfig.config.autoTrigger.enabled ? 'Yes' : 'No'}
+                <span className="font-medium">Auto-trigger:</span>{" "}
+                {selectedTemplateConfig.config.autoTrigger.enabled
+                  ? "Yes"
+                  : "No"}
               </div>
             </div>
           </div>
@@ -396,7 +421,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
             placeholder="Enter widget name"
             className={cn(
               errors.name &&
-              "border-destructive focus-visible:ring-destructive",
+                "border-destructive focus-visible:ring-destructive",
             )}
             maxLength={100}
           />

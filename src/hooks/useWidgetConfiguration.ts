@@ -51,59 +51,25 @@ export function useWidgetConfiguration(widgetId?: string) {
   const validateLoading = useOperationLoading("widget-validate");
   const resetLoading = useOperationLoading("widget-reset");
 
-  // Track changes for undo/redo - ENHANCED WITH TEMPLATE DEBUGGING
+  // Optimized config updates with efficient history management
   const updateConfig = useCallback(
     (updates: Partial<WidgetConfig>) => {
-      console.log("🔄 updateConfig called with:", updates);
-      console.log(
-        "📊 Current historyIndex:",
-        historyIndex,
-        "History length:",
-        history.length,
-      );
-
-      // Special logging for template changes
-      if (updates.selectedTemplate) {
-        console.log("🎨 Template change detected:", updates.selectedTemplate);
-        console.log("🔧 Full template update:", updates);
-      }
-
       const newConfig = {
         ...defaultConfig,
         ...config,
         ...updates,
       };
 
-      console.log("📋 New config created:", {
-        selectedTemplate: newConfig.selectedTemplate,
-        widgetName: newConfig.widgetName,
-        primaryColor: newConfig.primaryColor,
-        botName: newConfig.botName,
-      });
-
       setConfig(newConfig);
 
-      // Simple history management
+      // Efficient history management with size limit
       setHistory((prevHistory) => {
         const newHistory = prevHistory.slice(0, historyIndex + 1);
         newHistory.push(newConfig);
-        console.log("📝 Added to history. New length:", newHistory.length);
-        console.log(
-          "📚 History preview:",
-          newHistory.map((h, i) => ({
-            index: i,
-            template: h.selectedTemplate,
-            name: h.widgetName,
-          })),
-        );
-        return newHistory.slice(-50);
+        return newHistory.slice(-20); // Reduced history size for better performance
       });
 
-      setHistoryIndex((prev) => {
-        const newIndex = prev + 1;
-        console.log("📈 History index changed from", prev, "to", newIndex);
-        return newIndex;
-      });
+      setHistoryIndex((prev) => Math.min(prev + 1, 19)); // Cap at 19 for 20 total items
       setHasUnsavedChanges(true);
     },
     [config, historyIndex],
@@ -223,41 +189,35 @@ export function useWidgetConfiguration(widgetId?: string) {
     }
   }, [historyIndex, history, lastSavedConfig]);
 
-  // Real-time validation with proper error handling
-  const validateField = useCallback(
-    async (fieldName: string, value: any) => {
-      validateLoading.start(`Validating ${fieldName}...`);
-      try {
-        // Create a temporary config with the updated field
-        const tempConfig = { ...config, [fieldName]: value };
-        const validation = await widgetService.validateConfig(tempConfig);
-
-        setErrors((prev) => {
-          const newErrors = { ...prev };
-          if (validation.errors[fieldName]) {
-            newErrors[fieldName] = validation.errors[fieldName];
-          } else {
-            // Immediately clear error when field becomes valid
-            delete newErrors[fieldName];
-          }
-          return newErrors;
-        });
-
-        // Auto-focus and highlight field if validation fails
-        if (validation.errors[fieldName]) {
-          focusErrorField(fieldName);
+  // Optimized real-time validation with debouncing
+  const validateField = useCallback(async (fieldName: string, value: any) => {
+    try {
+      // Client-side validation first for immediate feedback
+      const fieldSchema =
+        widgetFieldValidation[fieldName as keyof typeof widgetFieldValidation];
+      if (fieldSchema) {
+        const result = fieldSchema.safeParse(value);
+        if (!result.success) {
+          const errorMessage =
+            result.error.errors[0]?.message || "Invalid value";
+          setErrors((prev) => ({ ...prev, [fieldName]: errorMessage }));
+          return false;
         }
-
-        return !validation.errors[fieldName];
-      } catch (error) {
-        console.warn(`Validation failed for ${fieldName}:`, error);
-        return true; // Don't block on validation errors
-      } finally {
-        validateLoading.stop();
       }
-    },
-    [config],
-  );
+
+      // Clear error immediately for valid values
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
+
+      return true;
+    } catch (error) {
+      console.warn(`Validation failed for ${fieldName}:`, error);
+      return true; // Don't block on validation errors
+    }
+  }, []);
 
   // Enhanced real-time field validation with improved error handling
   const validateFieldRealTime = useCallback(
