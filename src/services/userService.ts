@@ -1,5 +1,15 @@
-import { userApi, User, handleApiError, isValidationError, getValidationErrors } from "@/lib/api";
-import { createUserSchema, updateUserSchema, changePasswordSchema } from "@/lib/validation";
+import {
+  userApi,
+  User,
+  handleApiError,
+  isValidationError,
+  getValidationErrors,
+} from "@/lib/api";
+import {
+  createUserSchema,
+  updateUserSchema,
+  changePasswordSchema,
+} from "@/lib/validation";
 import { z } from "zod";
 
 export type CreateUserData = z.infer<typeof createUserSchema>;
@@ -30,14 +40,16 @@ export class UserService {
     try {
       // Validate data on frontend first
       const validatedData = createUserSchema.parse(data);
-      const response = await userApi.createUser(validatedData as {
-        name: string;
-        email: string;
-        password: string;
-        password_confirmation: string;
-        role_ids?: number[];
-        status?: string;
-      });
+      const response = await userApi.createUser(
+        validatedData as {
+          name: string;
+          email: string;
+          password: string;
+          password_confirmation: string;
+          role_ids?: number[];
+          status?: string;
+        },
+      );
       return { success: true, data: response.data, error: null };
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -111,10 +123,13 @@ export class UserService {
     try {
       // Validate data on frontend first
       const validatedData = changePasswordSchema.parse(data);
-      const response = await userApi.changeUserPassword(id, validatedData as {
-        password: string;
-        password_confirmation: string;
-      });
+      const response = await userApi.changeUserPassword(
+        id,
+        validatedData as {
+          password: string;
+          password_confirmation: string;
+        },
+      );
       return { success: true, data: response.data, error: null };
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -158,9 +173,19 @@ export class UserService {
 
   async assignRolesToUser(userId: number, roleIds: number[]) {
     try {
-      await userApi.assignRolesToUser(userId, roleIds);
-      return { success: true, error: null };
+      const response = await userApi.assignRolesToUser(userId, roleIds);
+      return { success: true, data: response.data, error: null };
     } catch (error) {
+      // Handle API validation errors
+      if (isValidationError(error)) {
+        const fieldErrors = getValidationErrors(error);
+        return {
+          success: false,
+          data: null,
+          error: "Validation failed",
+          fieldErrors,
+        };
+      }
       return { success: false, error: handleApiError(error) };
     }
   }

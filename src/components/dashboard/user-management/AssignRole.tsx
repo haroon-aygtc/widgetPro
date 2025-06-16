@@ -10,14 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-  Shield,
-  CheckCircle,
-  Loader2,
-  Mail,
-  Plus,
-  Minus,
-} from "lucide-react";
+import { Shield, CheckCircle, Loader2, Mail, Plus, Minus } from "lucide-react";
 import { useUserManagement } from "@/hooks/useUserManagement";
 import { useRoleManagement } from "@/hooks/useRoleManagement";
 import { User } from "@/lib/api";
@@ -27,11 +20,11 @@ interface AssignRoleProps {
   onUserAssigned?: () => void;
 }
 
-const AssignRole: React.FC<AssignRoleProps> = ({ preSelectedUser, onUserAssigned }) => {
-  const {
-    isLoading,
-    assignRolesToUser,
-  } = useUserManagement();
+const AssignRole: React.FC<AssignRoleProps> = ({
+  preSelectedUser,
+  onUserAssigned,
+}) => {
+  const { isLoading, assignRolesToUser } = useUserManagement();
 
   const { roles } = useRoleManagement();
 
@@ -43,7 +36,9 @@ const AssignRole: React.FC<AssignRoleProps> = ({ preSelectedUser, onUserAssigned
   useEffect(() => {
     if (preSelectedUser) {
       setSelectedUser(preSelectedUser);
-      setSelectedRoleIds(preSelectedUser.roles?.map((role: any) => role.id) || []);
+      setSelectedRoleIds(
+        preSelectedUser.roles?.map((role: any) => role.id) || [],
+      );
     }
   }, [preSelectedUser]);
 
@@ -51,18 +46,27 @@ const AssignRole: React.FC<AssignRoleProps> = ({ preSelectedUser, onUserAssigned
     e.preventDefault();
     if (!selectedUser) return;
 
+    if (selectedRoleIds.length === 0) {
+      // Show error if no roles selected
+      return;
+    }
+
     try {
       setSubmitting(true);
-      await assignRolesToUser(selectedUser.id, selectedRoleIds);
+      const result = await assignRolesToUser(selectedUser.id, selectedRoleIds);
 
-      // If this was triggered from parent component, call the callback
-      if (onUserAssigned) {
-        onUserAssigned();
-      } else {
-        // Otherwise, reset form
-        setSelectedUser(null);
-        setSelectedRoleIds([]);
+      if (result?.success) {
+        // If this was triggered from parent component, call the callback
+        if (onUserAssigned) {
+          onUserAssigned();
+        } else {
+          // Otherwise, reset form
+          setSelectedUser(null);
+          setSelectedRoleIds([]);
+        }
       }
+    } catch (error) {
+      console.error("Error assigning roles:", error);
     } finally {
       setSubmitting(false);
     }
@@ -71,17 +75,18 @@ const AssignRole: React.FC<AssignRoleProps> = ({ preSelectedUser, onUserAssigned
   const resetForm = () => {
     if (onUserAssigned) {
       onUserAssigned();
-    } else { // its not a callback, so reset the form
+    } else {
+      // its not a callback, so reset the form
       setSelectedUser(null);
       setSelectedRoleIds([]);
     }
   };
 
   const handleRoleToggle = (roleId: number) => {
-    setSelectedRoleIds(prev =>
+    setSelectedRoleIds((prev) =>
       prev.includes(roleId)
-        ? prev.filter(id => id !== roleId)
-        : [...prev, roleId]
+        ? prev.filter((id) => id !== roleId)
+        : [...prev, roleId],
     );
   };
 
@@ -117,8 +122,6 @@ const AssignRole: React.FC<AssignRoleProps> = ({ preSelectedUser, onUserAssigned
         </div>
       </CardHeader>
       <CardContent>
-
-
         {selectedUser && (
           <div className="w-full bg-gradient-to-br from-white to-violet-50/30 dark:from-gray-900 dark:to-violet-950/30 border-2 border-violet-200/50 dark:border-violet-800/50 shadow-xl rounded-lg">
             <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-b border-violet-200/50 dark:border-violet-800/50 p-6">
@@ -129,7 +132,10 @@ const AssignRole: React.FC<AssignRoleProps> = ({ preSelectedUser, onUserAssigned
                     alt={selectedUser.name}
                   />
                   <AvatarFallback className="bg-gradient-to-r from-violet-500 to-purple-600 text-white text-lg">
-                    {selectedUser.name.split(" ").map((n: string) => n[0]).join("")}
+                    {selectedUser.name
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -184,10 +190,11 @@ const AssignRole: React.FC<AssignRoleProps> = ({ preSelectedUser, onUserAssigned
                     {roles.map((role) => (
                       <div
                         key={role.id}
-                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${selectedRoleIds.includes(role.id)
-                          ? "border-violet-500 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/50 dark:to-purple-950/50 shadow-lg shadow-violet-500/20 ring-2 ring-violet-200 dark:ring-violet-800"
-                          : "border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50/30 dark:hover:bg-violet-950/20"
-                          }`}
+                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                          selectedRoleIds.includes(role.id)
+                            ? "border-violet-500 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/50 dark:to-purple-950/50 shadow-lg shadow-violet-500/20 ring-2 ring-violet-200 dark:ring-violet-800"
+                            : "border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50/30 dark:hover:bg-violet-950/20"
+                        }`}
                         onClick={() => handleRoleToggle(role.id)}
                       >
                         <div className="flex items-center justify-between">
@@ -200,7 +207,7 @@ const AssignRole: React.FC<AssignRoleProps> = ({ preSelectedUser, onUserAssigned
                                 {role.name}
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                {role.description || 'No description'}
+                                {role.description || "No description"}
                               </div>
                             </div>
                           </div>

@@ -134,25 +134,45 @@ class UserController extends Controller
     }
 
     /**
-     * Assign role to user.
+     * Assign roles to user (supports both single role and multiple roles).
      */
     public function assignRole(Request $request, User $user): JsonResponse
     {
+        // Support both single role_id and multiple role_ids
         $request->validate([
-            'role_id' => 'required|integer|exists:roles,id'
+            'role_id' => 'sometimes|integer|exists:roles,id',
+            'role_ids' => 'sometimes|array',
+            'role_ids.*' => 'integer|exists:roles,id'
         ]);
 
+        // Ensure at least one is provided
+        if (!$request->has('role_id') && !$request->has('role_ids')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Either role_id or role_ids must be provided',
+                'errors' => ['role_id' => ['Either role_id or role_ids is required']]
+            ], 422);
+        }
+
         try {
-            $this->userService->assignRole($user, $request->role_id);
+            if ($request->has('role_ids')) {
+                // Assign multiple roles
+                $this->userService->assignRoles($user, $request->role_ids);
+                $message = 'Roles assigned successfully';
+            } else {
+                // Assign single role
+                $this->userService->assignRole($user, $request->role_id);
+                $message = 'Role assigned successfully';
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Role assigned successfully'
+                'message' => $message
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to assign role: ' . $e->getMessage()
+                'message' => 'Failed to assign role(s): ' . $e->getMessage()
             ], 500);
         }
     }

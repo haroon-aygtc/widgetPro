@@ -141,15 +141,35 @@ export function useUserManagement() {
   const assignRolesToUser = useCallback(
     async (userId: number, roleIds: number[]) => {
       startLoading("Assigning roles...");
-      const result = await userService.assignRolesToUser(userId, roleIds);
+      try {
+        const result = await userService.assignRolesToUser(userId, roleIds);
 
-      if (result.success) {
-        toastUtils.apiSuccess("Roles assigned");
-        await fetchUsers();
-      } else {
-        toastUtils.apiError("Failed to assign roles");
+        if (result.success) {
+          toastUtils.apiSuccess("Roles assigned successfully");
+          await fetchUsers();
+          return { success: true };
+        } else {
+          if (result.fieldErrors) {
+            // Handle field-specific errors
+            const errorMessages = Object.values(result.fieldErrors).flat();
+            toastUtils.apiError(
+              errorMessages.join(", ") || "Failed to assign roles",
+            );
+          } else {
+            toastUtils.apiError(result.error || "Failed to assign roles");
+          }
+          return {
+            success: false,
+            error: result.error,
+            fieldErrors: result.fieldErrors,
+          };
+        }
+      } catch (error) {
+        toastUtils.apiError("An unexpected error occurred");
+        return { success: false, error: "An unexpected error occurred" };
+      } finally {
+        stopLoading();
       }
-      stopLoading();
     },
     [fetchUsers, startLoading, stopLoading],
   );
