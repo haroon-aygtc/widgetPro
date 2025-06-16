@@ -7,6 +7,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserActivityController;
+use App\Http\Controllers\AIProviderController;
+use App\Http\Controllers\UserProviderController;
+use App\Http\Controllers\UserModelController;
 
 // CSRF Cookie Route (for SPA authentication)
 Route::get('/sanctum/csrf-cookie', [AuthController::class, 'csrfCookie']);
@@ -104,3 +107,34 @@ Route::prefix('widgets')->middleware('auth:sanctum')->group(function () {
     Route::post('/test', [App\Http\Controllers\WidgetController::class, 'test']);
 });
 
+Route::middleware('auth:sanctum')->prefix('ai-providers')->group(function () {
+
+    // AI Provider Routes
+    Route::get('/provider', [AIProviderController::class, 'getProviders']);
+    Route::post('/provider', [AIProviderController::class, 'storeProviders']);
+    Route::put('/provider/{provider_id}', [AIProviderController::class, 'updateProviders']);
+    Route::delete('/provider/{provider_id}', [AIProviderController::class, 'deleteProviders']);
+
+    // AI Provider Routes
+    Route::post('/provider/test', [AIProviderController::class, 'testProvider']);
+
+    // AI Model Routes
+    Route::get('/{provider_id}/available-models', [AIProviderController::class, 'fetchModelsForProvider']);
+
+    // User Provider Routes
+    Route::get('/user-providers', [UserProviderController::class, 'getUserProvider']);
+    Route::post('/provider/configure', [UserProviderController::class, 'configureProvider']);
+    Route::put('/update-user-providers/status', [UserProviderController::class, 'updateUserProviderStatus']);
+    Route::delete('/delete-user-providers/{provider_id}', [UserProviderController::class, 'deleteUserProvider']);
+
+    // User Model Routes
+    Route::get('/user-models', [UserModelController::class, 'getUserModels']);
+    Route::post('/store-user-models', [UserModelController::class, 'storeUserModel']);
+    Route::put('/update-user-models/{model_id}', [UserModelController::class, 'updateUserModel']);
+    Route::delete('/delete-user-models/{model_id}', [UserModelController::class, 'deleteUserModel']);
+    Route::put('/update-user-models/{model_id}/status', [UserModelController::class, 'updateUserModelStatus']);
+    Route::get('/is-default-user-models/{model_id}', [UserModelController::class, 'isDefultUserModel']);
+
+
+
+});

@@ -76,6 +76,11 @@ const AdminLayout = () => {
       icon: MessageSquare,
     },
     {
+      path: "/admin/ai-providers",
+      label: "AI Providers",
+      icon: Bot,
+    },
+    {
       path: "/admin/ai-models",
       label: "AI Models",
       icon: Bot,
@@ -223,6 +228,7 @@ const AdminLayout = () => {
                 {location.pathname === "/admin" && "Dashboard"}
                 {location.pathname === "/admin/widgets" &&
                   "Widget Configuration"}
+                {location.pathname === "/admin/ai-providers" && "AI Providers"}
                 {location.pathname === "/admin/ai-models" && "AI Models"}
                 {location.pathname === "/admin/knowledge-base" &&
                   "Knowledge Base"}

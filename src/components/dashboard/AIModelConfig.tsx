@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+
 import {
   Card,
   CardContent,
@@ -11,32 +11,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   AlertCircle,
   CheckCircle2,
-  ChevronDown,
-  ChevronRight,
   Settings,
   Sparkles,
   TestTube,
   Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ErrorBoundary from "@/components/ui/error-boundary";
 import { toastUtils } from "@/components/ui/use-toast";
 import { useOperationLoading } from "@/contexts/LoadingContext";
+import { useState } from "react";
 
 interface AIModelConfigProps {
   onSave?: (config: any) => void;
@@ -168,6 +160,7 @@ const AIModelConfig = ({
       setIsConnected(true);
       toastUtils.operationSuccess(
         `${providers.find((p) => p.id === selectedProvider)?.name} connection`,
+        "Provider connected successfully",
       );
     } catch (error) {
       toastUtils.operationError(
@@ -204,7 +197,7 @@ const AIModelConfig = ({
         "I'm a simulated AI response based on your configuration. In a real implementation, this would be an actual response from the selected AI model with the specified parameters.",
       );
 
-      toastUtils.operationSuccess("Model test");
+      toastUtils.operationSuccess("Model test", "Model test successful");
     } catch (error) {
       toastUtils.operationError(
         "Model test",

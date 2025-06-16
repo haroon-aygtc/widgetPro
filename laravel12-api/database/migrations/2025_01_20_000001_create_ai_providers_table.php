@@ -14,14 +14,13 @@ return new class extends Migration
             $table->string('display_name');
             $table->text('description')->nullable();
             $table->string('api_base_url');
-            $table->boolean('is_free')->default(false);
             $table->boolean('is_active')->default(true);
             $table->string('logo_url')->nullable();
             $table->string('documentation_url')->nullable();
             $table->timestamps();
-            
+
             $table->index(['is_active']);
-            $table->index(['is_free']);
+            $table->index(['name']);
         });
     }
 

@@ -99,7 +99,7 @@ export function useWidgetConfiguration(widgetId?: string) {
           JSON.stringify(lastSavedConfig.current);
         setHasUnsavedChanges(hasChanges);
 
-        toastUtils.operationSuccess("Undo");
+        toastUtils.operationSuccess("Undo", "Configuration has been undone");
       }
     } else {
       toastUtils.operationError("Undo", "Nothing to undo");
@@ -122,7 +122,7 @@ export function useWidgetConfiguration(widgetId?: string) {
           JSON.stringify(lastSavedConfig.current);
         setHasUnsavedChanges(hasChanges);
 
-        toastUtils.operationSuccess("Redo");
+        toastUtils.operationSuccess("Redo", "Configuration has been redone");
       }
     } else {
       toastUtils.operationError("Redo", "Nothing to redo");
@@ -333,7 +333,7 @@ export function useWidgetConfiguration(widgetId?: string) {
       setErrors({});
       setWidgetIdState(id);
 
-      toastUtils.operationSuccess("Widget loaded");
+      toastUtils.operationSuccess("Widget loaded", "Widget configuration has been loaded");
       return true;
     } catch (error) {
       const errorMessage = handleWidgetError(error);
@@ -612,7 +612,7 @@ export function useWidgetConfiguration(widgetId?: string) {
           widgetIdState,
           newName,
         );
-        toastUtils.operationSuccess("Widget duplicated");
+        toastUtils.operationSuccess("Widget duplicated", "Widget has been duplicated");
         return result;
       } catch (error) {
         const errorMessage = handleWidgetError(error);

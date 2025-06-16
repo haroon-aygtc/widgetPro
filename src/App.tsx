@@ -10,6 +10,7 @@ import Register from "./components/auth/Register";
 import AdminLayout from "./components/layout/AdminLayout";
 import Dashboard from "./components/dashboard/Dashboard";
 import AIModelConfig from "./components/dashboard/AIModelConfig";
+import AIProviders from "./components/dashboard/AIProviders";
 import KnowledgeBaseConfig from "./components/dashboard/KnowledgeBaseConfig";
 import WidgetConfiguration from "./components/dashboard/WidgetConfiguration";
 import AnalyticsDashboard from "./components/dashboard/AnalyticsDashboard";
@@ -30,6 +31,7 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="widgets" element={<WidgetConfiguration />} />
+            <Route path="ai-providers" element={<AIProviders />} />
             <Route path="ai-models" element={<AIModelConfig />} />
             <Route path="knowledge-base" element={<KnowledgeBaseConfig />} />
             <Route path="analytics" element={<AnalyticsDashboard />} />

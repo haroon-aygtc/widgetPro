@@ -77,3 +77,27 @@ export interface CreateUserModelRequest {
   user_provider_id: number;
   custom_name?: string;
 }
+
+export interface ModelsTabProps {
+  availableModels: AIModel[];
+  userModels: UserAIModel[];
+  userProviders: UserAIProvider[];
+  modelSearchTerm: string;
+  loading: boolean;
+  addModelLoading: boolean;
+  onSearch: (term: string) => void;
+  onLoadModels: (providerId: number) => void;
+  onAddModel: (model: AIModel) => void;
+}
+
+export interface ConfiguredProvidersTabProps {
+  userProviders: UserAIProvider[];
+  loading: boolean;
+  onDeleteProvider: (providerId: number) => void;
+  onDeleteModel: (modelId: number) => void;
+  onUpdateProvider: (providerId: number) => void;
+  onUpdateModel: (modelId: number) => void;
+  onAddProvider: (provider: UserAIProvider) => void;
+  onAddModel: (model: UserAIModel) => void;
+}
+

@@ -78,8 +78,8 @@ class AdminSeeder extends Seeder
 
         // Create super admin user only if it doesn't exist
         // In production, you should change these credentials immediately after first login
-        $superAdminEmail = env('SUPER_ADMIN_EMAIL', 'admin@yourdomain.com');
-        $superAdminPassword = env('SUPER_ADMIN_PASSWORD', 'ChangeMe@123');
+        $superAdminEmail = env('SUPER_ADMIN_EMAIL', 'superadmin@helixchat.com');
+        $superAdminPassword = env('SUPER_ADMIN_PASSWORD', 'SuperAdmin@123');
 
         $superAdmin = User::firstOrCreate(
             ['email' => $superAdminEmail],

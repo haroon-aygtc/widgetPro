@@ -1,130 +1,15 @@
-import { BaseApiClient } from "@/lib/api/config/BaseApiClient";
-import type { ApiResponse } from "@/types/api";
-import type {
-  AIProvider,
-  AIModel,
-  UserAIProvider,
-  UserAIModel,
-  AIProviderTestRequest,
-  AIProviderTestResponse,
-  CreateUserProviderRequest,
-  CreateUserModelRequest,
-} from "@/types/ai";
+import type { AIProvider, AIModel, UserAIProvider, UserAIModel } from "@/types/ai";
+import { aiProviderApi } from "@/lib/api/aiproviderAPI";
 
-class AIProviderApiClient extends BaseApiClient {
-  // Get all available AI providers
-  async getProviders(params?: {
-    search?: string;
-    free_only?: boolean;
-  }): Promise<ApiResponse<AIProvider[]>> {
-    const searchParams = new URLSearchParams();
-    if (params?.search) searchParams.append("search", params.search);
-    if (params?.free_only) searchParams.append("free_only", "true");
-    const query = searchParams.toString();
-
-    return super.request<ApiResponse<AIProvider[]>>(
-      "GET",
-      `/ai-providers${query ? `?${query}` : ""}`,
-    );
-  }
-
-  // Test API key for a provider
-  async testProvider(
-    data: AIProviderTestRequest,
-  ): Promise<AIProviderTestResponse> {
-    const response = await super.request<AIProviderTestResponse>(
-      "POST",
-      "/ai-providers/test",
-      data,
-    );
-    return response;
-  }
-
-  // Configure user provider (store API key)
-  async configureProvider(data: CreateUserProviderRequest): Promise<
-    ApiResponse<{
-      user_provider: UserAIProvider;
-      available_models: AIModel[];
-    }>
-  > {
-    return super.request<
-      ApiResponse<{
-        user_provider: UserAIProvider;
-        available_models: AIModel[];
-      }>
-    >("POST", "/ai-providers/configure", data);
-  }
-
-  // Get user's configured providers
-  async getUserProviders(): Promise<ApiResponse<UserAIProvider[]>> {
-    return super.request<ApiResponse<UserAIProvider[]>>(
-      "GET",
-      "/ai-providers/user-providers",
-    );
-  }
-
-  // Get models for a specific provider
-  async getModelsForProvider(
-    providerId: number,
-    params?: { search?: string },
-  ): Promise<
-    ApiResponse<{
-      models: AIModel[];
-      provider: AIProvider;
-    }>
-  > {
-    const searchParams = new URLSearchParams();
-    if (params?.search) searchParams.append("search", params.search);
-    const query = searchParams.toString();
-
-    return super.request<
-      ApiResponse<{
-        models: AIModel[];
-        provider: AIProvider;
-      }>
-    >("GET", `/ai-providers/${providerId}/models${query ? `?${query}` : ""}`);
-  }
-
-  // Add model to user's collection
-  async addUserModel(
-    data: CreateUserModelRequest,
-  ): Promise<ApiResponse<UserAIModel>> {
-    return super.request<ApiResponse<UserAIModel>>(
-      "POST",
-      "/ai-providers/models/add",
-      data,
-    );
-  }
-
-  // Get user's configured models
-  async getUserModels(): Promise<ApiResponse<UserAIModel[]>> {
-    return super.request<ApiResponse<UserAIModel[]>>(
-      "GET",
-      "/ai-providers/user-models",
-    );
-  }
-}
-
-export const aiProviderApi = new AIProviderApiClient();
-
-// AI Provider service class
 class AIProviderService {
-  // Get all providers with optional filtering
-  async getProviders(params?: {
-    search?: string;
-    freeOnly?: boolean;
-  }): Promise<AIProvider[]> {
-    const response = await aiProviderApi.getProviders({
-      search: params?.search,
-      free_only: params?.freeOnly,
-    });
+  async getProviders(search?: string): Promise<AIProvider[]> {
+    const response = await aiProviderApi.getProviders(search);
     return response.data || [];
   }
 
-  // Test API key validity
   async testApiKey(
     providerId: number,
-    apiKey: string,
+    apiKey: string
   ): Promise<{ success: boolean; message: string; models?: AIModel[] }> {
     try {
       const response = await aiProviderApi.testProvider({
@@ -132,8 +17,8 @@ class AIProviderService {
         api_key: apiKey,
       });
       return {
-        success: response.success,
-        message: response.message,
+        success: response.data?.success || false,
+        message: response.data?.message || "",
         models: response.data?.models,
       };
     } catch (error: any) {
@@ -144,10 +29,9 @@ class AIProviderService {
     }
   }
 
-  // Configure provider for user
   async configureProvider(
     providerId: number,
-    apiKey: string,
+    apiKey: string
   ): Promise<{
     userProvider: UserAIProvider;
     availableModels: AIModel[];
@@ -163,28 +47,30 @@ class AIProviderService {
     };
   }
 
-  // Get user's configured providers
   async getUserProviders(): Promise<UserAIProvider[]> {
     const response = await aiProviderApi.getUserProviders();
     return response.data || [];
   }
 
-  // Get models for provider
-  async getModelsForProvider(
+  async getUserModels(): Promise<UserAIModel[]> {
+    const response = await aiProviderApi.getUserModels();
+    return response.data || [];
+  }
+
+  async fetchModelsForProvider(
     providerId: number,
-    search?: string,
+    search?: string
   ): Promise<{ models: AIModel[]; provider: AIProvider }> {
-    const response = await aiProviderApi.getModelsForProvider(providerId, {
+    const response = await aiProviderApi.fetchModelsForProvider(providerId, {
       search,
     });
     return response.data!;
   }
 
-  // Add model to user's collection
   async addUserModel(
     modelId: number,
     userProviderId: number,
-    customName?: string,
+    customName?: string
   ): Promise<UserAIModel> {
     const response = await aiProviderApi.addUserModel({
       model_id: modelId,
@@ -194,14 +80,26 @@ class AIProviderService {
     return response.data!;
   }
 
-  // Get user's configured models
-  async getUserModels(): Promise<UserAIModel[]> {
-    const response = await aiProviderApi.getUserModels();
-    return response.data || [];
+  async deleteUserProvider(providerId: number): Promise<void> {
+    await aiProviderApi.deleteUserProvider(providerId);
   }
+
+  async updateUserProvider(providerId: number, apiKey: string): Promise<UserAIProvider> {
+    const response = await aiProviderApi.updateUserProvider(providerId, apiKey);
+    return response;
+  }
+
+  async updateUserModel(modelId: number, customName?: string): Promise<UserAIModel> {
+    const response = await aiProviderApi.updateUserModel(modelId, customName);
+    return response;
+  }
+
+  async addUserProvider(providerId: number, apiKey: string): Promise<UserAIProvider> {
+    const response = await aiProviderApi.addUserProvider(providerId, apiKey);
+    return response;
+  }
+
+
 }
 
 export const aiProviderService = new AIProviderService();
-
-// Export error handler
-export { handleApiError } from "@/lib/api/config/axios";

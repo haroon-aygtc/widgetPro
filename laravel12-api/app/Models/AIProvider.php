@@ -10,20 +10,22 @@ class AIProvider extends Model
 {
     use HasFactory;
 
+    protected $table = 'ai_providers';
+
     protected $fillable = [
         'name',
         'display_name',
         'description',
         'api_base_url',
-        'is_free',
         'is_active',
+        'is_default',
         'logo_url',
         'documentation_url'
     ];
 
     protected $casts = [
-        'is_free' => 'boolean',
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
+        'is_default' => 'boolean'
     ];
 
     public function models(): HasMany
@@ -39,11 +41,6 @@ class AIProvider extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
-    }
-
-    public function scopeFree($query)
-    {
-        return $query->where('is_free', true);
     }
 
     public function scopeSearch($query, $search)

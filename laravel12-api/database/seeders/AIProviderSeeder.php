@@ -15,7 +15,6 @@ class AIProviderSeeder extends Seeder
                 'display_name' => 'OpenAI',
                 'description' => 'Advanced AI models including GPT-4 and GPT-3.5',
                 'api_base_url' => 'https://api.openai.com/v1',
-                'is_free' => false,
                 'is_active' => true,
                 'logo_url' => 'https://openai.com/favicon.ico',
                 'documentation_url' => 'https://platform.openai.com/docs'
@@ -25,7 +24,6 @@ class AIProviderSeeder extends Seeder
                 'display_name' => 'Anthropic',
                 'description' => 'Claude AI models for safe and helpful conversations',
                 'api_base_url' => 'https://api.anthropic.com',
-                'is_free' => false,
                 'is_active' => true,
                 'logo_url' => 'https://www.anthropic.com/favicon.ico',
                 'documentation_url' => 'https://docs.anthropic.com'
@@ -35,7 +33,6 @@ class AIProviderSeeder extends Seeder
                 'display_name' => 'Hugging Face',
                 'description' => 'Open source AI models and inference API',
                 'api_base_url' => 'https://api-inference.huggingface.co',
-                'is_free' => true,
                 'is_active' => true,
                 'logo_url' => 'https://huggingface.co/favicon.ico',
                 'documentation_url' => 'https://huggingface.co/docs'
@@ -45,7 +42,6 @@ class AIProviderSeeder extends Seeder
                 'display_name' => 'OpenRouter',
                 'description' => 'Access to multiple AI models through one API',
                 'api_base_url' => 'https://openrouter.ai/api/v1',
-                'is_free' => false,
                 'is_active' => true,
                 'logo_url' => 'https://openrouter.ai/favicon.ico',
                 'documentation_url' => 'https://openrouter.ai/docs'
@@ -55,7 +51,6 @@ class AIProviderSeeder extends Seeder
                 'display_name' => 'Mistral AI',
                 'description' => 'Efficient and powerful open-weight models',
                 'api_base_url' => 'https://api.mistral.ai/v1',
-                'is_free' => false,
                 'is_active' => true,
                 'logo_url' => 'https://mistral.ai/favicon.ico',
                 'documentation_url' => 'https://docs.mistral.ai'
@@ -65,7 +60,6 @@ class AIProviderSeeder extends Seeder
                 'display_name' => 'Groq',
                 'description' => 'Ultra-fast AI inference with LPU technology',
                 'api_base_url' => 'https://api.groq.com/openai/v1',
-                'is_free' => true,
                 'is_active' => true,
                 'logo_url' => 'https://groq.com/favicon.ico',
                 'documentation_url' => 'https://console.groq.com/docs'
@@ -75,7 +69,6 @@ class AIProviderSeeder extends Seeder
                 'display_name' => 'Google AI',
                 'description' => 'Gemini models for multimodal AI capabilities',
                 'api_base_url' => 'https://generativelanguage.googleapis.com/v1',
-                'is_free' => true,
                 'is_active' => true,
                 'logo_url' => 'https://ai.google/favicon.ico',
                 'documentation_url' => 'https://ai.google.dev/docs'
@@ -85,7 +78,6 @@ class AIProviderSeeder extends Seeder
                 'display_name' => 'Cohere',
                 'description' => 'Enterprise-grade language models',
                 'api_base_url' => 'https://api.cohere.ai/v1',
-                'is_free' => false,
                 'is_active' => true,
                 'logo_url' => 'https://cohere.com/favicon.ico',
                 'documentation_url' => 'https://docs.cohere.com'
@@ -95,7 +87,6 @@ class AIProviderSeeder extends Seeder
                 'display_name' => 'Together AI',
                 'description' => 'Open source models with fast inference',
                 'api_base_url' => 'https://api.together.xyz/v1',
-                'is_free' => true,
                 'is_active' => true,
                 'logo_url' => 'https://together.ai/favicon.ico',
                 'documentation_url' => 'https://docs.together.ai'
@@ -105,7 +96,6 @@ class AIProviderSeeder extends Seeder
                 'display_name' => 'Replicate',
                 'description' => 'Run open-source models with cloud API',
                 'api_base_url' => 'https://api.replicate.com/v1',
-                'is_free' => false,
                 'is_active' => true,
                 'logo_url' => 'https://replicate.com/favicon.ico',
                 'documentation_url' => 'https://replicate.com/docs'
