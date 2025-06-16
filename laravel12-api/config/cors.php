@@ -22,6 +22,7 @@ return [
     'allowed_origins' => [
         env('FRONTEND_URL', 'http://localhost:3000'),
         env('FRONTEND_URL', 'http://localhost:5173'),
+        env('FRONTEND_URL', 'https://naughty-noether5-p6an9.view-3.tempo-dev.app'),
         env('APP_URL', 'http://localhost:8000'),
     ],
 
