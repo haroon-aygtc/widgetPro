@@ -127,7 +127,7 @@ export function useWidgetConfiguration(widgetId?: string) {
     }
   }, [historyIndex, history]);
 
-  // Real-time validation
+  // Real-time validation with proper error handling
   const validateField = useCallback(
     async (fieldName: string, value: any) => {
       validateLoading.start(`Validating ${fieldName}...`);
@@ -146,8 +146,14 @@ export function useWidgetConfiguration(widgetId?: string) {
           return newErrors;
         });
 
+        // Auto-focus and highlight field if validation fails
+        if (validation.errors[fieldName]) {
+          focusErrorField(fieldName);
+        }
+
         return !validation.errors[fieldName];
       } catch (error) {
+        console.warn(`Validation failed for ${fieldName}:`, error);
         return true; // Don't block on validation errors
       } finally {
         validateLoading.stop();
@@ -196,32 +202,82 @@ export function useWidgetConfiguration(widgetId?: string) {
     }
   }, [config]);
 
-  // Focus error field and switch to appropriate tab
+  // Focus error field and switch to appropriate tab with enhanced mapping
   const focusErrorField = useCallback((fieldPath: string) => {
     const tabMapping: Record<string, string> = {
+      // Templates tab
       name: "templates",
+      widgetName: "templates",
       template: "templates",
+      selectedTemplate: "templates",
+
+      // Design tab
       primaryColor: "design",
+      primary_color: "design",
       position: "design",
+      widgetPosition: "design",
+
+      // Behavior tab
       welcomeMessage: "behavior",
+      welcome_message: "behavior",
       placeholder: "behavior",
+      botName: "behavior",
+      bot_name: "behavior",
+      botAvatar: "behavior",
+      bot_avatar: "behavior",
       autoTrigger: "behavior",
+      auto_trigger: "behavior",
       aiModel: "behavior",
+      ai_model: "behavior",
+      autoOpen: "behavior",
+      auto_open: "behavior",
+
+      // Controls tab
+      widgetTheme: "controls",
+      widget_theme: "controls",
+      widgetWidth: "controls",
+      widget_width: "controls",
+      widgetHeight: "controls",
+      widget_height: "controls",
     };
 
     const targetTab = tabMapping[fieldPath] || "templates";
     setActiveTab(targetTab);
 
-    // Focus the field after tab switch
+    // Focus the field after tab switch with enhanced selector
     setTimeout(() => {
-      const fieldElement = document.querySelector(
+      const selectors = [
         `[data-field="${fieldPath}"]`,
-      ) as HTMLElement;
+        `#${fieldPath}`,
+        `[name="${fieldPath}"]`,
+        `input[placeholder*="${fieldPath}"]`,
+      ];
+
+      let fieldElement: HTMLElement | null = null;
+      for (const selector of selectors) {
+        fieldElement = document.querySelector(selector) as HTMLElement;
+        if (fieldElement) break;
+      }
+
       if (fieldElement) {
         fieldElement.focus();
         fieldElement.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        // Add visual highlight
+        fieldElement.classList.add(
+          "ring-2",
+          "ring-destructive",
+          "ring-offset-2",
+        );
+        setTimeout(() => {
+          fieldElement?.classList.remove(
+            "ring-2",
+            "ring-destructive",
+            "ring-offset-2",
+          );
+        }, 3000);
       }
-    }, 100);
+    }, 150);
   }, []);
 
   // Load widget configuration
@@ -248,7 +304,7 @@ export function useWidgetConfiguration(widgetId?: string) {
     }
   }, []);
 
-  // Save configuration
+  // Save configuration with enhanced error handling
   const saveConfig = useCallback(async () => {
     if (!validateConfig()) {
       return false;
@@ -261,7 +317,16 @@ export function useWidgetConfiguration(widgetId?: string) {
 
       if (!validation.isValid) {
         setErrors(validation.errors);
-        toastUtils.validationError(Object.keys(validation.errors).length);
+
+        // Auto-focus first error field and switch to appropriate tab
+        const firstErrorField = Object.keys(validation.errors)[0];
+        if (firstErrorField) {
+          focusErrorField(firstErrorField);
+        }
+
+        // Show specific validation errors
+        const errorFields = Object.keys(validation.errors);
+        toastUtils.validationError(errorFields.length, errorFields);
         return false;
       }
 
@@ -291,9 +356,30 @@ export function useWidgetConfiguration(widgetId?: string) {
 
       toastUtils.configSaved();
       return true;
-    } catch (error) {
-      const errorMessage = handleWidgetError(error);
-      toastUtils.operationError("Save configuration", errorMessage);
+    } catch (error: any) {
+      // Handle backend validation errors
+      if (error.response?.data?.errors) {
+        const backendErrors: Record<string, string> = {};
+        Object.entries(error.response.data.errors).forEach(
+          ([key, messages]) => {
+            if (Array.isArray(messages)) {
+              backendErrors[key] = messages[0];
+            }
+          },
+        );
+        setErrors(backendErrors);
+
+        // Auto-focus first error field
+        const firstErrorField = Object.keys(backendErrors)[0];
+        if (firstErrorField) {
+          focusErrorField(firstErrorField);
+        }
+
+        toastUtils.validationError(Object.keys(backendErrors).length);
+      } else {
+        const errorMessage = handleWidgetError(error);
+        toastUtils.operationError("Save configuration", errorMessage);
+      }
       return false;
     } finally {
       saveLoading.stop();

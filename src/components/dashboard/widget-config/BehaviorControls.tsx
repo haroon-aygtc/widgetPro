@@ -49,60 +49,55 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
   errors = {},
   onFieldValidation,
 }) => {
-  // Handle welcome message change with validation
+  // Handle welcome message change with enhanced validation
   const handleWelcomeMessageChange = useCallback(
     async (message: string) => {
-      // Real-time validation
-      if (message.length > 200) {
-        toastUtils.formError(
-          "Welcome message must be less than 200 characters",
-        );
-        return;
-      }
-
+      // Always update the value first for real-time feedback
       onWelcomeMessageChange(message);
 
-      // Trigger field validation if provided
+      // Trigger field validation if provided and message meets minimum length
       if (onFieldValidation && message.length >= 5) {
-        await onFieldValidation("welcomeMessage", message);
+        try {
+          await onFieldValidation("welcomeMessage", message);
+        } catch (error) {
+          console.warn("Welcome message validation error:", error);
+        }
       }
     },
     [onWelcomeMessageChange, onFieldValidation],
   );
 
-  // Handle placeholder change with validation
+  // Handle placeholder change with enhanced validation
   const handlePlaceholderChange = useCallback(
     async (placeholderText: string) => {
-      // Real-time validation
-      if (placeholderText.length > 50) {
-        toastUtils.formError("Placeholder must be less than 50 characters");
-        return;
-      }
-
+      // Always update the value first for real-time feedback
       onPlaceholderChange(placeholderText);
 
-      // Trigger field validation if provided
+      // Trigger field validation if provided and placeholder meets minimum length
       if (onFieldValidation && placeholderText.length >= 3) {
-        await onFieldValidation("placeholder", placeholderText);
+        try {
+          await onFieldValidation("placeholder", placeholderText);
+        } catch (error) {
+          console.warn("Placeholder validation error:", error);
+        }
       }
     },
     [onPlaceholderChange, onFieldValidation],
   );
 
-  // Handle bot avatar change with validation
+  // Handle bot avatar change with enhanced validation
   const handleBotAvatarChange = useCallback(
     async (avatar: string) => {
-      // Real-time validation
-      if (avatar && !widgetValidation.isValidUrl(avatar)) {
-        toastUtils.formError("Please enter a valid avatar URL");
-        return;
-      }
-
+      // Always update the value first for real-time feedback
       onBotAvatarChange(avatar);
 
-      // Trigger field validation if provided
-      if (onFieldValidation && avatar) {
-        await onFieldValidation("botAvatar", avatar);
+      // Trigger field validation if provided and avatar is not empty
+      if (onFieldValidation && avatar.trim()) {
+        try {
+          await onFieldValidation("botAvatar", avatar);
+        } catch (error) {
+          console.warn("Bot avatar validation error:", error);
+        }
       }
     },
     [onBotAvatarChange, onFieldValidation],

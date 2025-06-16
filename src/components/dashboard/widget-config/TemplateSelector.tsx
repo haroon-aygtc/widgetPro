@@ -58,27 +58,28 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   errors = {},
   onFieldValidation,
 }) => {
-  // Handle widget name change with validation
+  // Handle widget name change with enhanced validation
   const handleWidgetNameChange = useCallback(
     async (name: string) => {
-      // Real-time validation
+      // Always update the value first for real-time feedback
+      onWidgetNameChange(name);
+
+      // Real-time validation with proper error handling
       if (name.length > 100) {
-        toastUtils.formError("Widget name must be less than 100 characters");
-        return;
+        return; // Let backend validation handle this
       }
 
       if (name.length >= 2 && !widgetValidation.isValidWidgetName(name)) {
-        toastUtils.formError(
-          "Widget name can only contain letters, numbers, spaces, hyphens, and underscores",
-        );
-        return;
+        return; // Let backend validation handle this
       }
 
-      onWidgetNameChange(name);
-
-      // Trigger field validation if provided
+      // Trigger field validation if provided and name is valid length
       if (onFieldValidation && name.length >= 2) {
-        await onFieldValidation("name", name);
+        try {
+          await onFieldValidation("name", name);
+        } catch (error) {
+          console.warn("Field validation error:", error);
+        }
       }
     },
     [onWidgetNameChange, onFieldValidation],
@@ -91,7 +92,11 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
       // Trigger field validation if provided
       if (onFieldValidation) {
-        await onFieldValidation("template", templateId);
+        try {
+          await onFieldValidation("template", templateId);
+        } catch (error) {
+          console.warn("Template validation error:", error);
+        }
       }
     },
     [onTemplateChange, onFieldValidation],
@@ -145,7 +150,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
             placeholder="Enter widget name"
             className={cn(
               errors.name &&
-                "border-destructive focus-visible:ring-destructive",
+              "border-destructive focus-visible:ring-destructive",
             )}
             maxLength={100}
           />

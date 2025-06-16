@@ -23,7 +23,7 @@ class UpdateWidgetRequest extends FormRequest
     public function rules(): array
     {
         $widgetId = $this->route('widget');
-        
+
         return [
             'name' => [
                 'sometimes',
@@ -172,7 +172,7 @@ class UpdateWidgetRequest extends FormRequest
         if ($this->has('auto_open')) {
             $this->merge(['auto_open' => $this->boolean('auto_open')]);
         }
-        
+
         if ($this->has('is_active')) {
             $this->merge(['is_active' => $this->boolean('is_active')]);
         }
@@ -191,13 +191,37 @@ class UpdateWidgetRequest extends FormRequest
     }
 
     /**
-     * Get the validated data with user tracking.
+     * Get the validated data with user tracking and proper handling.
      */
     public function validatedWithUser(): array
     {
         $validated = $this->validated();
         $validated['updated_by'] = auth()->id();
-        
+
+        // Ensure proper boolean values if provided
+        if (isset($validated['auto_open'])) {
+            $validated['auto_open'] = (bool) $validated['auto_open'];
+        }
+
+        if (isset($validated['is_active'])) {
+            $validated['is_active'] = (bool) $validated['is_active'];
+        }
+
+        // Ensure auto_trigger has proper structure if provided
+        if (isset($validated['auto_trigger']) && is_array($validated['auto_trigger'])) {
+            $autoTrigger = $validated['auto_trigger'];
+            $validated['auto_trigger'] = [
+                'enabled' => $autoTrigger['enabled'] ?? false,
+                'delay' => $autoTrigger['delay'] ?? 5,
+                'message' => $autoTrigger['message'] ?? 'Need help? I\'m here to assist you!'
+            ];
+        }
+
+        // Ensure knowledge_base is array if provided
+        if (isset($validated['knowledge_base']) && !is_array($validated['knowledge_base'])) {
+            $validated['knowledge_base'] = [];
+        }
+
         return $validated;
     }
 }

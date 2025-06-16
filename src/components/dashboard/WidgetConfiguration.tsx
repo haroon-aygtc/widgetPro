@@ -57,6 +57,8 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
       const confirmed = await modal.confirmReset("configuration");
       if (confirmed) {
         resetConfig();
+        // Clear any existing errors
+        setActiveTab("templates"); // Reset to first tab
       }
     }
   };
@@ -114,10 +116,13 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                   size="sm"
                   onClick={testConfig}
                   disabled={
-                    isSaving || isLoading || Object.keys(errors).length > 0
+                    isSaving ||
+                    isLoading ||
+                    Object.keys(errors).length > 0 ||
+                    !currentWidgetId
                   }
                 >
-                  Test Widget
+                  {currentWidgetId ? "Test Widget" : "Save First"}
                 </Button>
                 <button
                   onClick={() => setShowQuickSetup(true)}
@@ -208,7 +213,9 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                 <TabsContent value="behavior" className="space-y-6">
                   <BehaviorControls
                     autoOpen={config.autoOpen}
-                    onAutoOpenChange={(autoOpen) => updateConfig({ autoOpen })}
+                    onAutoOpenChange={(autoOpen) =>
+                      updateConfig({ autoOpen })
+                    }
                     welcomeMessage={config.welcomeMessage}
                     onWelcomeMessageChange={(message) =>
                       updateConfig({ welcomeMessage: message })

@@ -356,7 +356,7 @@ const UserActivity = () => {
                             <div className="text-xs text-muted-foreground">
                               <Badge
                                 className={getRoleBadgeColor(
-                                  activity.user?.roles[0]?.name || "User",
+                                  activity.user?.roles?.[0]?.name || "User",
                                 )}
                                 variant="outline"
                               >

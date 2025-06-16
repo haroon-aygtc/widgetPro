@@ -36,6 +36,7 @@ class Widget extends Model
         'knowledge_base',
         'status',
         'is_active',
+        'embed_code',
         'created_by',
         'updated_by',
     ];
@@ -148,20 +149,32 @@ class Widget extends Model
     }
 
     /**
-     * Generate embed code for the widget.
+     * Generate production-ready embed code for the widget.
      */
     public static function generateEmbedCode($widgetId = null): string
     {
         $id = $widgetId ?: 'WIDGET_ID';
         $baseUrl = config('app.url');
-        
+
+        // Production embed code with proper error handling
         return "<script>
 (function() {
-    var script = document.createElement('script');
-    script.src = '{$baseUrl}/widget.js';
-    script.setAttribute('data-widget-id', '{$id}');
-    script.async = true;
-    document.head.appendChild(script);
+    try {
+        var script = document.createElement('script');
+        script.src = '{$baseUrl}/js/widget.min.js';
+        script.setAttribute('data-widget-id', '{$id}');
+        script.setAttribute('data-widget-version', '1.0');
+        script.async = true;
+        script.defer = true;
+
+        script.onerror = function() {
+            console.warn('ChatWidget: Failed to load widget script');
+        };
+
+        document.head.appendChild(script);
+    } catch (error) {
+        console.warn('ChatWidget: Error initializing widget', error);
+    }
 })();
 </script>";
     }
@@ -214,13 +227,13 @@ class Widget extends Model
     {
         $attributes = $this->toArray();
         unset($attributes['id'], $attributes['created_at'], $attributes['updated_at']);
-        
+
         $attributes['name'] = $newName;
         $attributes['created_by'] = $userId;
         $attributes['updated_by'] = $userId;
         $attributes['status'] = 'draft';
         $attributes['embed_code'] = null; // Will be auto-generated
-        
+
         return static::create($attributes);
     }
 
@@ -238,9 +251,9 @@ class Widget extends Model
      */
     public function isReadyForDeployment(): bool
     {
-        return !empty($this->name) && 
-               !empty($this->welcome_message) && 
-               !empty($this->placeholder) && 
+        return !empty($this->name) &&
+               !empty($this->welcome_message) &&
+               !empty($this->placeholder) &&
                $this->status === 'active';
     }
 }

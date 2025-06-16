@@ -176,14 +176,37 @@ class CreateWidgetRequest extends FormRequest
     }
 
     /**
-     * Get the validated data with user tracking.
+     * Get the validated data with user tracking and proper defaults.
      */
     public function validatedWithUser(): array
     {
         $validated = $this->validated();
         $validated['created_by'] = auth()->id();
         $validated['updated_by'] = auth()->id();
-        
+
+        // Ensure status is set
+        if (!isset($validated['status'])) {
+            $validated['status'] = 'draft';
+        }
+
+        // Ensure proper boolean values
+        $validated['auto_open'] = $validated['auto_open'] ?? false;
+        $validated['is_active'] = $validated['is_active'] ?? true;
+
+        // Ensure auto_trigger has proper structure
+        if (!isset($validated['auto_trigger']) || !is_array($validated['auto_trigger'])) {
+            $validated['auto_trigger'] = [
+                'enabled' => false,
+                'delay' => 5,
+                'message' => 'Need help? I\'m here to assist you!'
+            ];
+        }
+
+        // Ensure knowledge_base is array
+        if (!isset($validated['knowledge_base'])) {
+            $validated['knowledge_base'] = [];
+        }
+
         return $validated;
     }
 }

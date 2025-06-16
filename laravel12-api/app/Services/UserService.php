@@ -116,6 +116,16 @@ class UserService
     }
 
     /**
+     * Bulk assign roles to a user.
+     */
+    public function assignRoles(User $user, array $roleIds): void
+    {
+        $user->roles()->sync($roleIds);
+        $count = count($roleIds);
+        $this->logActivity($user->id, 'roles_bulk_assign', "Bulk assigned {$count} roles to user");
+    }
+
+    /**
      * Assign a permission to a user.
      */
     public function assignPermission(User $user, int $permissionId): void

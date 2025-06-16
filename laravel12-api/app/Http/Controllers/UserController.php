@@ -141,7 +141,7 @@ class UserController extends Controller
         // Support both single role_id and multiple role_ids
         $request->validate([
             'role_id' => 'sometimes|integer|exists:roles,id',
-            'role_ids' => 'sometimes|array',
+            'role_ids' => 'sometimes|array|min:1',
             'role_ids.*' => 'integer|exists:roles,id'
         ]);
 
@@ -150,19 +150,25 @@ class UserController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Either role_id or role_ids must be provided',
-                'errors' => ['role_id' => ['Either role_id or role_ids is required']]
+                'errors' => ['role_ids' => ['Either role_id or role_ids is required']]
             ], 422);
         }
 
         try {
-            if ($request->has('role_ids')) {
+            if ($request->has('role_ids') && !empty($request->role_ids)) {
                 // Assign multiple roles
                 $this->userService->assignRoles($user, $request->role_ids);
                 $message = 'Roles assigned successfully';
-            } else {
+            } elseif ($request->has('role_id')) {
                 // Assign single role
                 $this->userService->assignRole($user, $request->role_id);
                 $message = 'Role assigned successfully';
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No valid roles provided',
+                    'errors' => ['role_ids' => ['At least one role must be provided']]
+                ], 422);
             }
 
             return response()->json([

@@ -46,20 +46,19 @@ const DesignControls: React.FC<DesignControlsProps> = ({
   errors = {},
   onFieldValidation,
 }) => {
-  // Handle color change with validation
+  // Handle color change with enhanced validation
   const handleColorChange = useCallback(
     async (color: string) => {
-      // Real-time validation
-      if (!widgetValidation.isValidHexColor(color) && color.length === 7) {
-        toastUtils.formError("Please enter a valid hex color (e.g., #4f46e5)");
-        return;
-      }
-
+      // Always update the value first for real-time feedback
       onPrimaryColorChange(color);
 
-      // Trigger field validation if provided
+      // Trigger field validation if provided and color is complete
       if (onFieldValidation && color.length === 7) {
-        await onFieldValidation("primaryColor", color);
+        try {
+          await onFieldValidation("primaryColor", color);
+        } catch (error) {
+          console.warn("Color validation error:", error);
+        }
       }
     },
     [onPrimaryColorChange, onFieldValidation],
@@ -74,7 +73,11 @@ const DesignControls: React.FC<DesignControlsProps> = ({
 
       // Trigger field validation if provided
       if (onFieldValidation) {
-        await onFieldValidation("position", position);
+        try {
+          await onFieldValidation("position", position);
+        } catch (error) {
+          console.warn("Position validation error:", error);
+        }
       }
     },
     [onPositionChange, onFieldValidation],

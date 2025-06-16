@@ -323,7 +323,7 @@ class WidgetController extends Controller
 
             $widgetData = $data['widget'];
             unset($widgetData['id'], $widgetData['created_at'], $widgetData['updated_at']);
-            
+
             $widgetData['created_by'] = Auth::id();
             $widgetData['updated_by'] = Auth::id();
             $widgetData['name'] = $widgetData['name'] . ' (Imported)';
@@ -359,32 +359,92 @@ class WidgetController extends Controller
     }
 
     /**
-     * Test widget configuration.
+     * Test widget configuration with production validation.
      */
     public function test(Request $request): JsonResponse
     {
-        // Basic validation for testing
-        $request->validate([
-            'name' => 'required|string',
-            'welcome_message' => 'required|string',
-            'placeholder' => 'required|string',
-            'primary_color' => 'required|string|regex:/^#[0-9A-F]{6}$/i'
+        // Validate using the same rules as CreateWidgetRequest
+        $validator = validator($request->all(), [
+            'name' => [
+                'required',
+                'string',
+                'min:2',
+                'max:100',
+                'regex:/^[a-zA-Z0-9\s\-_]+$/'
+            ],
+            'template' => [
+                'required',
+                'string',
+                'in:default,minimal,modern,enterprise'
+            ],
+            'primary_color' => [
+                'required',
+                'string',
+                'regex:/^#[0-9A-F]{6}$/i'
+            ],
+            'position' => [
+                'required',
+                'string',
+                'in:bottom-right,bottom-left,top-right,top-left'
+            ],
+            'welcome_message' => [
+                'required',
+                'string',
+                'min:5',
+                'max:200'
+            ],
+            'placeholder' => [
+                'required',
+                'string',
+                'min:3',
+                'max:50'
+            ],
+            'bot_name' => [
+                'required',
+                'string',
+                'min:2',
+                'max:30'
+            ],
+            'widget_theme' => [
+                'required',
+                'string',
+                'in:light,dark'
+            ],
+            'widget_width' => [
+                'required',
+                'integer',
+                'min:250',
+                'max:450'
+            ],
+            'widget_height' => [
+                'required',
+                'integer',
+                'min:400',
+                'max:600'
+            ]
         ]);
 
-        // Simulate testing the widget configuration
-        // In a real implementation, you might test API connections, etc.
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Widget configuration validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Production validation checks
         $testResults = [
             'configuration_valid' => true,
-            'api_connections' => true,
-            'theme_rendering' => true,
-            'responsive_design' => true
+            'required_fields_present' => true,
+            'data_types_correct' => true,
+            'constraints_satisfied' => true
         ];
 
         $success = !in_array(false, $testResults, true);
 
         return response()->json([
             'success' => $success,
-            'message' => $success ? 'Widget configuration test passed' : 'Widget configuration test failed',
+            'message' => $success ? 'Widget configuration is valid and ready for deployment' : 'Widget configuration test failed',
             'test_results' => $testResults
         ]);
     }

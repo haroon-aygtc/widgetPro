@@ -10,10 +10,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Shield, CheckCircle, Loader2, Mail, Plus, Minus } from "lucide-react";
+import { Shield, CheckCircle, Loader2, Mail, Plus, Minus, AlertCircle } from "lucide-react";
 import { useUserManagement } from "@/hooks/useUserManagement";
 import { useRoleManagement } from "@/hooks/useRoleManagement";
 import { User } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AssignRoleProps {
   preSelectedUser?: User | null;
@@ -25,12 +26,13 @@ const AssignRole: React.FC<AssignRoleProps> = ({
   onUserAssigned,
 }) => {
   const { isLoading, assignRolesToUser } = useUserManagement();
-
   const { roles } = useRoleManagement();
+  const { toast } = useToast();
 
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Handle preSelectedUser prop
   useEffect(() => {
@@ -44,10 +46,25 @@ const AssignRole: React.FC<AssignRoleProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedUser) return;
+    setValidationErrors({});
+
+    // Frontend validation
+    if (!selectedUser) {
+      toast({
+        title: "Error",
+        description: "Please select a user first",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (selectedRoleIds.length === 0) {
-      // Show error if no roles selected
+      setValidationErrors({ roles: "Please select at least one role" });
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one role to assign",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -56,6 +73,12 @@ const AssignRole: React.FC<AssignRoleProps> = ({
       const result = await assignRolesToUser(selectedUser.id, selectedRoleIds);
 
       if (result?.success) {
+        toast({
+          title: "Success",
+          description: `Roles assigned successfully to ${selectedUser.name}`,
+          variant: "default",
+        });
+
         // If this was triggered from parent component, call the callback
         if (onUserAssigned) {
           onUserAssigned();
@@ -64,9 +87,31 @@ const AssignRole: React.FC<AssignRoleProps> = ({
           setSelectedUser(null);
           setSelectedRoleIds([]);
         }
+      } else {
+        // Handle validation errors from backend
+        if (result?.fieldErrors) {
+          setValidationErrors(result.fieldErrors as Record<string, string>);
+          const errorMessages = Object.values(result.fieldErrors).flat();
+          toast({
+            title: "Validation Error",
+            description: errorMessages.join(", "),
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: result?.error || "Failed to assign roles",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error("Error assigning roles:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while assigning roles",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -88,10 +133,18 @@ const AssignRole: React.FC<AssignRoleProps> = ({
         ? prev.filter((id) => id !== roleId)
         : [...prev, roleId],
     );
+    // Clear validation errors when user makes a selection
+    if (validationErrors.roles) {
+      setValidationErrors(prev => ({ ...prev, roles: "" }));
+    }
   };
 
   const handleSelectAll = () => {
     setSelectedRoleIds(roles.map((role) => role.id));
+    // Clear validation errors when user selects all
+    if (validationErrors.roles) {
+      setValidationErrors(prev => ({ ...prev, roles: "" }));
+    }
   };
 
   const handleDeselectAll = () => {
@@ -160,7 +213,10 @@ const AssignRole: React.FC<AssignRoleProps> = ({
                   </div>
 
                   {/* Role Controls */}
-                  <div className="flex flex-wrap gap-2 p-4 bg-gradient-to-r from-violet-50/50 to-purple-50/50 dark:from-violet-950/30 dark:to-purple-950/30 rounded-lg border border-violet-200/50 dark:border-violet-800/50 mb-6">
+                  <div className={`flex flex-wrap gap-2 p-4 bg-gradient-to-r from-violet-50/50 to-purple-50/50 dark:from-violet-950/30 dark:to-purple-950/30 rounded-lg border mb-6 ${validationErrors.roles
+                    ? "border-red-300 dark:border-red-700"
+                    : "border-violet-200/50 dark:border-violet-800/50"
+                    }`}>
                     <Button
                       type="button"
                       variant="outline"
@@ -186,15 +242,24 @@ const AssignRole: React.FC<AssignRoleProps> = ({
                       {selectedRoleIds.length} of {roles.length} roles selected
                     </div>
                   </div>
+
+                  {/* Validation Error Display */}
+                  {validationErrors.roles && (
+                    <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-lg">
+                      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                      <span className="text-sm text-red-700 dark:text-red-300">
+                        {validationErrors.roles}
+                      </span>
+                    </div>
+                  )}
                   <div className="grid gap-4">
                     {roles.map((role) => (
                       <div
                         key={role.id}
-                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                          selectedRoleIds.includes(role.id)
-                            ? "border-violet-500 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/50 dark:to-purple-950/50 shadow-lg shadow-violet-500/20 ring-2 ring-violet-200 dark:ring-violet-800"
-                            : "border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50/30 dark:hover:bg-violet-950/20"
-                        }`}
+                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${selectedRoleIds.includes(role.id)
+                          ? "border-violet-500 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/50 dark:to-purple-950/50 shadow-lg shadow-violet-500/20 ring-2 ring-violet-200 dark:ring-violet-800"
+                          : "border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50/30 dark:hover:bg-violet-950/20"
+                          }`}
                         onClick={() => handleRoleToggle(role.id)}
                       >
                         <div className="flex items-center justify-between">

@@ -20,7 +20,31 @@ const EmbedCodeGenerator: React.FC<EmbedCodeGeneratorProps> = ({
   const [copied, setCopied] = useState(false);
 
   const generateEmbedCode = () => {
-    return `<script src="https://chatwidget.pro/widget/${widgetId || "demo"}.js"></script>`;
+    if (!widgetId) {
+      return `<!-- Save your widget configuration first to generate embed code -->`;
+    }
+
+    const baseUrl = window.location.origin;
+    return `<script>
+(function() {
+  try {
+    var script = document.createElement('script');
+    script.src = '${baseUrl}/js/widget.min.js';
+    script.setAttribute('data-widget-id', '${widgetId}');
+    script.setAttribute('data-widget-version', '1.0');
+    script.async = true;
+    script.defer = true;
+    
+    script.onerror = function() {
+      console.warn('ChatWidget: Failed to load widget script');
+    };
+    
+    document.head.appendChild(script);
+  } catch (error) {
+    console.warn('ChatWidget: Error initializing widget', error);
+  }
+})();
+</script>`;
   };
 
   const copyToClipboard = async () => {
@@ -113,14 +137,28 @@ const EmbedCodeGenerator: React.FC<EmbedCodeGeneratorProps> = ({
               <h4 className="font-medium mb-2">Custom Initialization</h4>
               <div className="bg-muted p-4 rounded-md">
                 <code className="text-sm font-mono whitespace-pre-wrap">
-                  {`<script>
+                  {widgetId
+                    ? `<script>
   window.ChatWidgetConfig = {
     autoOpen: false,
     position: 'bottom-right',
     theme: 'light'
   };
 </script>
-<script src="https://chatwidget.pro/widget/${widgetId || "demo"}.js"></script>`}
+<script>
+(function() {
+  try {
+    var script = document.createElement('script');
+    script.src = '${window.location.origin}/js/widget.min.js';
+    script.setAttribute('data-widget-id', '${widgetId}');
+    script.async = true;
+    document.head.appendChild(script);
+  } catch (error) {
+    console.warn('ChatWidget: Error initializing widget', error);
+  }
+})();
+</script>`
+                    : "<!-- Save your widget first to see custom configuration -->"}
                 </code>
               </div>
             </div>

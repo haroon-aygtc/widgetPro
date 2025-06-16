@@ -339,7 +339,7 @@ class WidgetService {
     }
   }
 
-  // Test widget configuration
+  // Test widget configuration with production validation
   async testWidget(
     config: WidgetConfig,
   ): Promise<{ success: boolean; message: string }> {
@@ -355,8 +355,19 @@ class WidgetService {
   }
 }
 
-// Create widget service instance
-export const widgetService = new WidgetService("http://localhost:8000/api");
+// Create widget service instance with environment-based URL
+const getApiBaseUrl = () => {
+  if (typeof window !== "undefined") {
+    // Client-side: use current origin for production, localhost for development
+    return window.location.hostname === "localhost"
+      ? "http://localhost:8000/api"
+      : `${window.location.protocol}//${window.location.host}/api`;
+  }
+  // Server-side fallback
+  return "http://localhost:8000/api";
+};
+
+export const widgetService = new WidgetService(getApiBaseUrl());
 
 // Widget error handler
 export const handleWidgetError = (error: any): string => {
