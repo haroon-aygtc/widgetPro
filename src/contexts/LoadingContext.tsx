@@ -9,6 +9,7 @@ interface LoadingState {
 interface LoadingContextType {
   isLoading: boolean;
   loadingStates: Record<string, LoadingState>;
+  loadingMessage?: string;
   setLoading: (loading: boolean, message?: string) => void;
   setLoadingMessage: (message?: string) => void;
   // Unified loading state management

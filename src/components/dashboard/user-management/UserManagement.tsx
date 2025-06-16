@@ -17,7 +17,7 @@ import {
   Loader2,
 } from "lucide-react";
 import ErrorBoundary from "@/components/ui/error-boundary";
-import { User } from "@/lib/api";
+import type { User } from "@/types/user";
 
 // Lazy load components to improve initial load time
 const Users = lazy(() => import("./Users"));

@@ -1,4 +1,5 @@
-import { userApi, Role, handleApiError } from "@/lib/api";
+import { userApi, handleApiError } from "@/lib/api/userApi";
+import type { Role } from "@/types/user";
 import { z } from "zod";
 
 // Validation schemas
@@ -40,7 +41,11 @@ export class RoleService {
   async createRole(data: CreateRoleData) {
     try {
       // Validate data
-      const validatedData = createRoleSchema.parse(data);
+      const validatedData = createRoleSchema.parse(data) as {
+        name: string;
+        description: string;
+        permission_ids?: number[];
+      };
       const response = await userApi.createRole(validatedData);
       return { success: true, data: response.data, error: null };
     } catch (error) {
@@ -65,7 +70,11 @@ export class RoleService {
   async updateRole(id: number, data: UpdateRoleData) {
     try {
       // Validate data
-      const validatedData = updateRoleSchema.parse(data);
+      const validatedData = updateRoleSchema.parse(data) as {
+        name: string;
+        description: string;
+        permission_ids?: number[];
+      };
       const response = await userApi.updateRole(id, validatedData);
       return { success: true, data: response.data, error: null };
     } catch (error) {

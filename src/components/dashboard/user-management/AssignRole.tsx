@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Shield, CheckCircle, Loader2, Mail, Plus, Minus, AlertCircle } from "lucide-react";
 import { useUserManagement } from "@/hooks/useUserManagement";
 import { useRoleManagement } from "@/hooks/useRoleManagement";
-import { User } from "@/lib/api";
+import type { User } from "@/types/user";
 import { useToast } from "@/components/ui/use-toast";
 
 interface AssignRoleProps {
@@ -90,7 +90,12 @@ const AssignRole: React.FC<AssignRoleProps> = ({
       } else {
         // Handle validation errors from backend
         if (result?.fieldErrors) {
-          setValidationErrors(result.fieldErrors as Record<string, string>);
+          // Convert string[] to string for display
+          const convertedErrors: Record<string, string> = {};
+          Object.entries(result.fieldErrors).forEach(([key, value]) => {
+            convertedErrors[key] = Array.isArray(value) ? value.join(", ") : value;
+          });
+          setValidationErrors(convertedErrors);
           const errorMessages = Object.values(result.fieldErrors).flat();
           toast({
             title: "Validation Error",

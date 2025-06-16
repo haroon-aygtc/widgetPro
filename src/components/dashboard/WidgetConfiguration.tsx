@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,11 +8,13 @@ import {
   Sliders,
   Code,
   Zap,
+  Loader2,
 } from "lucide-react";
 import QuickSetupWizard from "@/components/onboarding/QuickSetupWizard";
 import ErrorBoundary from "@/components/ui/error-boundary";
 import { useWidgetConfiguration } from "@/hooks/useWidgetConfiguration";
 import { useModal } from "@/hooks/useModal";
+import { UnifiedModal } from "@/components/ui/unified-modal";
 import TemplateSelector from "./widget-config/TemplateSelector";
 import DesignControls from "./widget-config/DesignControls";
 import BehaviorControls from "./widget-config/BehaviorControls";
@@ -20,6 +22,7 @@ import PositionControls from "./widget-config/PositionControls";
 import EmbedCodeGenerator from "./widget-config/EmbedCodeGenerator";
 import SaveStateIndicator from "./widget-config/SaveStateIndicator";
 import WidgetPreview from "./WidgetPreview";
+
 
 interface WidgetConfigurationProps {
   widgetId?: string;
@@ -39,10 +42,12 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
     hasUnsavedChanges,
     isSaving,
     isLoading,
+    isResetting,
     errors,
     activeTab,
     setActiveTab,
     validateField,
+    validateFieldRealTime,
     saveConfig,
     resetConfig,
     testConfig,
@@ -52,15 +57,107 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
 
   const modal = useModal();
 
+  const [resetModalState, setResetModalState] = useState({
+    isOpen: false,
+    isLoading: false,
+    loadingMessage: ""
+  });
+
   const handleReset = async () => {
+    console.log("🔄 HANDLE RESET CALLED");
+    console.log("💾 hasUnsavedChanges:", hasUnsavedChanges);
+
     if (hasUnsavedChanges) {
-      const confirmed = await modal.confirmReset("configuration");
-      if (confirmed) {
-        resetConfig();
-        // Clear any existing errors
-        setActiveTab("templates"); // Reset to first tab
-      }
+      console.log("📋 Showing unsaved changes dialog...");
+      // Show custom modal with loading support
+      setResetModalState({
+        isOpen: true,
+        isLoading: false,
+        loadingMessage: ""
+      });
+    } else {
+      // No unsaved changes, just reset directly
+      console.log("🔄 No unsaved changes, resetting directly");
+      await resetConfig();
+      setActiveTab("templates");
     }
+  };
+
+  const handleModalSave = async () => {
+    console.log("💾 Modal save clicked - starting save with loading");
+    setResetModalState(prev => ({
+      ...prev,
+      isLoading: true,
+      loadingMessage: "Saving changes..."
+    }));
+
+    try {
+      const saveResult = await saveConfig();
+      console.log("💾 Save completed:", saveResult);
+
+      if (saveResult) {
+        // Save successful, now reset
+        console.log("✅ Save successful, now resetting");
+        setResetModalState(prev => ({
+          ...prev,
+          loadingMessage: "Resetting to factory defaults..."
+        }));
+
+        await resetConfig();
+        setActiveTab("templates");
+
+        // Close modal
+        setResetModalState({
+          isOpen: false,
+          isLoading: false,
+          loadingMessage: ""
+        });
+      }
+    } catch (error) {
+      console.error("❌ Save failed:", error);
+      setResetModalState(prev => ({
+        ...prev,
+        isLoading: false,
+        loadingMessage: ""
+      }));
+    }
+  };
+
+  const handleModalReset = async () => {
+    console.log("🔄 Modal reset clicked");
+    setResetModalState(prev => ({
+      ...prev,
+      isLoading: true,
+      loadingMessage: "Resetting to factory defaults..."
+    }));
+
+    try {
+      await resetConfig();
+      setActiveTab("templates");
+
+      // Close modal
+      setResetModalState({
+        isOpen: false,
+        isLoading: false,
+        loadingMessage: ""
+      });
+    } catch (error) {
+      console.error("❌ Reset failed:", error);
+      setResetModalState(prev => ({
+        ...prev,
+        isLoading: false,
+        loadingMessage: ""
+      }));
+    }
+  };
+
+  const handleModalCancel = () => {
+    console.log("❌ Modal cancelled");
+    setResetModalState({
+      isOpen: false,
+      isLoading: false,
+      loadingMessage: ""
+    });
   };
 
   const errorCount = Object.keys(errors).length;
@@ -86,6 +183,70 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
         />
       )}
 
+      {/* Modal for confirmations */}
+      <UnifiedModal
+        open={modal.isOpen}
+        onOpenChange={modal.closeModal}
+        title={modal.modalState.title}
+        description={modal.modalState.description}
+        type={modal.modalState.type}
+        variant={modal.modalState.variant}
+        size={modal.modalState.size}
+        confirmText={modal.modalState.confirmText}
+        cancelText={modal.modalState.cancelText}
+        onConfirm={modal.modalState.onConfirm}
+        onCancel={modal.modalState.onCancel}
+      />
+
+      {/* Custom Reset Modal with Loading State */}
+      <UnifiedModal
+        open={resetModalState.isOpen}
+        onOpenChange={(open) => !resetModalState.isLoading && !open && handleModalCancel()}
+        title="Unsaved Changes"
+        description={resetModalState.isLoading ? resetModalState.loadingMessage : "You have unsaved changes. What would you like to do?"}
+        type="dialog"
+        variant="warning"
+        size="md"
+      >
+        <div className="flex justify-end space-x-2 mt-4">
+          <Button
+            variant="outline"
+            onClick={handleModalCancel}
+            disabled={resetModalState.isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleModalReset}
+            disabled={resetModalState.isLoading}
+            className="text-red-600 hover:text-red-700"
+          >
+            {resetModalState.isLoading && resetModalState.loadingMessage.includes("Resetting") ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Resetting...
+              </>
+            ) : (
+              "Reset"
+            )}
+          </Button>
+          <Button
+            onClick={handleModalSave}
+            disabled={resetModalState.isLoading}
+          >
+            {resetModalState.isLoading && resetModalState.loadingMessage.includes("Saving") ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
+        </div>
+      </UnifiedModal>
+
       <ErrorBoundary>
         <div className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-teal-50/20 dark:to-teal-950/20">
           {/* Header */}
@@ -102,6 +263,7 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
               <SaveStateIndicator
                 hasUnsavedChanges={hasUnsavedChanges}
                 isSaving={isSaving}
+                isResetting={isResetting}
                 canUndo={canUndo}
                 canRedo={canRedo}
                 onSave={saveConfig}
@@ -114,15 +276,22 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={testConfig}
+                  onClick={() => {
+                    console.log("🖱️ Test Widget button clicked!");
+                    console.log("🔒 Button disabled?", isSaving || isLoading || Object.keys(errors).length > 0);
+                    console.log("💾 isSaving:", isSaving);
+                    console.log("⏳ isLoading:", isLoading);
+                    console.log("❌ errors:", errors);
+                    console.log("🔢 error count:", Object.keys(errors).length);
+                    testConfig();
+                  }}
                   disabled={
                     isSaving ||
                     isLoading ||
-                    Object.keys(errors).length > 0 ||
-                    !currentWidgetId
+                    Object.keys(errors).length > 0
                   }
                 >
-                  {currentWidgetId ? "Test Widget" : "Save First"}
+                  Test Widget
                 </Button>
                 <button
                   onClick={() => setShowQuickSetup(true)}
@@ -186,12 +355,15 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                     onTemplateChange={(template) =>
                       updateConfig({ selectedTemplate: template })
                     }
+                    onTemplateApply={(templateConfig) =>
+                      updateConfig(templateConfig)
+                    }
                     widgetName={config.widgetName}
                     onWidgetNameChange={(name) =>
                       updateConfig({ widgetName: name })
                     }
                     errors={errors}
-                    onFieldValidation={validateField}
+                    onFieldValidation={validateFieldRealTime}
                   />
                 </TabsContent>
 
@@ -206,7 +378,7 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                       updateConfig({ widgetPosition: position })
                     }
                     errors={errors}
-                    onFieldValidation={validateField}
+                    onFieldValidation={validateFieldRealTime}
                   />
                 </TabsContent>
 
@@ -235,7 +407,7 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                       updateConfig({ autoTrigger })
                     }
                     errors={errors}
-                    onFieldValidation={validateField}
+                    onFieldValidation={validateFieldRealTime}
                   />
                 </TabsContent>
 

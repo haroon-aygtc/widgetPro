@@ -1,4 +1,5 @@
-import { userApi, UserActivity, handleApiError } from "@/lib/api";
+import { userApi, handleApiError } from "@/lib/api/userApi";
+import type { UserActivity } from "@/types/user";
 
 // User Activity service class
 export class UserActivityService {

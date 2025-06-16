@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Permission } from "@/lib/api";
+import type { Permission } from "@/types/user";
 import {
   permissionService,
   CreatePermissionData,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Role, Permission } from "@/lib/api";
+import type { Role, Permission } from "@/types/user";
 import {
   roleService,
   CreateRoleData,

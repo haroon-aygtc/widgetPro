@@ -1,10 +1,9 @@
 import {
   userApi,
-  User,
   handleApiError,
   isValidationError,
   getValidationErrors,
-} from "@/lib/api";
+} from "@/lib/api/userApi";
 import {
   createUserSchema,
   updateUserSchema,
@@ -18,6 +17,7 @@ export type ChangePasswordData = z.infer<typeof changePasswordSchema>;
 
 // User service class
 export class UserService {
+  
   async getUsers(params?: { search?: string; role?: string; page?: number }) {
     try {
       const response = await userApi.getUsers(params);

@@ -275,10 +275,7 @@ const UserActivity = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <DatePickerWithRange
-                date={dateRange}
-                onDateChange={setDateRange}
-              />
+              <DatePickerWithRange />
             </div>
           </div>
         </CardContent>

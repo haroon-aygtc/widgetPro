@@ -7,28 +7,7 @@ import {
 } from "@/lib/validation";
 import { widgetService, handleWidgetError } from "@/services/widgetService";
 import { z } from "zod";
-
-export interface WidgetConfig {
-  widgetName: string;
-  selectedTemplate: string;
-  primaryColor: string;
-  widgetPosition: "bottom-right" | "bottom-left" | "top-right" | "top-left";
-  autoOpen: boolean;
-  widgetTheme: "light" | "dark";
-  widgetWidth: number;
-  widgetHeight: number;
-  botName: string;
-  welcomeMessage: string;
-  botAvatar: string;
-  placeholder: string;
-  autoTrigger: {
-    enabled: boolean;
-    delay: number;
-    message: string;
-  };
-  aiModel: string;
-  knowledgeBase: string[];
-}
+import type { WidgetConfig } from "@/types/widget";
 
 const defaultConfig: WidgetConfig = {
   widgetName: "My Chat Widget",
@@ -69,63 +48,155 @@ export function useWidgetConfiguration(widgetId?: string) {
   const saveLoading = useOperationLoading("widget-save");
   const loadLoading = useOperationLoading("widget-load");
   const validateLoading = useOperationLoading("widget-validate");
+  const resetLoading = useOperationLoading("widget-reset");
 
-  // Track changes for undo/redo
+  // Track changes for undo/redo - ENHANCED WITH TEMPLATE DEBUGGING
   const updateConfig = useCallback(
     (updates: Partial<WidgetConfig>) => {
-      setConfig((prev) => {
-        const newConfig = { ...prev, ...updates };
+      console.log("🔄 updateConfig called with:", updates);
+      console.log("📊 Current historyIndex:", historyIndex, "History length:", history.length);
 
-        // Add to history for undo/redo
-        setHistory((prevHistory) => {
-          const newHistory = prevHistory.slice(0, historyIndex + 1);
-          newHistory.push(newConfig);
-          return newHistory.slice(-50); // Keep last 50 changes
-        });
-        setHistoryIndex((prev) => prev + 1);
+      // Special logging for template changes
+      if (updates.selectedTemplate) {
+        console.log("🎨 Template change detected:", updates.selectedTemplate);
+        console.log("🔧 Full template update:", updates);
+      }
 
-        // Check if there are unsaved changes
-        const hasChanges =
-          JSON.stringify(newConfig) !== JSON.stringify(lastSavedConfig.current);
-        setHasUnsavedChanges(hasChanges);
+      const newConfig = {
+        ...defaultConfig,
+        ...config,
+        ...updates
+      };
 
-        return newConfig;
+      console.log("📋 New config created:", {
+        selectedTemplate: newConfig.selectedTemplate,
+        widgetName: newConfig.widgetName,
+        primaryColor: newConfig.primaryColor,
+        botName: newConfig.botName
       });
+
+      setConfig(newConfig);
+
+      // Simple history management
+      setHistory((prevHistory) => {
+        const newHistory = prevHistory.slice(0, historyIndex + 1);
+        newHistory.push(newConfig);
+        console.log("📝 Added to history. New length:", newHistory.length);
+        console.log("📚 History preview:", newHistory.map((h, i) => ({
+          index: i,
+          template: h.selectedTemplate,
+          name: h.widgetName
+        })));
+        return newHistory.slice(-50);
+      });
+
+      setHistoryIndex((prev) => {
+        const newIndex = prev + 1;
+        console.log("📈 History index changed from", prev, "to", newIndex);
+        return newIndex;
+      });
+      setHasUnsavedChanges(true);
     },
-    [historyIndex],
+    [config, historyIndex]
   );
 
-  // Undo functionality
+  // Enhanced undo functionality with template debugging
   const undo = useCallback(() => {
+    console.log("⏪ Undo called. Current index:", historyIndex, "History length:", history.length);
+    console.log("📚 Current history:", history.map((h, i) => ({
+      index: i,
+      template: h.selectedTemplate,
+      name: h.widgetName,
+      isCurrent: i === historyIndex
+    })));
+
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
-      setHistoryIndex(newIndex);
-      setConfig(history[newIndex]);
+      const targetConfig = history[newIndex];
+      const currentConfig = history[historyIndex];
 
-      const hasChanges =
-        JSON.stringify(history[newIndex]) !==
-        JSON.stringify(lastSavedConfig.current);
-      setHasUnsavedChanges(hasChanges);
+      console.log("🎯 Undoing from:", {
+        template: currentConfig?.selectedTemplate,
+        name: currentConfig?.widgetName
+      });
+      console.log("🎯 Undoing to:", {
+        template: targetConfig?.selectedTemplate,
+        name: targetConfig?.widgetName
+      });
 
-      toastUtils.operationSuccess("Undo");
+      if (targetConfig) {
+        // Set config directly without triggering updateConfig
+        setConfig(targetConfig);
+        setHistoryIndex(newIndex);
+
+        const hasChanges =
+          JSON.stringify(targetConfig) !==
+          JSON.stringify(lastSavedConfig.current);
+        setHasUnsavedChanges(hasChanges);
+
+        console.log("✅ Undo successful. New index:", newIndex);
+        console.log("📋 Config after undo:", {
+          selectedTemplate: targetConfig.selectedTemplate,
+          widgetName: targetConfig.widgetName
+        });
+        toastUtils.operationSuccess("Undo");
+      } else {
+        console.log("❌ Target config is null/undefined");
+      }
+    } else {
+      console.log("❌ Nothing to undo");
+      toastUtils.operationError("Undo", "Nothing to undo");
     }
-  }, [historyIndex, history]);
+  }, [historyIndex, history, lastSavedConfig]);
 
-  // Redo functionality
+  // Enhanced redo functionality with template debugging
   const redo = useCallback(() => {
+    console.log("⏩ Redo called. Current index:", historyIndex, "History length:", history.length);
+    console.log("📚 Current history:", history.map((h, i) => ({
+      index: i,
+      template: h.selectedTemplate,
+      name: h.widgetName,
+      isCurrent: i === historyIndex
+    })));
+
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1;
-      setHistoryIndex(newIndex);
-      setConfig(history[newIndex]);
+      const targetConfig = history[newIndex];
+      const currentConfig = history[historyIndex];
 
-      const hasChanges =
-        JSON.stringify(history[newIndex]) !==
-        JSON.stringify(lastSavedConfig.current);
-      setHasUnsavedChanges(hasChanges);
+      console.log("🎯 Redoing from:", {
+        template: currentConfig?.selectedTemplate,
+        name: currentConfig?.widgetName
+      });
+      console.log("🎯 Redoing to:", {
+        template: targetConfig?.selectedTemplate,
+        name: targetConfig?.widgetName
+      });
 
-      toastUtils.operationSuccess("Redo");
+      if (targetConfig) {
+        // Set config directly without triggering updateConfig
+        setConfig(targetConfig);
+        setHistoryIndex(newIndex);
+
+        const hasChanges =
+          JSON.stringify(targetConfig) !==
+          JSON.stringify(lastSavedConfig.current);
+        setHasUnsavedChanges(hasChanges);
+
+        console.log("✅ Redo successful. New index:", newIndex);
+        console.log("📋 Config after redo:", {
+          selectedTemplate: targetConfig.selectedTemplate,
+          widgetName: targetConfig.widgetName
+        });
+        toastUtils.operationSuccess("Redo");
+      } else {
+        console.log("❌ Target config is null/undefined");
+      }
+    } else {
+      console.log("❌ Nothing to redo");
+      toastUtils.operationError("Redo", "Nothing to redo");
     }
-  }, [historyIndex, history]);
+  }, [historyIndex, history, lastSavedConfig]);
 
   // Real-time validation with proper error handling
   const validateField = useCallback(
@@ -141,6 +212,7 @@ export function useWidgetConfiguration(widgetId?: string) {
           if (validation.errors[fieldName]) {
             newErrors[fieldName] = validation.errors[fieldName];
           } else {
+            // Immediately clear error when field becomes valid
             delete newErrors[fieldName];
           }
           return newErrors;
@@ -160,6 +232,24 @@ export function useWidgetConfiguration(widgetId?: string) {
       }
     },
     [config],
+  );
+
+  // Enhanced real-time field validation - SIMPLIFIED
+  const validateFieldRealTime = useCallback(
+    async (fieldName: string, value: any): Promise<boolean> => {
+      // Only clear errors immediately, don't trigger API validation on every change
+      if (value && value.toString().trim()) {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[fieldName];
+          return newErrors;
+        });
+      }
+
+      // No API calls on every change - only validate on save
+      return true;
+    },
+    []
   );
 
   // Validation
@@ -204,6 +294,8 @@ export function useWidgetConfiguration(widgetId?: string) {
 
   // Focus error field and switch to appropriate tab with enhanced mapping
   const focusErrorField = useCallback((fieldPath: string) => {
+    console.log(`🎯 Focusing error field: ${fieldPath}`);
+
     const tabMapping: Record<string, string> = {
       // Templates tab
       name: "templates",
@@ -213,35 +305,27 @@ export function useWidgetConfiguration(widgetId?: string) {
 
       // Design tab
       primaryColor: "design",
-      primary_color: "design",
-      position: "design",
       widgetPosition: "design",
+      position: "design",
 
       // Behavior tab
       welcomeMessage: "behavior",
-      welcome_message: "behavior",
       placeholder: "behavior",
       botName: "behavior",
-      bot_name: "behavior",
       botAvatar: "behavior",
-      bot_avatar: "behavior",
       autoTrigger: "behavior",
-      auto_trigger: "behavior",
+      autoTriggerMessage: "behavior",
       aiModel: "behavior",
-      ai_model: "behavior",
       autoOpen: "behavior",
-      auto_open: "behavior",
 
       // Controls tab
       widgetTheme: "controls",
-      widget_theme: "controls",
       widgetWidth: "controls",
-      widget_width: "controls",
       widgetHeight: "controls",
-      widget_height: "controls",
     };
 
     const targetTab = tabMapping[fieldPath] || "templates";
+    console.log(`📂 Switching to tab: ${targetTab}`);
     setActiveTab(targetTab);
 
     // Focus the field after tab switch with enhanced selector
@@ -256,7 +340,10 @@ export function useWidgetConfiguration(widgetId?: string) {
       let fieldElement: HTMLElement | null = null;
       for (const selector of selectors) {
         fieldElement = document.querySelector(selector) as HTMLElement;
-        if (fieldElement) break;
+        if (fieldElement) {
+          console.log(`✅ Found field element with selector: ${selector}`);
+          break;
+        }
       }
 
       if (fieldElement) {
@@ -276,6 +363,11 @@ export function useWidgetConfiguration(widgetId?: string) {
             "ring-offset-2",
           );
         }, 3000);
+
+        console.log(`🎯 Successfully focused and highlighted field: ${fieldPath}`);
+      } else {
+        console.warn(`❌ Could not find field element for: ${fieldPath}`);
+        console.warn(`Tried selectors:`, selectors);
       }
     }, 150);
   }, []);
@@ -287,8 +379,15 @@ export function useWidgetConfiguration(widgetId?: string) {
       const loadedConfig = await widgetService.getWidget(id);
       setConfig(loadedConfig);
       lastSavedConfig.current = { ...loadedConfig };
-      setHistory([loadedConfig]);
-      setHistoryIndex(0);
+
+      // Initialize history properly - keep current history and add loaded config
+      setHistory((prevHistory) => {
+        // If we have existing history, preserve it and add the loaded config
+        const newHistory = prevHistory.length > 1 ? [...prevHistory, loadedConfig] : [defaultConfig, loadedConfig];
+        return newHistory.slice(-50); // Keep last 50 changes
+      });
+      setHistoryIndex((prevIndex) => prevIndex + 1);
+
       setHasUnsavedChanges(false);
       setErrors({});
       setWidgetIdState(id);
@@ -386,14 +485,63 @@ export function useWidgetConfiguration(widgetId?: string) {
     }
   }, [config, validateConfig, widgetIdState]);
 
-  // Reset to last saved state
-  const resetConfig = useCallback(() => {
-    setConfig(lastSavedConfig.current);
-    setHasUnsavedChanges(false);
-    setErrors({});
+  // Professional Reset to Factory Defaults - COMPLETELY REWRITTEN
+  const resetConfig = useCallback(async () => {
+    console.log("🏭 PROFESSIONAL RESET TO FACTORY DEFAULTS INITIATED");
 
-    toastUtils.configReset();
-  }, []);
+    resetLoading.start("Resetting to factory defaults...");
+
+    try {
+      // ALWAYS reset to defaultConfig - this is what "reset to default" means
+      // Not to last saved state, not to anything else - FACTORY DEFAULTS
+      const factoryDefaults = { ...defaultConfig };
+
+      console.log("🎯 Resetting to factory defaults:", {
+        widgetName: factoryDefaults.widgetName,
+        selectedTemplate: factoryDefaults.selectedTemplate,
+        primaryColor: factoryDefaults.primaryColor,
+        botName: factoryDefaults.botName
+      });
+
+      resetLoading.updateMessage("Applying factory defaults...");
+
+      // Set configuration to factory defaults
+      setConfig(factoryDefaults);
+
+      resetLoading.updateMessage("Resetting history...");
+
+      // Reset history to factory defaults only
+      setHistory([factoryDefaults]);
+      setHistoryIndex(0);
+
+      resetLoading.updateMessage("Clearing unsaved changes...");
+
+      // Clear all unsaved changes and errors
+      setHasUnsavedChanges(false);
+      setErrors({});
+
+      resetLoading.updateMessage("Reset completed successfully!");
+
+      console.log("✅ Factory reset completed successfully");
+      console.log("📋 New config state:", {
+        widgetName: factoryDefaults.widgetName,
+        selectedTemplate: factoryDefaults.selectedTemplate,
+        primaryColor: factoryDefaults.primaryColor
+      });
+
+      // Show success message
+      toastUtils.operationSuccess("Reset to factory defaults");
+
+      return true;
+
+    } catch (error) {
+      console.error("❌ Reset failed:", error);
+      toastUtils.apiError("Failed to reset widget configuration");
+      return false;
+    } finally {
+      resetLoading.stop();
+    }
+  }, [resetLoading]);
 
   // Load widget on mount if widgetId is provided
   useEffect(() => {
@@ -478,11 +626,13 @@ export function useWidgetConfiguration(widgetId?: string) {
     hasUnsavedChanges,
     isSaving: saveLoading.isLoading,
     isLoading: loadLoading.isLoading || isLoading,
+    isResetting: resetLoading.isLoading,
     errors,
     activeTab,
     setActiveTab,
     validateConfig,
     validateField,
+    validateFieldRealTime,
     saveConfig,
     loadConfig,
     resetConfig,
@@ -492,3 +642,6 @@ export function useWidgetConfiguration(widgetId?: string) {
     widgetId: widgetIdState,
   };
 }
+
+// Re-export for backward compatibility
+export type { WidgetConfig } from "@/types/widget";

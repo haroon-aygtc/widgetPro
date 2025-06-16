@@ -62,7 +62,7 @@ import { useDeleteConfirmation } from "@/hooks/useDeleteConfirmation";
 import { createUserSchema, updateUserSchema } from "@/lib/validation";
 import { toastUtils } from "@/components/ui/use-toast";
 import DeleteConfirmation from "@/components/ui/delete-confirmation";
-import { User } from "@/lib/api";
+import type { User } from "@/types/user";
 
 interface UsersProps {
   onAssignPermission?: (user: any) => void;

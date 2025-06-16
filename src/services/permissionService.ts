@@ -1,4 +1,5 @@
-import { userApi, Permission, handleApiError } from "@/lib/api";
+import { userApi, handleApiError } from "@/lib/api/userApi";
+import type { Permission } from "@/types/user";
 import { z } from "zod";
 
 // Validation schemas
@@ -46,7 +47,12 @@ export class PermissionService {
   async createPermission(data: CreatePermissionData) {
     try {
       // Validate data
-      const validatedData = createPermissionSchema.parse(data);
+      const validatedData = createPermissionSchema.parse(data) as {
+        name: string;
+        display_name: string;
+        description?: string;
+        category: string;
+      };
       // Note: This endpoint might not exist in the current API
       // You may need to add it to the backend
       const response = await userApi.createPermission(validatedData);
@@ -73,7 +79,12 @@ export class PermissionService {
   async updatePermission(id: number, data: UpdatePermissionData) {
     try {
       // Validate data
-      const validatedData = updatePermissionSchema.parse(data);
+      const validatedData = updatePermissionSchema.parse(data) as {
+        name: string;
+        display_name: string;
+        description?: string;
+        category: string;
+      };
       // Note: This endpoint might not exist in the current API
       // You may need to add it to the backend
       const response = await userApi.updatePermission(id, validatedData);

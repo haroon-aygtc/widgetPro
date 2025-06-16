@@ -29,7 +29,9 @@ import {
   Calendar,
   Filter,
   RefreshCw,
+  Target,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 // Reusable Metric Card Component
 interface MetricCardProps {

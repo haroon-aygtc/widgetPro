@@ -24,7 +24,7 @@ import { useUserManagement } from "@/hooks/useUserManagement";
 import { usePermissionManagement } from "@/hooks/usePermissionManagement";
 import { userService } from "@/services/userService";
 import { useToast } from "@/components/ui/use-toast";
-import { User } from "@/lib/api";
+import { Permission, User } from "@/types/user";
 
 interface AssignPermissionProps {
   preSelectedUser?: User | null;
@@ -328,7 +328,7 @@ const AssignPermission: React.FC<AssignPermissionProps> = ({ preSelectedUser, on
                                 {category}
                               </h3>
                               <Badge className={getCategoryColor(category)}>
-                                {categoryPermissions.length} permissions
+                                {(categoryPermissions as Permission[]).length} permissions
                               </Badge>
                             </div>
                             <div className="flex gap-2">
@@ -357,7 +357,7 @@ const AssignPermission: React.FC<AssignPermissionProps> = ({ preSelectedUser, on
                             </div>
                           </div>
                           <div className="grid gap-3">
-                            {categoryPermissions.map((permission) => {
+                            {(categoryPermissions as Permission[]).map((permission: Permission) => {
                               const isSelected = selectedPermissions.includes(permission.id.toString());
                               const hasViaRole = hasPermissionThroughRole(permission.id.toString());
 

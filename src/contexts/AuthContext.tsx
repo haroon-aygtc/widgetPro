@@ -5,13 +5,9 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import {
-  authService,
-  type AuthUser,
-  type LoginCredentials,
-  type RegisterData,
-} from "@/services/authService";
-import { handleApiError } from "@/lib/axios";
+import { authService } from "@/services/authService";
+import type { AuthUser, LoginCredentials, RegisterData } from "@/types/auth";
+import { handleApiError } from "@/lib/api/config/axios";
 import { toastUtils } from "@/components/ui/use-toast";
 
 interface AuthContextType {

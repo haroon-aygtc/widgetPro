@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { UserActivity } from "@/lib/api";
+import { UserActivity } from "@/types/user";
 import { userActivityService } from "@/services/userActivityService";
 import { useOperationLoading } from "@/contexts/LoadingContext";
 import { toastUtils } from "@/components/ui/use-toast";

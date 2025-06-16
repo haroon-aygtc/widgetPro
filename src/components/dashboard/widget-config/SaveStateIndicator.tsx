@@ -20,6 +20,7 @@ import {
 interface SaveStateIndicatorProps {
   hasUnsavedChanges: boolean;
   isSaving: boolean;
+  isResetting?: boolean;
   canUndo: boolean;
   canRedo: boolean;
   onSave: () => void;
@@ -32,6 +33,7 @@ interface SaveStateIndicatorProps {
 const SaveStateIndicator: React.FC<SaveStateIndicatorProps> = ({
   hasUnsavedChanges,
   isSaving,
+  isResetting = false,
   canUndo,
   canRedo,
   onSave,
@@ -40,6 +42,9 @@ const SaveStateIndicator: React.FC<SaveStateIndicatorProps> = ({
   onReset,
   errorCount = 0,
 }) => {
+  // Save button should be disabled if there are validation errors OR no changes OR currently saving OR resetting
+  const canSave = hasUnsavedChanges && !isSaving && !isResetting && errorCount === 0;
+
   return (
     <TooltipProvider>
       <div className="flex items-center space-x-3">
@@ -79,10 +84,10 @@ const SaveStateIndicator: React.FC<SaveStateIndicatorProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onUndo}
-                disabled={!canUndo}
+                disabled={!canUndo || isResetting || isSaving}
                 className={cn(
                   "h-8 w-8 p-0",
-                  !canUndo && "opacity-50 cursor-not-allowed",
+                  (!canUndo || isResetting || isSaving) && "opacity-50 cursor-not-allowed",
                 )}
               >
                 <Undo2 className="h-4 w-4" />
@@ -99,10 +104,10 @@ const SaveStateIndicator: React.FC<SaveStateIndicatorProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onRedo}
-                disabled={!canRedo}
+                disabled={!canRedo || isResetting || isSaving}
                 className={cn(
                   "h-8 w-8 p-0",
-                  !canRedo && "opacity-50 cursor-not-allowed",
+                  (!canRedo || isResetting || isSaving) && "opacity-50 cursor-not-allowed",
                 )}
               >
                 <Redo2 className="h-4 w-4" />
@@ -119,26 +124,31 @@ const SaveStateIndicator: React.FC<SaveStateIndicatorProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onReset}
-                disabled={!hasUnsavedChanges}
+                disabled={isResetting || isSaving}
                 className={cn(
                   "h-8 w-8 p-0",
-                  !hasUnsavedChanges && "opacity-50 cursor-not-allowed",
+                  (isResetting || isSaving) && "opacity-50 cursor-not-allowed",
                 )}
               >
-                <RotateCcw className="h-4 w-4" />
+                {isResetting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-4 w-4" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Reset to Last Saved</p>
+              <p>{isResetting ? "Resetting to factory defaults..." : "Reset to factory defaults"}</p>
             </TooltipContent>
           </Tooltip>
 
           <Button
             onClick={onSave}
-            disabled={isSaving || errorCount > 0}
+            disabled={!canSave}
             size="sm"
             className={cn(
-              hasUnsavedChanges && errorCount === 0 && "animate-pulse",
+              canSave && "animate-pulse",
+              !canSave && errorCount > 0 && "opacity-50",
             )}
           >
             {isSaving ? (
@@ -158,6 +168,7 @@ const SaveStateIndicator: React.FC<SaveStateIndicatorProps> = ({
         {/* Keyboard Shortcuts Hint */}
         <div className="text-xs text-muted-foreground hidden lg:block">
           Ctrl+S to save • Ctrl+Z to undo
+          {errorCount > 0 && " • Fix errors to save"}
         </div>
       </div>
     </TooltipProvider>

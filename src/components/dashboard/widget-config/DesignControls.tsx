@@ -17,8 +17,6 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { widgetValidation } from "@/services/widgetService";
-import { toastUtils } from "@/components/ui/use-toast";
 
 interface DesignControlsProps {
   primaryColor: string;
@@ -52,8 +50,8 @@ const DesignControls: React.FC<DesignControlsProps> = ({
       // Always update the value first for real-time feedback
       onPrimaryColorChange(color);
 
-      // Trigger field validation if provided and color is complete
-      if (onFieldValidation && color.length === 7) {
+      // Trigger real-time validation for immediate error clearing
+      if (onFieldValidation) {
         try {
           await onFieldValidation("primaryColor", color);
         } catch (error) {
@@ -71,7 +69,7 @@ const DesignControls: React.FC<DesignControlsProps> = ({
     ) => {
       onPositionChange(position);
 
-      // Trigger field validation if provided
+      // Trigger real-time validation
       if (onFieldValidation) {
         try {
           await onFieldValidation("position", position);
@@ -117,7 +115,7 @@ const DesignControls: React.FC<DesignControlsProps> = ({
                 className={cn(
                   "flex-1",
                   errors.primaryColor &&
-                    "border-destructive focus-visible:ring-destructive",
+                  "border-destructive focus-visible:ring-destructive",
                 )}
                 placeholder="#000000"
                 maxLength={7}
@@ -145,7 +143,7 @@ const DesignControls: React.FC<DesignControlsProps> = ({
                 data-field="position"
                 className={cn(
                   errors.position &&
-                    "border-destructive focus:ring-destructive",
+                  "border-destructive focus:ring-destructive",
                 )}
               >
                 <SelectValue placeholder="Select position" />

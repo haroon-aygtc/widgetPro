@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import type { WidgetConfig } from "@/hooks/useWidgetConfiguration";
+import type { WidgetConfig } from "@/types/widget";
 import { widgetValidation } from "@/services/widgetService";
 import { toastUtils } from "@/components/ui/use-toast";
 
@@ -55,8 +55,8 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
       // Always update the value first for real-time feedback
       onWelcomeMessageChange(message);
 
-      // Trigger field validation if provided and message meets minimum length
-      if (onFieldValidation && message.length >= 5) {
+      // Trigger real-time validation for immediate error clearing
+      if (onFieldValidation) {
         try {
           await onFieldValidation("welcomeMessage", message);
         } catch (error) {
@@ -73,8 +73,8 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
       // Always update the value first for real-time feedback
       onPlaceholderChange(placeholderText);
 
-      // Trigger field validation if provided and placeholder meets minimum length
-      if (onFieldValidation && placeholderText.length >= 3) {
+      // Trigger real-time validation for immediate error clearing
+      if (onFieldValidation) {
         try {
           await onFieldValidation("placeholder", placeholderText);
         } catch (error) {
@@ -91,8 +91,8 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
       // Always update the value first for real-time feedback
       onBotAvatarChange(avatar);
 
-      // Trigger field validation if provided and avatar is not empty
-      if (onFieldValidation && avatar.trim()) {
+      // Trigger real-time validation for immediate error clearing
+      if (onFieldValidation) {
         try {
           await onFieldValidation("botAvatar", avatar);
         } catch (error) {
@@ -102,6 +102,24 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
     },
     [onBotAvatarChange, onFieldValidation],
   );
+
+  // Handle bot name change with validation
+  const handleBotNameChange = useCallback(
+    async (name: string) => {
+      onBotNameChange(name);
+
+      // Trigger real-time validation
+      if (onFieldValidation) {
+        try {
+          await onFieldValidation("botName", name);
+        } catch (error) {
+          console.warn("Bot name validation error:", error);
+        }
+      }
+    },
+    [onBotNameChange, onFieldValidation],
+  );
+
   return (
     <Card className="bg-gradient-to-br from-card to-card/80">
       <CardHeader>
@@ -143,7 +161,7 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
               onChange={(e) => handleWelcomeMessageChange(e.target.value)}
               className={cn(
                 errors.welcomeMessage &&
-                  "border-destructive focus-visible:ring-destructive",
+                "border-destructive focus-visible:ring-destructive",
               )}
               maxLength={200}
             />
@@ -169,7 +187,7 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
               onChange={(e) => handlePlaceholderChange(e.target.value)}
               className={cn(
                 errors.placeholder &&
-                  "border-destructive focus-visible:ring-destructive",
+                "border-destructive focus-visible:ring-destructive",
               )}
               maxLength={50}
             />
@@ -189,9 +207,10 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
             <Label htmlFor="bot-name">Bot Name</Label>
             <Input
               id="bot-name"
+              data-field="botName"
               placeholder="Enter bot name"
               value={botName}
-              onChange={(e) => onBotNameChange(e.target.value)}
+              onChange={(e) => handleBotNameChange(e.target.value)}
             />
           </div>
 
@@ -199,12 +218,13 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
             <Label htmlFor="bot-avatar">Bot Avatar URL</Label>
             <Input
               id="bot-avatar"
+              data-field="botAvatar"
               placeholder="Enter avatar URL"
               value={botAvatar}
               onChange={(e) => handleBotAvatarChange(e.target.value)}
               className={cn(
                 errors.botAvatar &&
-                  "border-destructive focus-visible:ring-destructive",
+                "border-destructive focus-visible:ring-destructive",
               )}
             />
             {errors.botAvatar && (
@@ -251,6 +271,7 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
                   <Label htmlFor="auto-trigger-message">Trigger Message</Label>
                   <Input
                     id="auto-trigger-message"
+                    data-field="autoTriggerMessage"
                     placeholder="Enter trigger message"
                     value={autoTrigger.message}
                     onChange={(e) =>

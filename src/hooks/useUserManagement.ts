@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { User, Role } from "@/lib/api";
+import { User, Role } from "@/types/user";
 import {
   userService,
   CreateUserData,
