@@ -11,6 +11,9 @@ import {
   Loader2,
   Save,
   RotateCcw,
+  Sparkles,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import QuickSetupWizard from "@/components/onboarding/QuickSetupWizard";
 import ErrorBoundary from "@/components/ui/error-boundary";
@@ -437,6 +440,13 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                     Controls
                   </TabsTrigger>
                   <TabsTrigger
+                    value="ai-model"
+                    className="flex items-center gap-2"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    AI Model
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="embed"
                     className="flex items-center gap-2"
                   >
@@ -503,6 +513,73 @@ const WidgetConfiguration: React.FC<WidgetConfigurationProps> = ({
                     errors={errors}
                     onFieldValidation={validateFieldRealTime}
                   />
+                </TabsContent>
+
+                <TabsContent value="ai-model" className="space-y-6">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold">
+                          AI Model Selection
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Choose the AI model that will power your chat widget
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          window.open("/dashboard/ai-models", "_blank")
+                        }
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Manage AI Models
+                      </Button>
+                    </div>
+
+                    {!hasAIModel() ? (
+                      <div className="p-6 border-2 border-dashed border-yellow-200 rounded-lg bg-yellow-50/50">
+                        <div className="text-center space-y-3">
+                          <div className="w-12 h-12 mx-auto bg-yellow-100 rounded-full flex items-center justify-center">
+                            <AlertCircle className="h-6 w-6 text-yellow-600" />
+                          </div>
+                          <h4 className="font-medium text-yellow-800">
+                            No AI Model Selected
+                          </h4>
+                          <p className="text-sm text-yellow-700">
+                            Your widget needs an AI model to function. Please
+                            configure an AI provider and select a model.
+                          </p>
+                          <Button
+                            onClick={() =>
+                              window.open("/dashboard/ai-models", "_blank")
+                            }
+                            className="bg-yellow-600 hover:bg-yellow-700"
+                          >
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Configure AI Model
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 border border-green-200 rounded-lg bg-green-50/50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-green-800">
+                              AI Model Configured
+                            </h4>
+                            <p className="text-sm text-green-700">
+                              Your widget is ready to use AI-powered
+                              conversations
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="controls" className="space-y-6">

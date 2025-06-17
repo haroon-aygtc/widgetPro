@@ -1,25 +1,30 @@
 import type { ApiResponse } from "@/types/api";
-import { WidgetConfig, WidgetApiData, WidgetListItem, WidgetAnalytics } from "@/types/widget";
+import {
+  WidgetConfig,
+  WidgetApiData,
+  WidgetListItem,
+  WidgetAnalytics,
+} from "@/types/widget";
 import { widgetApi } from "@/lib/api/widgetApi";
 import { handleApiError } from "@/lib/api/config/axios";
 
 // Field mapping configuration to eliminate duplication
 const WIDGET_FIELD_MAPPINGS = {
-  widgetName: 'name',
-  primaryColor: 'primary_color',
-  widgetPosition: 'position',
-  autoOpen: 'auto_open',
-  widgetTheme: 'widget_theme',
-  widgetWidth: 'widget_width',
-  widgetHeight: 'widget_height',
-  botName: 'bot_name',
-  welcomeMessage: 'welcome_message',
-  botAvatar: 'bot_avatar',
-  selectedTemplate: 'template',
-  placeholder: 'placeholder',
-  autoTrigger: 'auto_trigger',
-  aiModel: 'ai_model',
-  knowledgeBase: 'knowledge_base',
+  widgetName: "name",
+  primaryColor: "primary_color",
+  widgetPosition: "position",
+  autoOpen: "auto_open",
+  widgetTheme: "widget_theme",
+  widgetWidth: "widget_width",
+  widgetHeight: "widget_height",
+  botName: "bot_name",
+  welcomeMessage: "welcome_message",
+  botAvatar: "bot_avatar",
+  selectedTemplate: "template",
+  placeholder: "placeholder",
+  autoTrigger: "auto_trigger",
+  aiModel: "ai_model",
+  knowledgeBase: "knowledge_base",
 } as const;
 
 // Default values configuration
@@ -189,13 +194,41 @@ class WidgetService {
     }
   }
 
-  // Test widget configuration with production validation
+  // Test widget configuration with enhanced production validation
   async testWidget(
     config: WidgetConfig,
-  ): Promise<{ success: boolean; message: string }> {
-    const apiData = this.configToApiData(config);
-    const response = await widgetApi.testWidget(apiData);
-    return response.data;
+  ): Promise<{ success: boolean; message: string; details?: any }> {
+    try {
+      // Pre-validation checks
+      const preValidation = this.preValidateWidget(config);
+      if (!preValidation.isValid) {
+        return {
+          success: false,
+          message: preValidation.message,
+          details: preValidation.errors,
+        };
+      }
+
+      const apiData = this.configToApiData(config);
+      const response = await widgetApi.testWidget(apiData);
+
+      // Enhanced response with additional validation details
+      return {
+        success: response.data.success,
+        message: response.data.message,
+        details: {
+          aiModelValidated: !!config.aiModel,
+          knowledgeBaseCount: config.knowledgeBase?.length || 0,
+          configurationComplete: this.isConfigurationComplete(config),
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: handleApiError(error),
+        details: { error: error.message },
+      };
+    }
   }
 }
 
@@ -206,7 +239,7 @@ export const handleWidgetError = (error: any): string => {
   return handleApiError(error);
 };
 
-// Widget validation helpers
+// Enhanced widget validation helpers
 export const widgetValidation = {
   isValidHexColor: (color: string): boolean => {
     return /^#[0-9A-F]{6}$/i.test(color);
@@ -234,4 +267,103 @@ export const widgetValidation = {
   ): boolean => {
     return message.length >= minLength && message.length <= maxLength;
   },
+
+  isValidAIModel: (model: string): boolean => {
+    if (!model || model.trim() === "") return false;
+
+    const validPatterns = [
+      /^gpt-[34]/, // OpenAI GPT models
+      /^claude-/, // Anthropic Claude models
+      /^gemini-/, // Google Gemini models
+      /^llama-/, // Meta LLaMA models
+      /^mistral-/, // Mistral models
+    ];
+
+    return validPatterns.some((pattern) => pattern.test(model.toLowerCase()));
+  },
+
+  isValidPosition: (position: string): boolean => {
+    const validPositions = [
+      "bottom-right",
+      "bottom-left",
+      "top-right",
+      "top-left",
+      "center",
+    ];
+    return validPositions.includes(position);
+  },
+
+  isValidTheme: (theme: string): boolean => {
+    const validThemes = ["light", "dark", "auto"];
+    return validThemes.includes(theme);
+  },
 };
+
+// Additional widget service methods
+class WidgetServiceExtensions {
+  // Pre-validation before API calls
+  preValidateWidget(config: WidgetConfig): {
+    isValid: boolean;
+    message: string;
+    errors?: string[];
+  } {
+    const errors: string[] = [];
+
+    // Validate required fields
+    if (!config.widgetName || config.widgetName.trim() === "") {
+      errors.push("Widget name is required");
+    }
+
+    if (!widgetValidation.isValidWidgetName(config.widgetName)) {
+      errors.push("Widget name contains invalid characters");
+    }
+
+    if (!widgetValidation.isValidHexColor(config.primaryColor)) {
+      errors.push("Primary color must be a valid hex color");
+    }
+
+    if (!widgetValidation.isValidPosition(config.widgetPosition)) {
+      errors.push("Widget position is invalid");
+    }
+
+    if (!widgetValidation.isValidTheme(config.widgetTheme)) {
+      errors.push("Widget theme is invalid");
+    }
+
+    if (config.aiModel && !widgetValidation.isValidAIModel(config.aiModel)) {
+      errors.push("AI model format is invalid");
+    }
+
+    if (!widgetValidation.isValidMessage(config.welcomeMessage)) {
+      errors.push("Welcome message length is invalid");
+    }
+
+    if (config.botAvatar && !widgetValidation.isValidUrl(config.botAvatar)) {
+      errors.push("Bot avatar URL is invalid");
+    }
+
+    return {
+      isValid: errors.length === 0,
+      message: errors.length > 0 ? errors[0] : "Configuration is valid",
+      errors: errors.length > 0 ? errors : undefined,
+    };
+  }
+
+  // Check if configuration is complete for production
+  isConfigurationComplete(config: WidgetConfig): boolean {
+    const requiredFields = [
+      config.widgetName,
+      config.primaryColor,
+      config.widgetPosition,
+      config.welcomeMessage,
+      config.botName,
+    ];
+
+    return requiredFields.every(
+      (field) => field && field.toString().trim() !== "",
+    );
+  }
+}
+
+// Extend the main widget service with additional methods
+Object.assign(WidgetService.prototype, WidgetServiceExtensions.prototype);

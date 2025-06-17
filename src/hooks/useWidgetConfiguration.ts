@@ -333,7 +333,10 @@ export function useWidgetConfiguration(widgetId?: string) {
       setErrors({});
       setWidgetIdState(id);
 
-      toastUtils.operationSuccess("Widget loaded", "Widget configuration has been loaded");
+      toastUtils.operationSuccess(
+        "Widget loaded",
+        "Widget configuration has been loaded",
+      );
       return true;
     } catch (error) {
       const errorMessage = handleWidgetError(error);
@@ -566,15 +569,16 @@ export function useWidgetConfiguration(widgetId?: string) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [undo, redo, saveConfig]);
 
-  // Test widget configuration
+  // Test widget configuration with enhanced AI model validation
   const testConfig = useCallback(async () => {
     if (!validateConfig()) {
       return false;
     }
 
     try {
-      // Check if AI model is configured
-      if (!config.aiModel || config.aiModel.trim() === "") {
+      // Enhanced AI model validation
+      const aiModelStatus = getAIModelStatus();
+      if (!aiModelStatus.configured) {
         toastUtils.operationError(
           "Widget Test",
           "⚠️ No AI model configured. The widget will show fallback messages instead of AI responses. Please configure an AI model for full functionality.",
@@ -582,19 +586,28 @@ export function useWidgetConfiguration(widgetId?: string) {
         return false;
       }
 
+      // Validate AI model format and availability
+      if (!isValidAIModelFormat(config.aiModel)) {
+        toastUtils.operationError(
+          "Widget Test",
+          "❌ Invalid AI model format. Please select a valid AI model from the available options.",
+        );
+        return false;
+      }
+
       const result = await widgetService.testWidget(config);
       if (result.success) {
         toastUtils.operationSuccess(
-          "Widget test",
-          "Widget is properly configured and ready to use!",
+          "Widget Test",
+          "✅ Widget is properly configured and ready to use! AI model is responding correctly.",
         );
       } else {
-        toastUtils.operationError("Widget test", result.message);
+        toastUtils.operationError("Widget Test", result.message);
       }
       return result.success;
     } catch (error) {
       const errorMessage = handleWidgetError(error);
-      toastUtils.operationError("Widget test", errorMessage);
+      toastUtils.operationError("Widget Test", errorMessage);
       return false;
     }
   }, [config, validateConfig]);
@@ -612,7 +625,10 @@ export function useWidgetConfiguration(widgetId?: string) {
           widgetIdState,
           newName,
         );
-        toastUtils.operationSuccess("Widget duplicated", "Widget has been duplicated");
+        toastUtils.operationSuccess(
+          "Widget duplicated",
+          "Widget has been duplicated",
+        );
         return result;
       } catch (error) {
         const errorMessage = handleWidgetError(error);
@@ -628,7 +644,23 @@ export function useWidgetConfiguration(widgetId?: string) {
     return config.aiModel && config.aiModel.trim() !== "";
   }, [config.aiModel]);
 
-  // Get AI model status for UI feedback
+  // Enhanced AI model validation helper
+  const isValidAIModelFormat = useCallback((model: string): boolean => {
+    if (!model || model.trim() === "") return false;
+
+    // Check for valid AI model patterns
+    const validPatterns = [
+      /^gpt-[34]/, // OpenAI GPT models
+      /^claude-/, // Anthropic Claude models
+      /^gemini-/, // Google Gemini models
+      /^llama-/, // Meta LLaMA models
+      /^mistral-/, // Mistral models
+    ];
+
+    return validPatterns.some((pattern) => pattern.test(model.toLowerCase()));
+  }, []);
+
+  // Get AI model status for UI feedback with enhanced validation
   const getAIModelStatus = useCallback(() => {
     if (!config.aiModel || config.aiModel.trim() === "") {
       return {
@@ -636,16 +668,28 @@ export function useWidgetConfiguration(widgetId?: string) {
         status: "not_configured",
         message: "No AI model configured. Widget will show fallback messages.",
         severity: "warning",
+        icon: "⚠️",
+      };
+    }
+
+    if (!isValidAIModelFormat(config.aiModel)) {
+      return {
+        configured: false,
+        status: "invalid_format",
+        message: `Invalid AI model format: "${config.aiModel}". Please select a supported model.`,
+        severity: "error",
+        icon: "❌",
       };
     }
 
     return {
       configured: true,
       status: "configured",
-      message: `AI model "${config.aiModel}" is configured.`,
+      message: `AI model "${config.aiModel}" is configured and ready.`,
       severity: "success",
+      icon: "✅",
     };
-  }, [config.aiModel]);
+  }, [config.aiModel, isValidAIModelFormat]);
 
   return {
     config,
@@ -673,6 +717,7 @@ export function useWidgetConfiguration(widgetId?: string) {
     widgetId: widgetIdState,
     hasAIModel,
     getAIModelStatus,
+    isValidAIModelFormat,
   };
 }
 
