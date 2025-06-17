@@ -7,11 +7,18 @@ import { ProvidersTab } from "@/components/dashboard/ai-providers/ProvidersTab";
 import { ModelsTab } from "@/components/dashboard/ai-providers/AITabViews";
 import { ConfiguredList } from "@/components/dashboard/ai-providers/ConfiguredList";
 import { SkeletonGrid } from "@/components/ui/SkeletonCardGrid";
-import type { AIProvider, AIModel, UserAIProvider, ConfiguredProvidersTabProps } from "@/types/ai";
+import type {
+  AIProvider,
+  AIModel,
+  UserAIProvider,
+  ConfiguredProvidersTabProps,
+} from "@/types/ai";
 
 const AIProviders = () => {
   const [activeTab, setActiveTab] = useState("providers");
-  const [selectedProvider, setSelectedProvider] = useState<AIProvider | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<AIProvider | null>(
+    null,
+  );
   const [apiKey, setApiKey] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [modelSearchTerm, setModelSearchTerm] = useState("");
@@ -34,7 +41,6 @@ const AIProviders = () => {
     loadProviders(searchTerm);
   }, [searchTerm]);
 
-
   useEffect(() => {
     loadUserProviders();
   }, []);
@@ -53,8 +59,12 @@ const AIProviders = () => {
   };
 
   const handleAddModel = async (model: AIModel) => {
-    const userProvidersArray = Array.isArray(userProviders) ? userProviders : [];
-    const provider = userProvidersArray.find((p) => p.provider_id === model.provider_id);
+    const userProvidersArray = Array.isArray(userProviders)
+      ? userProviders
+      : [];
+    const provider = userProvidersArray.find(
+      (p) => p.provider_id === model.provider_id,
+    );
     if (!provider) return;
     await addUserModel(model.id, provider.id);
   };
@@ -66,22 +76,35 @@ const AIProviders = () => {
           AI Providers
         </h1>
         <p className="text-muted-foreground">
-          Connect and manage AI providers to power your widgets with advanced language models
+          Connect and manage AI providers to power your widgets with advanced
+          language models
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6 bg-violet-50/50 dark:bg-violet-950/50 border border-violet-200/50 dark:border-violet-800/50">
-          <TabsTrigger value="providers" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
+          <TabsTrigger
+            value="providers"
+            className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
+          >
             Providers
           </TabsTrigger>
-          <TabsTrigger value="user-providers" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
+          <TabsTrigger
+            value="user-providers"
+            className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
+          >
             User Providers
           </TabsTrigger>
-          <TabsTrigger value="models" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
+          <TabsTrigger
+            value="models"
+            className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
+          >
             Models
           </TabsTrigger>
-          <TabsTrigger value="configured" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
+          <TabsTrigger
+            value="configured"
+            className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
+          >
             My Setup
           </TabsTrigger>
         </TabsList>
@@ -103,6 +126,13 @@ const AIProviders = () => {
               testResult={testResult}
               onTestApiKey={handleTestApiKey}
               onConfigure={handleConfigure}
+              testKeyLoading={loading.testKeyLoading.isLoading}
+              configureLoading={loading.configureLoading.isLoading}
+              availableModels={availableModels}
+              onLoadModels={loadModelsForProvider}
+              onAddModel={handleAddModel}
+              addModelLoading={loading.addModelLoading.isLoading}
+              userModels={userModels}
             />
           )}
         </TabsContent>
