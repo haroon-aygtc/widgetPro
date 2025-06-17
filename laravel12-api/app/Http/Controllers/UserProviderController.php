@@ -32,7 +32,7 @@ class UserProviderController extends Controller
             'api_key' => 'required|string'
         ]);
 
-        $result = $this->userProviderService->configureProviderWithModels($request->all());
+        $result = $this->userProviderService->configureProvider($request->all());
 
         return response()->json([
             'success' => $result['success'] ?? true,

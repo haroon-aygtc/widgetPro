@@ -7,7 +7,6 @@ import type {
   AIModel,
   UserAIModel,
   UserAIProvider,
-  CreateUserModelRequest,
 } from "@/types/ai";
 
 export function useAIProviders() {
@@ -27,6 +26,7 @@ export function useAIProviders() {
   const loadModelsLoading = useOperationLoading("load-models");
   const addModelLoading = useOperationLoading("add-model");
   const addProviderLoading = useOperationLoading("add-provider");
+  const updateProviderLoading = useOperationLoading("update-provider");
   useEffect(() => {
     loadProviders();
     loadUserProviders();
@@ -39,7 +39,7 @@ export function useAIProviders() {
       const data = await aiProviderService.getProviders(searchTerm);
       setProviders(data);
     } catch {
-      toastUtils.operationError("Loading providers");
+      toastUtils.operationError("Loading providers", "Failed to load providers");
     } finally {
       loadProvidersLoading.stop();
     }
@@ -50,7 +50,10 @@ export function useAIProviders() {
       const data = await aiProviderService.getUserProviders();
       setUserProviders(data);
     } catch {
-      toastUtils.operationError("Loading user providers");
+      toastUtils.operationError(
+        "Loading user providers",
+        "Failed to load user providers",
+      );
     }
   };
 
@@ -59,7 +62,10 @@ export function useAIProviders() {
       const data = await aiProviderService.getUserModels();
       setUserModels(data);
     } catch {
-      toastUtils.operationError("Loading user models");
+      toastUtils.operationError(
+        "Loading user models",
+        "Failed to load user models",
+      );
     }
   };
 
@@ -70,7 +76,10 @@ export function useAIProviders() {
       setTestResult(result);
       return result;
     } catch {
-      toastUtils.operationError("API key test");
+      toastUtils.operationError(
+        "API key test",
+        "Failed to test API key",
+      );
       setTestResult({ success: false, message: "API key test failed" });
       return { success: false, message: "API key test failed" };
     } finally {
@@ -79,7 +88,7 @@ export function useAIProviders() {
   };
 
   const configureProvider = async (providerId: number, apiKey: string) => {
-    configureLoading.start("Configuring provider...");
+    configureLoading.start("Configuring provider and fetching models...");
     try {
       const { userProvider, availableModels } =
         await aiProviderService.configureProvider(providerId, apiKey);
@@ -93,47 +102,34 @@ export function useAIProviders() {
         ];
       });
 
+      // Set available models
       setAvailableModels(availableModels);
       setTestResult(null);
 
       toastUtils.operationSuccess(
         "Provider configured successfully!",
-        "Available models loaded.",
+        `Found ${availableModels.length} available models.`,
       );
 
-      // Return the configured provider for immediate use
+      // Return the configured provider and models for immediate use
       return { userProvider, availableModels };
     } catch (error) {
       console.error("Error configuring provider:", error);
-      toastUtils.operationError("Provider configuration");
+      toastUtils.operationError(
+        "Provider configuration",
+        "Failed to configure provider",
+      );
       throw error; // Re-throw to handle in component
     } finally {
       configureLoading.stop();
     }
   };
 
-  const loadModelsForProvider = async (providerId: number, search = "") => {
+  const loadModelsForProvider = async (providerId: number) => {
     loadModelsLoading.start("Loading models...");
     try {
-      // Find the user provider for this provider ID
-      const userProvidersArray = Array.isArray(userProviders)
-        ? userProviders
-        : [];
-      const userProvider = userProvidersArray.find(
-        (p) => p.provider_id === providerId,
-      );
-
-      if (!userProvider) {
-        throw new Error(
-          "Provider not configured. Please configure the provider first.",
-        );
-      }
-
-      const { models } = await aiProviderService.fetchModelsForProvider(
-        providerId,
-        userProvider.api_key,
-        search,
-      );
+      // Use the new provider-specific method that validates user access
+      const models = await aiProviderService.getAvailableModelsForProvider(providerId);
       setAvailableModels(models);
       toastUtils.operationSuccess(
         "Models loaded successfully!",
@@ -141,19 +137,47 @@ export function useAIProviders() {
       );
     } catch (error: any) {
       console.error("Error loading models:", error);
-      toastUtils.operationError("Loading models", error.message);
+      toastUtils.operationError(
+        "Loading models",
+        error.message || "Failed to load models",
+      );
     } finally {
       loadModelsLoading.stop();
     }
   };
 
-  const addUserModel = async (data: CreateUserModelRequest) => {
+  const addUserModel = async (data: {
+    model_id: number;
+    user_provider_id: number;
+    custom_name?: string;
+    is_active?: boolean;
+    is_default?: boolean;
+  }) => {
     addModelLoading.start("Adding model...");
     try {
-      const response = await aiProviderService.addUserModel(data);
-      toastUtils.operationSuccess("Model Added", "Model added successfully.");
-    } catch (err: any) {
-        toastUtils.operationError("Failed to Add Model", err.message);
+      const userModel = await aiProviderService.addUserModel(data);
+      setUserModels((prev) => {
+        const prevArray = Array.isArray(prev) ? prev : [];
+        return [...prevArray.filter((m) => m.model_id !== data.model_id), userModel];
+      });
+
+      // Find the model name for the toast
+      const model = availableModels.find((m) => m.id === data.model_id);
+      const modelName = model?.display_name || "Model";
+
+      toastUtils.operationSuccess(
+        "Model added successfully!",
+        `${modelName} is now available in your collection.`,
+      );
+
+      return userModel;
+    } catch (error: any) {
+      console.error("Error adding model:", error);
+      toastUtils.operationError(
+        "Failed to add model",
+        error.message || "Please try again.",
+      );
+      throw error;
     } finally {
       addModelLoading.stop();
     }
@@ -171,9 +195,41 @@ export function useAIProviders() {
         return [...prevArray, userProvider];
       });
     } catch {
-      toastUtils.operationError("Adding provider");
+      toastUtils.operationError(
+        "Adding provider",
+        "Failed to add provider",
+      );
     } finally {
       addProviderLoading.stop();
+    }
+  };
+
+  const updateUserProvider = async (
+    providerId: number,
+    data: { api_key?: string; is_active?: boolean; is_default?: boolean },
+  ) => {
+    updateProviderLoading.start("Updating provider...");
+    try {
+      const updatedProvider = await aiProviderService.updateUserProvider(providerId, data);
+      setUserProviders((prev) => {
+        const prevArray = Array.isArray(prev) ? prev : [];
+        return prevArray.map((p) =>
+          p.id === providerId ? { ...p, ...updatedProvider } : p
+        );
+      });
+      toastUtils.operationSuccess(
+        "Provider updated successfully!",
+        "Provider updated successfully!",
+      );
+      return updatedProvider;
+    } catch (error: any) {
+      toastUtils.operationError(
+        "Updating provider",
+        "Failed to update provider",
+      );
+      throw error;
+    } finally {
+      updateProviderLoading.stop();
     }
   };
 
@@ -191,6 +247,7 @@ export function useAIProviders() {
     loadModelsForProvider,
     addUserModel,
     addUserProvider,
+    updateUserProvider,
     loading: {
       loadProvidersLoading,
       testKeyLoading,
@@ -198,6 +255,7 @@ export function useAIProviders() {
       loadModelsLoading,
       addModelLoading,
       addProviderLoading,
+      updateProviderLoading,
     },
   };
 }

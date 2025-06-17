@@ -389,15 +389,15 @@ export const toastUtils = {
     }),
 
   // Generic operations
-  operationSuccess: (operation: string = "Operation", p0: string) =>
+  operationSuccess: (operation: string = "Operation", description: string) =>
     toastSuccess({
       title: "Success",
-      description: `${operation} completed successfully.`,
+      description: description,
     }),
-  operationError: (operation: string = "Operation", error?: string) =>
+  operationError: (operation: string = "Operation", description: string) =>
     toastError({
       title: "Error",
-      description: error || `${operation} failed. Please try again.`,
+      description: description,
     }),
 };
 

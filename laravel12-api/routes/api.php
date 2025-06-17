@@ -120,6 +120,8 @@ Route::middleware('auth:sanctum')->prefix('ai-providers')->group(function () {
 
     // AI Model Routes
     Route::get('/{provider_id}/available-models', [AIProviderController::class, 'fetchModelsForProvider']);
+    Route::get('/{provider_id}/models', [AIProviderController::class, 'getAvailableModelsForProvider']);
+    Route::get('/configured-providers/models', [AIProviderController::class, 'getUserConfiguredProviderModels']);
 
     // User Provider Routes
     Route::get('/user-providers', [UserProviderController::class, 'getUserProvider']);

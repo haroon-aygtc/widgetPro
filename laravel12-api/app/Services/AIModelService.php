@@ -12,9 +12,53 @@ use Illuminate\Support\Facades\Auth;
 
 class AIModelService
 {
+    public function validateApiKey(AIProvider $provider, string $apiKey): array
+    {
+        try {
+            return $this->testApiKeyWithProvider($provider, $apiKey);
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'API key validation failed: ' . $e->getMessage()
+            ];
+        }
+    }
+
     public function fetchModels(AIProvider $provider, string $apiKey): array
     {
-        return $this->fetchModelsFromProvider($provider, $apiKey);
+        try {
+            $models = $this->fetchModelsFromProvider($provider, $apiKey);
+
+            // Store models in ai_models table if they don't exist
+            foreach ($models as &$modelData) {
+                $existingModel = \App\Models\AIModel::where('provider_id', $provider->id)
+                    ->where('name', $modelData['name'])
+                    ->first();
+
+                if (!$existingModel) {
+                    $existingModel = \App\Models\AIModel::create([
+                        'provider_id' => $provider->id,
+                        'name' => $modelData['name'],
+                        'display_name' => $modelData['display_name'],
+                        'description' => $modelData['description'] ?? null,
+                        'is_free' => $modelData['is_free'] ?? false,
+                        'max_tokens' => $modelData['max_tokens'] ?? null,
+                        'context_window' => $modelData['context_window'] ?? null,
+                        'pricing_input' => $modelData['pricing_input'] ?? null,
+                        'pricing_output' => $modelData['pricing_output'] ?? null,
+                        'is_active' => true
+                    ]);
+                }
+
+                // Add the database ID to the model data
+                $modelData['id'] = $existingModel->id;
+                $modelData['provider'] = $provider;
+            }
+
+            return $models;
+        } catch (\Exception $e) {
+            throw new \Exception('Failed to fetch models: ' . $e->getMessage());
+        }
     }
 
     public function storeModels(array $data)
@@ -176,6 +220,109 @@ class AIModelService
                 'description' => 'Default model for ' . $provider->display_name,
                 'is_free' => $provider->is_free
             ]
+        ];
+    }
+
+    private function testApiKeyWithProvider(AIProvider $provider, string $apiKey): array
+    {
+        switch ($provider->name) {
+            case 'openai':
+                return $this->testOpenAIApiKey($apiKey);
+            case 'anthropic':
+                return $this->testAnthropicApiKey($apiKey);
+            case 'groq':
+                return $this->testGroqApiKey($apiKey);
+            case 'google':
+                return $this->testGoogleApiKey($apiKey);
+            case 'huggingface':
+                return $this->testHuggingFaceApiKey($apiKey);
+            default:
+                return $this->testGenericApiKey($provider, $apiKey);
+        }
+    }
+
+    private function testOpenAIApiKey(string $apiKey): array
+    {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $apiKey,
+            'Content-Type' => 'application/json'
+        ])->get('https://api.openai.com/v1/models', ['limit' => 1]);
+
+        if (!$response->successful()) {
+            throw new \Exception('Invalid OpenAI API key');
+        }
+
+        return [
+            'success' => true,
+            'message' => 'OpenAI API key is valid'
+        ];
+    }
+
+    private function testAnthropicApiKey(string $apiKey): array
+    {
+        // Anthropic doesn't have a simple test endpoint, so we'll assume it's valid if it's formatted correctly
+        if (empty($apiKey) || !str_starts_with($apiKey, 'sk-ant-')) {
+            throw new \Exception('Invalid Anthropic API key format');
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Anthropic API key format is valid'
+        ];
+    }
+
+    private function testGroqApiKey(string $apiKey): array
+    {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $apiKey,
+            'Content-Type' => 'application/json'
+        ])->get('https://api.groq.com/openai/v1/models', ['limit' => 1]);
+
+        if (!$response->successful()) {
+            throw new \Exception('Invalid Groq API key');
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Groq API key is valid'
+        ];
+    }
+
+    private function testGoogleApiKey(string $apiKey): array
+    {
+        // Google AI uses a different format, basic validation
+        if (empty($apiKey)) {
+            throw new \Exception('Google AI API key cannot be empty');
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Google AI API key format is valid'
+        ];
+    }
+
+    private function testHuggingFaceApiKey(string $apiKey): array
+    {
+        // HuggingFace API key validation
+        if (empty($apiKey)) {
+            throw new \Exception('HuggingFace API key cannot be empty');
+        }
+
+        return [
+            'success' => true,
+            'message' => 'HuggingFace API key format is valid'
+        ];
+    }
+
+    private function testGenericApiKey(AIProvider $provider, string $apiKey): array
+    {
+        if (empty($apiKey)) {
+            throw new \Exception($provider->display_name . ' API key cannot be empty');
+        }
+
+        return [
+            'success' => true,
+            'message' => $provider->display_name . ' API key format is valid'
         ];
     }
 }

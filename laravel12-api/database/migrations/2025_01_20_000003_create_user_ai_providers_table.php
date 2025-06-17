@@ -14,11 +14,12 @@ return new class extends Migration
             $table->foreignId('provider_id')->constrained('ai_providers')->onDelete('cascade');
             $table->text('api_key');
             $table->boolean('is_active')->default(true);
+            $table->boolean('is_default')->default(false);
             $table->timestamp('last_tested_at')->nullable();
             $table->enum('test_status', ['success', 'failed', 'pending'])->nullable();
             $table->text('test_message')->nullable();
             $table->timestamps();
-            
+
             $table->unique(['user_id', 'provider_id']);
             $table->index(['user_id']);
             $table->index(['provider_id']);

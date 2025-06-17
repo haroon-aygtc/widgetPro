@@ -88,6 +88,34 @@ class AIProviderApiClient extends BaseApiClient {
     );
   }
 
+  async getAvailableModelsForProvider(
+    providerId: number,
+  ): Promise<ApiResponse<AIModel[]>> {
+    return super.request<ApiResponse<AIModel[]>>(
+      "GET",
+      `${this.apiUrl}/${providerId}/models`,
+    );
+  }
+
+  async getUserConfiguredProviderModels(): Promise<
+    ApiResponse<{
+      provider: AIProvider;
+      user_provider: UserAIProvider;
+      models: AIModel[];
+    }[]>
+  > {
+    return super.request<
+      ApiResponse<{
+        provider: AIProvider;
+        user_provider: UserAIProvider;
+        models: AIModel[];
+      }[]>
+    >(
+      "GET",
+      `${this.apiUrl}/configured-providers/models`,
+    );
+  }
+
   async addUserModel(
     data: CreateUserModelRequest,
   ): Promise<ApiResponse<UserAIModel>> {
@@ -114,12 +142,12 @@ class AIProviderApiClient extends BaseApiClient {
 
   async updateUserProvider(
     providerId: number,
-    apiKey: string,
-  ): Promise<UserAIProvider> {
-    return super.request<UserAIProvider>(
+    data: { api_key?: string; is_active?: boolean; is_default?: boolean },
+  ): Promise<ApiResponse<UserAIProvider>> {
+    return super.request<ApiResponse<UserAIProvider>>(
       "PUT",
       `${this.apiUrl}/update-user-providers/${providerId}`,
-      { api_key: apiKey },
+      data,
     );
   }
 
@@ -131,6 +159,24 @@ class AIProviderApiClient extends BaseApiClient {
       "PUT",
       `${this.apiUrl}/update-user-models/${modelId}`,
       { custom_name: customName },
+    );
+  }
+
+  async updateUserModelStatus(
+    modelId: number,
+    data: { is_active?: boolean; is_default?: boolean }
+  ): Promise<ApiResponse<UserAIModel>> {
+    return super.request<ApiResponse<UserAIModel>>(
+      "PUT",
+      `${this.apiUrl}/update-user-models/${modelId}/status`,
+      data,
+    );
+  }
+
+  async deleteUserModel(modelId: number): Promise<ApiResponse<any>> {
+    return super.request<ApiResponse<any>>(
+      "DELETE",
+      `${this.apiUrl}/delete-user-models/${modelId}`,
     );
   }
 

@@ -113,19 +113,72 @@ class UserProviderService
         });
     }
 
+    public function configureProvider(array $data)
+    {
+        return DB::transaction(function () use ($data) {
+            try {
+                // Store/update the user provider
+                $providerResult = $this->storeUserProvider($data);
+
+                if (!$providerResult['success']) {
+                    return $providerResult;
+                }
+
+                $userProvider = $providerResult['data'];
+
+                // Auto-fetch models from the provider
+                $provider = AIProvider::findOrFail($data['provider_id']);
+                $availableModels = $this->aiModelService->fetchModels($provider, $data['api_key']);
+
+                // Update test status to success
+                $userProvider->update([
+                    'test_status' => 'success',
+                    'test_message' => 'API key validated successfully',
+                    'last_tested_at' => now()
+                ]);
+
+                // Reload the provider relationship
+                $userProvider->load('provider');
+
+                return [
+                    'success' => true,
+                    'data' => [
+                        'user_provider' => $userProvider,
+                        'available_models' => $availableModels
+                    ],
+                    'message' => 'Provider configured and models fetched successfully'
+                ];
+            } catch (\Exception $e) {
+                // Update test status to failed if provider was created
+                if (isset($userProvider)) {
+                    $userProvider->update([
+                        'test_status' => 'failed',
+                        'test_message' => $e->getMessage(),
+                        'last_tested_at' => now()
+                    ]);
+                }
+
+                return [
+                    'success' => false,
+                    'message' => 'Failed to configure provider: ' . $e->getMessage()
+                ];
+            }
+        });
+    }
+
     public function configureProviderWithModels(array $data)
     {
         return DB::transaction(function () use ($data) {
             try {
                 // First, store/update the user provider
                 $providerResult = $this->storeUserProvider($data);
-                
+
                 if (!$providerResult['success']) {
                     return $providerResult;
                 }
 
                 $userProvider = $providerResult['data'];
-                
+
                 // Then fetch available models from the provider
                 $provider = AIProvider::findOrFail($data['provider_id']);
                 $availableModels = $this->aiModelService->fetchModels($provider, $data['api_key']);

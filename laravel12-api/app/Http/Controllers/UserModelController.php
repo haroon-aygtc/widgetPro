@@ -27,13 +27,22 @@ class UserModelController extends Controller
 
     public function storeUserModel(Request $request)
     {
+        // Validate request
+        $request->validate([
+            'model_id' => 'required|integer|exists:ai_models,id',
+            'user_provider_id' => 'required|integer|exists:user_ai_providers,id',
+            'custom_name' => 'nullable|string|max:255',
+            'is_active' => 'boolean',
+            'is_default' => 'boolean'
+        ]);
+
         $result = $this->userModelService->storeUserModel($request->all());
 
         return response()->json([
             'success' => $result['success'] ?? true,
             'data' => $result['data'] ?? $result,
             'message' => $result['message'] ?? 'User model stored successfully'
-        ]);
+        ], $result['success'] ? 200 : 400);
     }
 
     public function updateUserModel(Request $request, $modelId)

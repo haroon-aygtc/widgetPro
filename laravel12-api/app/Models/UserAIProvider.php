@@ -18,14 +18,20 @@ class UserAIProvider extends Model
         'provider_id',
         'api_key',
         'is_active',
+        'is_default',
         'last_tested_at',
         'test_status',
-        'test_message'
+        'test_message',
+        'created_at',
+        'updated_at'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'last_tested_at' => 'datetime'
+        'is_default' => 'boolean',
+        'last_tested_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime'
     ];
 
     protected $hidden = [
