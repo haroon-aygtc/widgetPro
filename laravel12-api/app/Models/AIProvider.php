@@ -18,18 +18,12 @@ class AIProvider extends Model
         'description',
         'api_base_url',
         'is_active',
-        'is_free',
-        'is_default',
         'logo_url',
-        'documentation_url',
-        'provider_icon',
-        'status_color'
+        'documentation_url'
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
-        'is_free' => 'boolean',
-        'is_default' => 'boolean'
+        'is_active' => 'boolean'
     ];
 
     public function models(): HasMany
@@ -49,12 +43,9 @@ class AIProvider extends Model
 
     public function scopeSearch($query, $search)
     {
-        return $query->where(function($q) use ($search) {
+        return $query->where(function ($q) use ($search) {
             $q->where('display_name', 'like', "%{$search}%")
-              ->orWhere('description', 'like', "%{$search}%")
-              ->orWhere('name', 'like', "%{$search}%");
+              ->orWhere('description', 'like', "%{$search}%");
         });
     }
-
-
 }

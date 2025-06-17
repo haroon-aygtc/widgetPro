@@ -38,7 +38,6 @@ export interface UserAIProvider {
   provider_id: number;
   api_key: string;
   is_active: boolean;
-  is_default: boolean;
   last_tested_at?: string;
   test_status?: "success" | "failed" | "pending";
   test_message?: string;
@@ -53,7 +52,6 @@ export interface UserAIModel {
   model_id: number;
   user_provider_id: number;
   is_active: boolean;
-  is_default: boolean;
   custom_name?: string;
   created_at: string;
   updated_at: string;
@@ -75,8 +73,6 @@ export interface AIProviderTestResponse {
 export interface CreateUserProviderRequest {
   provider_id: number;
   api_key: string;
-  is_active?: boolean;
-  is_default?: boolean;
 }
 
 export interface CreateUserModelRequest {

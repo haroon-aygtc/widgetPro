@@ -17,8 +17,8 @@ class UserAIModel extends Model
         'model_id',
         'user_provider_id',
         'is_active',
-        'custom_name',
         'is_default',
+        'custom_name'
     ];
 
     protected $casts = [

@@ -32,6 +32,9 @@ import {
   Target,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useAnalytics, useConversationTrends, useRecentActivity, analyticsService } from "@/services/analyticsService";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Reusable Metric Card Component
 interface MetricCardProps {
@@ -189,14 +192,12 @@ const AnalyticsDashboard = () => {
   const [dateRange, setDateRange] = useState("7d");
   const [selectedWidget, setSelectedWidget] = useState("all");
 
-  // Mock data
-  const metrics = {
-    totalConversations: 1247,
-    activeUsers: 892,
-    avgResponseTime: "2.3s",
-    satisfactionRate: "94%",
-  };
+  // Real data from API
+  const { data: analyticsData, loading, error, refetch } = useAnalytics(dateRange, selectedWidget === "all" ? undefined : parseInt(selectedWidget));
+  const { data: conversationTrends, loading: trendsLoading } = useConversationTrends(dateRange, selectedWidget === "all" ? undefined : parseInt(selectedWidget));
+  const { data: recentActivity, loading: activityLoading } = useRecentActivity(10);
 
+  // Mock widgets data - this should come from a widgets API in production
   const widgets = [
     { id: "all", name: "All Widgets" },
     { id: "support", name: "Customer Support" },
@@ -204,37 +205,37 @@ const AnalyticsDashboard = () => {
     { id: "faq", name: "Product FAQ" },
   ];
 
-  const recentActivity = [
-    {
-      title: "High conversation volume",
-      description:
-        "Customer Support widget received 45 conversations in the last hour",
-      time: "5 minutes ago",
-      type: "conversation" as const,
-      status: "success" as const,
-    },
-    {
-      title: "New user engagement",
-      description: "15 new users started conversations today",
-      time: "1 hour ago",
-      type: "user" as const,
-      status: "success" as const,
-    },
-    {
-      title: "Widget performance alert",
-      description: "Sales Assistant response time increased by 12%",
-      time: "2 hours ago",
-      type: "widget" as const,
-      status: "warning" as const,
-    },
-    {
-      title: "System update completed",
-      description: "Analytics system updated with new features",
-      time: "4 hours ago",
-      type: "system" as const,
-      status: "success" as const,
-    },
-  ];
+  const handleRefresh = async () => {
+    await refetch();
+  };
+
+  const handleExport = async () => {
+      try {
+      const blob = await analyticsService.exportAnalytics('conversations', dateRange as any);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `analytics-${dateRange}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-violet-50/20 dark:to-violet-950/20 p-6">
+        <Alert variant="destructive">
+          <AlertDescription>
+            Failed to load analytics data: {error}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-violet-50/20 dark:to-violet-950/20">
@@ -262,11 +263,18 @@ const AnalyticsDashboard = () => {
               </SelectContent>
             </Select>
             <div className="flex items-center gap-2">
-              <button className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 hover:border-border/80 hover:bg-muted/50 transition-all duration-200">
-                <RefreshCw className="h-4 w-4 group-hover:animate-spin" />
+              <button
+                onClick={handleRefresh}
+                disabled={loading}
+                className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 hover:border-border/80 hover:bg-muted/50 transition-all duration-200 disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : 'group-hover:animate-spin'}`} />
                 <span className="text-sm font-medium">Refresh</span>
               </button>
-              <button className="group flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md">
+              <button
+                onClick={handleExport}
+                className="group flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
                 <Download className="h-4 w-4 group-hover:animate-bounce" />
                 <span className="text-sm font-medium">Export</span>
               </button>
@@ -406,38 +414,81 @@ const AnalyticsDashboard = () => {
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <MetricCard
-                title="Total Conversations"
-                value={metrics.totalConversations.toLocaleString()}
-                change="+12.5%"
-                changeType="positive"
-                icon={<MessageSquare className="h-5 w-5" />}
-                description="vs last period"
-              />
-              <MetricCard
-                title="Active Users"
-                value={metrics.activeUsers.toLocaleString()}
-                change="+8.2%"
-                changeType="positive"
-                icon={<Users className="h-5 w-5" />}
-                description="unique visitors"
-              />
-              <MetricCard
-                title="Avg Response Time"
-                value={metrics.avgResponseTime}
-                change="-0.3s"
-                changeType="positive"
-                icon={<Clock className="h-5 w-5" />}
-                description="faster responses"
-              />
-              <MetricCard
-                title="Satisfaction Rate"
-                value={metrics.satisfactionRate}
-                change="+2.1%"
-                changeType="positive"
-                icon={<Star className="h-5 w-5" />}
-                description="user ratings"
-              />
+              {loading ? (
+                <>
+                  <Card className="bg-gradient-to-br from-card to-card/80">
+                    <CardHeader className="pb-3">
+                      <Skeleton className="h-8 w-8 rounded-lg" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-8 w-24 mb-2" />
+                      <Skeleton className="h-4 w-32" />
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-card to-card/80">
+                    <CardHeader className="pb-3">
+                      <Skeleton className="h-8 w-8 rounded-lg" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-8 w-24 mb-2" />
+                      <Skeleton className="h-4 w-32" />
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-card to-card/80">
+                    <CardHeader className="pb-3">
+                      <Skeleton className="h-8 w-8 rounded-lg" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-8 w-24 mb-2" />
+                      <Skeleton className="h-4 w-32" />
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-card to-card/80">
+                    <CardHeader className="pb-3">
+                      <Skeleton className="h-8 w-8 rounded-lg" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-8 w-24 mb-2" />
+                      <Skeleton className="h-4 w-32" />
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                <>
+                  <MetricCard
+                    title="Total Conversations"
+                    value={analyticsData?.metrics?.totalConversations?.toLocaleString() || "0"}
+                    change={`${analyticsData?.metrics?.conversationChange > 0 ? '+' : ''}${analyticsData?.metrics?.conversationChange?.toFixed(1) || 0}%`}
+                    changeType={analyticsData?.metrics?.conversationChange >= 0 ? "positive" : "negative"}
+                    icon={<MessageSquare className="h-5 w-5" />}
+                    description="vs last period"
+                  />
+                  <MetricCard
+                    title="Active Users"
+                    value={analyticsData?.metrics?.activeUsers?.toLocaleString() || "0"}
+                    change={`${analyticsData?.metrics?.userChange > 0 ? '+' : ''}${analyticsData?.metrics?.userChange?.toFixed(1) || 0}%`}
+                    changeType={analyticsData?.metrics?.userChange >= 0 ? "positive" : "negative"}
+                    icon={<Users className="h-5 w-5" />}
+                    description="unique visitors"
+                  />
+                  <MetricCard
+                    title="Avg Response Time"
+                    value={analyticsData?.metrics?.avgResponseTime || "0s"}
+                    change="Real-time"
+                    changeType="neutral"
+                    icon={<Clock className="h-5 w-5" />}
+                    description="AI response time"
+                  />
+                  <MetricCard
+                    title="Satisfaction Rate"
+                    value={analyticsData?.metrics?.satisfactionRate || "0%"}
+                    change="Based on ratings"
+                    changeType="positive"
+                    icon={<Star className="h-5 w-5" />}
+                    description="user ratings"
+                  />
+                </>
+              )}
             </div>
 
             {/* Charts Section */}
@@ -490,11 +541,34 @@ const AnalyticsDashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-1">
-                  {recentActivity.map((activity, index) => (
-                    <ActivityItem key={index} {...activity} />
-                  ))}
-                </div>
+                {activityLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(4)].map((_, index) => (
+                      <div key={index} className="flex items-start space-x-3 p-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                          <Skeleton className="h-3 w-1/4" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {recentActivity && recentActivity.length > 0 ? (
+                      recentActivity.map((activity, index) => (
+                        <ActivityItem key={index} {...activity} />
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No recent activity found</p>
+                        <p className="text-sm">Activity will appear here as users interact with your widgets</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

@@ -46,12 +46,31 @@ class AIModelController extends Controller
 
     public function storeModels(Request $request)
     {
-        $result = $this->aiModelService->storeModels($request->all());
-
-        return response()->json([
-            'success' => $result['success'] ?? true,
-            'data' => $result['data'] ?? $result,
-            'message' => $result['message'] ?? 'Models stored successfully'
+        $request->validate([
+            'provider_id' => 'required|integer|exists:ai_providers,id',
+            'name' => 'required|string',
+            'display_name' => 'required|string',
+            'description' => 'nullable|string',
+            'is_free' => 'boolean',
+            'max_tokens' => 'nullable|integer',
+            'context_window' => 'nullable|integer',
+            'pricing_input' => 'nullable|numeric',
+            'pricing_output' => 'nullable|numeric'
         ]);
+
+        try {
+            $result = $this->aiModelService->storeModels($request->all());
+
+            return response()->json([
+                'success' => $result['success'] ?? true,
+                'data' => $result['data'] ?? $result,
+                'message' => $result['message'] ?? 'Model stored successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to store model: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -244,25 +244,13 @@ const AdvancedProviderConfig: React.FC<AdvancedProviderConfigProps> = ({
 
         configureLoading.start("Configuring provider...");
         try {
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const result = await aiProviderService.configureProvider(provider.id, apiKey);
 
-            const mockUserProvider: UserAIProvider = {
-                id: Date.now(),
-                user_id: 1,
-                provider_id: provider.id,
-                api_key: apiKey,
-                is_active: true,
-                test_status: "success",
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                provider: provider,
-            };
-
-            onConfigured(mockUserProvider, testResult.models || []);
+            onConfigured(result.userProvider, result.availableModels || []);
             onOpenChange(false);
             toastUtils.operationSuccess("Configuration", `${provider.display_name} configured successfully!`);
         } catch (error) {
-            toastUtils.operationError("Configuration", "Failed to configure provider");
+            toastUtils.operationError("Configuration", error instanceof Error ? error.message : "Failed to configure provider");
         } finally {
             configureLoading.stop();
         }

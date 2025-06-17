@@ -23,6 +23,152 @@ class AIProviderController extends Controller
         $this->aiProviderService = $aiProviderService;
     }
 
+    public function updateUserModel(Request $request, $modelId)
+    {
+        $request->validate([
+            'is_active' => 'nullable|boolean',
+            'is_default' => 'nullable|boolean',
+            'custom_name' => 'nullable|string'
+        ]);
+
+        try {
+            $userModel = UserAIModel::where('user_id', Auth::id())
+                ->where('id', $modelId)
+                ->firstOrFail();
+
+            // If setting as default, unset all other defaults for this user
+            if ($request->get('is_default', false)) {
+                UserAIModel::where('user_id', Auth::id())
+                    ->where('id', '!=', $modelId)
+                    ->where('is_default', true)
+                    ->update(['is_default' => false]);
+            }
+
+            $updateData = [];
+            if ($request->has('is_active')) {
+                $updateData['is_active'] = $request->is_active;
+            }
+            if ($request->has('is_default')) {
+                $updateData['is_default'] = $request->is_default;
+            }
+            if ($request->has('custom_name')) {
+                $updateData['custom_name'] = $request->custom_name;
+            }
+
+            $userModel->update($updateData);
+            $userModel->load(['model.provider', 'userProvider']);
+
+            return response()->json([
+                'success' => true,
+                'data' => $userModel,
+                'message' => 'User model updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update user model: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteUserProvider($providerId)
+    {
+        try {
+            $userProvider = UserAIProvider::where('user_id', Auth::id())
+                ->where('id', $providerId)
+                ->firstOrFail();
+
+            // Delete associated user models first
+            UserAIModel::where('user_provider_id', $providerId)->delete();
+
+            $userProvider->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User provider deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete user provider: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteUserModel($modelId)
+    {
+        try {
+            $userModel = UserAIModel::where('user_id', Auth::id())
+                ->where('id', $modelId)
+                ->firstOrFail();
+
+            $userModel->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User model deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete user model: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getProviderComparison()
+    {
+        try {
+            $userProviders = UserAIProvider::with(['provider', 'userModels.model'])
+                ->where('user_id', Auth::id())
+                ->where('is_active', true)
+                ->get();
+
+            $comparison = $userProviders->map(function ($userProvider) {
+                $models = $userProvider->userModels->where('is_active', true);
+
+                return [
+                    'provider' => $userProvider->provider,
+                    'user_provider_id' => $userProvider->id,
+                    'is_default' => $userProvider->is_default,
+                    'test_status' => $userProvider->test_status,
+                    'model_count' => $models->count(),
+                    'free_models' => $models->filter(function ($userModel) {
+                        return $userModel->model->is_free;
+                    })->count(),
+                    'avg_pricing_input' => $models->avg(function ($userModel) {
+                        return $userModel->model->pricing_input;
+                    }),
+                    'avg_pricing_output' => $models->avg(function ($userModel) {
+                        return $userModel->model->pricing_output;
+                    }),
+                    'models' => $models->map(function ($userModel) {
+                        return [
+                            'id' => $userModel->id,
+                            'model' => $userModel->model,
+                            'custom_name' => $userModel->custom_name,
+                            'is_default' => $userModel->is_default,
+                            'is_active' => $userModel->is_active
+                        ];
+                    })
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $comparison,
+                'message' => 'Provider comparison retrieved successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve provider comparison: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
     public function getProviders(Request $request): JsonResponse
     {
         $result = $this->aiProviderService->getProviders($request->all(), 15);
@@ -37,26 +183,13 @@ class AIProviderController extends Controller
 
     public function testProvider(Request $request)
     {
-        // Validate request
-        $request->validate([
-            'provider_id' => 'required|integer|exists:ai_providers,id',
-            'api_key' => 'required|string'
+        $result = $this->aiProviderService->testProvider($request->provider_id, $request->api_key);
+
+        return response()->json([
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'Provider tested successfully'
         ]);
-
-        try {
-            $result = $this->aiProviderService->testProvider($request->provider_id, $request->api_key);
-
-            return response()->json([
-                'success' => $result['success'] ?? true,
-                'data' => $result['data'] ?? $result,
-                'message' => $result['message'] ?? 'API key validated successfully'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'API key validation failed: ' . $e->getMessage()
-            ], 400);
-        }
     }
 
     public function fetchModelsForProvider(Request $request, $providerId)
@@ -66,38 +199,13 @@ class AIProviderController extends Controller
             'search' => 'nullable|string'
         ]);
 
-        try {
-            // Verify user has configured this provider
-            $userProvider = UserAIProvider::where('user_id', Auth::id())
-                ->where('provider_id', $providerId)
-                ->where('is_active', true)
-                ->first();
+        $result = $this->aiProviderService->fetchModels($request->all(), 15, $providerId);
 
-            if (!$userProvider) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Provider not configured. Please configure this provider first.',
-                    'data' => []
-                ], 403);
-            }
-
-            $provider = \App\Models\AIProvider::findOrFail($providerId);
-            $models = $this->aiProviderService->fetchModels($provider, $request->api_key);
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'models' => $models,
-                    'provider' => $provider
-                ],
-                'message' => 'Models fetched successfully'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch models: ' . $e->getMessage()
-            ], 400);
-        }
+        return response()->json([
+            'success' => $result['success'] ?? true,
+            'data' => $result['data'] ?? $result,
+            'message' => $result['message'] ?? 'Models retrieved successfully'
+        ]);
     }
 
     public function configureProvider(Request $request)
@@ -299,92 +407,4 @@ class AIProviderController extends Controller
             ], 500);
         }
     }
-
-    public function deleteUserProvider(Request $request)
-    {
-        $request->validate([
-            'provider_id' => 'required|integer|exists:ai_providers,id',
-        ]);
-    }
-
-    public function updateUserModel(Request $request, $modelId)
-    {
-        $request->validate([
-            'model_id' => 'required|integer|exists:ai_models,id',
-            'user_provider_id' => 'required|integer|exists:user_ai_providers,id',
-            'custom_name' => 'nullable|string'
-        ]);
-
-        try {
-            // Verify the user provider belongs to the authenticated user
-            $userProvider = UserAIProvider::where('user_id', Auth::id())
-                ->where('id', $request->user_provider_id)
-                ->firstOrFail();
-
-            $userModel = UserAIModel::updateOrCreate(
-                [
-                    'user_id' => Auth::id(),
-                    'model_id' => $request->model_id,
-                    'user_provider_id' => $request->user_provider_id
-                ],
-                [
-                    'custom_name' => $request->custom_name,
-                    'is_active' => true
-                ]
-            );
-
-            $userModel->load(['model.provider', 'userProvider']);
-
-            return response()->json([
-                'success' => true,
-                'data' => $userModel,
-                'message' => 'User model added successfully'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to add user model: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function getAvailableModelsForProvider(Request $request, $providerId)
-    {
-        try {
-            $result = $this->aiProviderService->getAvailableModels($providerId, Auth::id());
-
-            return response()->json([
-                'success' => $result['success'] ?? true,
-                'data' => $result['data'] ?? [],
-                'message' => $result['message'] ?? 'Available models retrieved successfully'
-            ], $result['success'] ? 200 : 400);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to get available models: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function getUserConfiguredProviderModels(Request $request)
-    {
-        try {
-            $result = $this->aiProviderService->getModelsForUserConfiguredProviders(Auth::id());
-
-            return response()->json([
-                'success' => $result['success'] ?? true,
-                'data' => $result['data'] ?? [],
-                'message' => $result['message'] ?? 'Models for configured providers retrieved successfully'
-            ], $result['success'] ? 200 : 400);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to get models for configured providers: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-
-
-
 }

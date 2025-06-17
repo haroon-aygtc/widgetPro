@@ -32,8 +32,8 @@ class UserModelService
 
                 $query = UserAIModel::with(['model.provider', 'userProvider.provider'])
                     ->where('user_id', Auth::id())
-                    ->whereIn('user_provider_id', $userProviderIds) // Only user's configured providers
-                    ->where('is_active', true);
+                    ->whereIn('user_provider_id', $userProviderIds); // Only user's configured providers
+                    // Remove is_active filter to show all models (active and inactive)
 
                 // Apply specific provider filter if specified
                 if (!empty($filters['provider_id'])) {

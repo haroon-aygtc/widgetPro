@@ -56,6 +56,7 @@ import {
   toastInfo,
   toastWarning,
 } from "@/components/ui/use-toast";
+import { knowledgeBaseService, useKnowledgeBaseStats } from "@/services/knowledgeBaseService";
 
 interface KnowledgeBaseConfigProps {
   knowledgeBaseId?: string;
@@ -93,8 +94,8 @@ interface ApiItem {
 
 const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
   knowledgeBaseId = "",
-  onSave = () => {},
-  onTest = () => {},
+  onSave = () => { },
+  onTest = () => { },
 }) => {
   const [activeTab, setActiveTab] = useState("documents");
   const [testResult, setTestResult] = useState<{
@@ -496,76 +497,89 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
 
     setIsProcessing(true);
     try {
-      // Simulate API call
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          if (Math.random() > 0.1) {
-            resolve(true);
-          } else {
-            reject(new Error("Knowledge base connection failed"));
-          }
-        }, 1500);
-      });
+      const result = await knowledgeBaseService.testKnowledgeBase(testQuery, 5);
 
       setTestResult({
-        success: true,
-        message:
-          "Knowledge base integration test successful! Found 3 relevant documents.",
+        success: result.success,
+        message: result.message,
       });
 
-      toastSuccess({
-        title: "Test Successful",
-        description:
-          "Knowledge base is working correctly and found relevant content!",
-      });
+      if (result.success) {
+        toastSuccess({
+          title: "Test Successful",
+          description: `Found ${result.results_count} relevant documents in your knowledge base!`,
+        });
+      } else {
+        toastError({
+          title: "Test Failed",
+          description: result.message,
+        });
+      }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Test failed";
       setTestResult({
         success: false,
-        message: error instanceof Error ? error.message : "Test failed",
+        message: errorMessage,
       });
 
       toastError({
         title: "Test Failed",
-        description:
-          "Knowledge base test failed. Please check your configuration.",
+        description: "Knowledge base test failed. Please check your configuration.",
       });
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleFileUpload = async () => {
+  const handleFileUpload = async (files?: FileList) => {
+    if (!files || files.length === 0) {
+      // Trigger file input if no files provided
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.multiple = true;
+      input.accept = '.pdf,.docx,.txt,.csv';
+      input.onchange = (e) => {
+        const target = e.target as HTMLInputElement;
+        if (target.files) {
+          handleFileUpload(target.files);
+        }
+      };
+      input.click();
+      return;
+    }
+
     setUploadProgress(0);
     setIsUploading(true);
 
     try {
-      // Simulate file upload progress
-      await new Promise((resolve) => {
-        const interval = setInterval(() => {
-          setUploadProgress((prev) => {
-            const newProgress = prev + 10;
-            if (newProgress >= 100) {
-              clearInterval(interval);
-              setTimeout(() => resolve(true), 500);
-              return 100;
-            }
-            return newProgress;
-          });
-        }, 200);
+      const result = await knowledgeBaseService.uploadDocuments(files, {
+        chunkSize: 1024,
+        chunkOverlap: 200,
+        autoProcess: true,
       });
 
-      toastSuccess({
-        title: "Files Uploaded",
-        description:
-          "Your files have been uploaded and processed successfully.",
-      });
+      if (result.success) {
+        toastSuccess({
+          title: "Files Uploaded",
+          description: `${result.total_uploaded} file(s) uploaded successfully. ${result.total_errors > 0 ? `${result.total_errors} file(s) failed.` : ''}`,
+        });
+
+        // Refresh documents list
+        // You would call a refresh function here
+      } else {
+        toastError({
+          title: "Upload Failed",
+          description: result.message || "Failed to upload files. Please try again.",
+        });
+      }
     } catch (error) {
       toastError({
         title: "Upload Failed",
-        description: "Failed to upload files. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to upload files. Please try again.",
       });
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -718,7 +732,7 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
                   {/* One-Click Upload - Enhanced */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <button
-                      onClick={handleFileUpload}
+                      onClick={() => handleFileUpload()}
                       disabled={isUploading}
                       className="group relative h-32 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/60 hover:border-primary/60 transition-all duration-200 hover:shadow-lg hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -797,7 +811,7 @@ const KnowledgeBaseConfig: React.FC<KnowledgeBaseConfigProps> = ({
                           Support for PDF, DOCX, TXT, CSV files up to 10MB each
                         </p>
                       </div>
-                      <Button onClick={handleFileUpload} disabled={isUploading}>
+                      <Button onClick={() => handleFileUpload()} disabled={isUploading}>
                         {isUploading ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />

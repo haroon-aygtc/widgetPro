@@ -140,3 +140,33 @@ Route::middleware('auth:sanctum')->prefix('ai-providers')->group(function () {
 
 
 });
+
+// Analytics routes
+Route::middleware('auth:sanctum')->prefix('analytics')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\AnalyticsController::class, 'getDashboardMetrics']);
+    Route::get('/conversations', [App\Http\Controllers\AnalyticsController::class, 'getConversationAnalytics']);
+    Route::get('/users', [App\Http\Controllers\AnalyticsController::class, 'getUserAnalytics']);
+    Route::get('/performance', [App\Http\Controllers\AnalyticsController::class, 'getPerformanceMetrics']);
+    Route::get('/widgets/{widget}/analytics', [App\Http\Controllers\AnalyticsController::class, 'getWidgetAnalytics']);
+});
+
+// Knowledge Base routes
+Route::middleware('auth:sanctum')->prefix('knowledge-base')->group(function () {
+    Route::post('/documents/upload', [App\Http\Controllers\KnowledgeBaseController::class, 'uploadDocuments']);
+    Route::get('/documents', [App\Http\Controllers\KnowledgeBaseController::class, 'getDocuments']);
+    Route::delete('/documents/{id}', [App\Http\Controllers\KnowledgeBaseController::class, 'deleteDocument']);
+    Route::post('/websites/crawl', [App\Http\Controllers\KnowledgeBaseController::class, 'crawlWebsite']);
+    Route::post('/apis/connect', [App\Http\Controllers\KnowledgeBaseController::class, 'connectAPI']);
+    Route::post('/test', [App\Http\Controllers\KnowledgeBaseController::class, 'testKnowledgeBase']);
+    Route::get('/statistics', [App\Http\Controllers\KnowledgeBaseController::class, 'getStatistics']);
+});
+
+// Chat & Conversation routes
+Route::middleware('auth:sanctum')->prefix('chat')->group(function () {
+    Route::post('/conversations', [App\Http\Controllers\ChatController::class, 'createConversation']);
+    Route::get('/conversations', [App\Http\Controllers\ChatController::class, 'getConversations']);
+    Route::post('/conversations/{id}/messages', [App\Http\Controllers\ChatController::class, 'sendMessage']);
+    Route::get('/conversations/{id}/messages', [App\Http\Controllers\ChatController::class, 'getMessages']);
+    Route::patch('/conversations/{id}/status', [App\Http\Controllers\ChatController::class, 'updateConversationStatus']);
+    Route::post('/conversations/{id}/rating', [App\Http\Controllers\ChatController::class, 'rateConversation']);
+});
