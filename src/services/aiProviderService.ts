@@ -3,13 +3,14 @@ import type {
   AIModel,
   UserAIProvider,
   UserAIModel,
+  ConfiguredProviderResponse,
+  CreateUserModelRequest,
 } from "@/types/ai";
 import { aiProviderApi } from "@/lib/api/aiproviderAPI";
 
 class AIProviderService {
   async getProviders(search?: string): Promise<AIProvider[]> {
     const response = await aiProviderApi.getProviders(search);
-    // Handle paginated response structure: response.data.data contains the actual providers array
     return response.data?.data || [];
   }
 
@@ -22,10 +23,6 @@ class AIProviderService {
         provider_id: providerId,
         api_key: apiKey,
       });
-
-      // Laravel controller returns: {success: boolean, message: string, data: {...}}
-      // For success: data contains {models: [...], provider: {...}}
-      // For failure: data contains the original service response {success: false, message: "..."}
       return {
         success: response.success || false,
         message: response.message || "",
@@ -42,18 +39,15 @@ class AIProviderService {
   async configureProvider(
     providerId: number,
     apiKey: string,
-  ): Promise<{
-    userProvider: UserAIProvider;
-    availableModels: AIModel[];
-  }> {
+  ): Promise<ConfiguredProviderResponse> {
     try {
       const response = await aiProviderApi.configureProvider({
         provider_id: providerId,
         api_key: apiKey,
       });
 
-      // Laravel controller returns: {success: boolean, message: string, data: {...}}
-      // For success: data contains {user_provider: {...}, available_models: [...]}
+      console.log("Configure Provider Response:", response);
+
       if (response.success && response.data) {
         return {
           userProvider: response.data.user_provider,
@@ -74,7 +68,6 @@ class AIProviderService {
   async getUserProviders(): Promise<UserAIProvider[]> {
     try {
       const response = await aiProviderApi.getUserProviders();
-      // Laravel controller returns: {success: boolean, message: string, data: [...]}
       return response.data || [];
     } catch (error: any) {
       throw new Error(
@@ -88,7 +81,6 @@ class AIProviderService {
   async getUserModels(): Promise<UserAIModel[]> {
     try {
       const response = await aiProviderApi.getUserModels();
-      // Laravel controller returns: {success: boolean, message: string, data: [...]}
       return response.data || [];
     } catch (error: any) {
       throw new Error(
@@ -109,9 +101,6 @@ class AIProviderService {
         api_key: apiKey,
         search,
       });
-
-      // Laravel controller returns: {success: boolean, message: string, data: {...}}
-      // For success: data contains {models: [...], provider: {...}}
       if (response.success && response.data) {
         return response.data;
       } else {
@@ -128,18 +117,10 @@ class AIProviderService {
   }
 
   async addUserModel(
-    modelId: number,
-    userProviderId: number,
-    customName?: string,
+    data: CreateUserModelRequest,
   ): Promise<UserAIModel> {
     try {
-      const response = await aiProviderApi.addUserModel({
-        model_id: modelId,
-        user_provider_id: userProviderId,
-        custom_name: customName,
-      });
-
-      // Laravel controller returns: {success: boolean, message: string, data: {...}}
+      const response = await aiProviderApi.addUserModel(data);
       if (response.success && response.data) {
         return response.data;
       } else {
@@ -147,13 +128,10 @@ class AIProviderService {
       }
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to add user model",
+        error.response?.data?.message || error.message || "Failed to add user model"
       );
     }
   }
-
   async deleteUserProvider(providerId: number): Promise<void> {
     await aiProviderApi.deleteUserProvider(providerId);
   }

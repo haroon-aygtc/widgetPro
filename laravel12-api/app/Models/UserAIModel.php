@@ -17,11 +17,14 @@ class UserAIModel extends Model
         'model_id',
         'user_provider_id',
         'is_active',
-        'custom_name'
+        'custom_name',
+        'is_default',
+
     ];
 
     protected $casts = [
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
+        'is_default' => 'boolean'
     ];
 
     public function user(): BelongsTo

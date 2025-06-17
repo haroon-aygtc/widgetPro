@@ -11,6 +11,7 @@ class AIModel extends Model
 {
     use HasFactory;
 
+    protected $table = 'ai_models';
     protected $fillable = [
         'provider_id',
         'name',

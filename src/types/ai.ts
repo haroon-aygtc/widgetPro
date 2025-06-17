@@ -100,3 +100,8 @@ export interface ConfiguredProvidersTabProps {
   onAddProvider: (provider: UserAIProvider) => void;
   onAddModel: (model: UserAIModel) => void;
 }
+
+export interface ConfiguredProviderResponse {
+  userProvider: UserAIProvider;
+  availableModels: AIModel[];
+}

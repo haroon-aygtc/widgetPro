@@ -7,6 +7,7 @@ import type {
   AIModel,
   UserAIModel,
   UserAIProvider,
+  CreateUserModelRequest,
 } from "@/types/ai";
 
 export function useAIProviders() {
@@ -146,33 +147,13 @@ export function useAIProviders() {
     }
   };
 
-  const addUserModel = async (
-    modelId: number,
-    userProviderId: number,
-    customName?: string,
-  ) => {
+  const addUserModel = async (data: CreateUserModelRequest) => {
     addModelLoading.start("Adding model...");
     try {
-      const userModel = await aiProviderService.addUserModel(
-        modelId,
-        userProviderId,
-        customName,
-      );
-      setUserModels((prev) => {
-        const prevArray = Array.isArray(prev) ? prev : [];
-        return [...prevArray.filter((m) => m.model_id !== modelId), userModel];
-      });
-
-      // Find the model name for the toast
-      const model = availableModels.find((m) => m.id === modelId);
-      const modelName = model?.display_name || "Model";
-
-      toastUtils.operationSuccess(
-        "Model added to your collection!",
-        `${modelName} is now available.`,
-      );
-    } catch (error: any) {
-      toastUtils.operationError("Adding model", error.message);
+      const response = await aiProviderService.addUserModel(data);
+      toastUtils.operationSuccess("Model Added", "Model added successfully.");
+    } catch (err: any) {
+        toastUtils.operationError("Failed to Add Model", err.message);
     } finally {
       addModelLoading.stop();
     }

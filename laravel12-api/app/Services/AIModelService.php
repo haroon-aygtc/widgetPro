@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 use App\Services\FetchModels;
 use App\Models\AIProvider;
 use Illuminate\Support\Facades\Http;
+use App\Models\UserAIModel;
+use Illuminate\Support\Facades\Auth;
 
 class AIModelService
 {
@@ -18,8 +20,16 @@ class AIModelService
     public function storeModels(array $data)
     {
         return DB::transaction(function () use ($data) {
-            $model = AIModel::create($data);
-            
+            $model = UserAIModel::create(
+                [
+                    'user_id' => Auth::id(),
+                    'user_provider_id' => $data['user_provider_id'],
+                    'custom_name' => $data['custom_name'],
+                    'is_active' => true,
+                    'is_default' => false,
+                ]
+            );
+
             return [
                 'success' => true,
                 'data' => $model
