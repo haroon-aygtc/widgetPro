@@ -137,6 +137,9 @@ class UserProviderService
                     'last_tested_at' => now()
                 ]);
 
+                // Reload the provider relationship
+                $userProvider->load('provider');
+
                 return [
                     'success' => true,
                     'data' => [

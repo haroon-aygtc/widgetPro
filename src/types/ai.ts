@@ -87,7 +87,7 @@ export interface ModelsTabProps {
   addModelLoading: boolean;
   onSearch: (term: string) => void;
   onLoadModels: (providerId: number) => void;
-  onAddModel: (model: AIModel) => void;
+  onAddModel: (model: AIModel, userProviderId: number) => void;
 }
 
 export interface ConfiguredProvidersTabProps {
@@ -100,4 +100,3 @@ export interface ConfiguredProvidersTabProps {
   onAddProvider: (provider: UserAIProvider) => void;
   onAddModel: (model: UserAIModel) => void;
 }
-

@@ -37,78 +37,101 @@ class UserModelService
 
     public function storeUserModel($data)
     {
-        return DB::transaction(function () use ($data)
-        {
-        try {
-        $userId = Auth::id();
-        $modelId = $data['model_id'];
-        $userProviderId = $data['user_provider_id'];
-        $customName = $data['custom_name'];
+        return DB::transaction(function () use ($data) {
+            try {
+                $userId = Auth::id();
+                $modelId = $data['model_id'];
+                $userProviderId = $data['user_provider_id'];
+                $customName = $data['custom_name'] ?? null;
 
-        $userProvider = UserAIProvider::where('id', $userProviderId)
-                                     ->where('user_id', $userId)
-                                     ->firstOrFail();
+                // Validate user provider exists and belongs to user
+                $userProvider = UserAIProvider::where('id', $userProviderId)
+                                             ->where('user_id', $userId)
+                                             ->first();
 
-        $model = AIModel::findOrFail($modelId);
+                if (!$userProvider) {
+                    Log::error('User provider not found', [
+                        'user_provider_id' => $userProviderId,
+                        'user_id' => $userId
+                    ]);
+                    return [
+                        'success' => false,
+                        'message' => 'User provider not found'
+                    ];
+                }
 
-        if (!$userProvider) {
-            Log::error('User provider not found', [
-                'user_provider_id' => $userProviderId,
-                'user_id' => $userId
-            ]);
-            return [
-                'success' => false,
-                'message' => 'User provider not found'
-            ];
-        }
+                // Validate model exists
+                $model = AIModel::find($modelId);
+                if (!$model) {
+                    Log::error('Model not found', [
+                        'model_id' => $modelId,
+                        'user_id' => $userId
+                    ]);
+                    return [
+                        'success' => false,
+                        'message' => 'Model not found'
+                    ];
+                }
 
-        if ($model->provider_id !== $userProvider->provider_id) {
-            Log::error('Model does not belong to the specified provider', [
-                'model_id' => $modelId,
-                'user_provider_id' => $userProviderId,
-                'user_id' => $userId
-            ]);
-            return [
-                'success' => false,
-                'message' => 'Model does not belong to the specified provider'
-            ];
-        }
+                // Validate model belongs to the provider
+                if ($model->provider_id !== $userProvider->provider_id) {
+                    Log::error('Model does not belong to the specified provider', [
+                        'model_id' => $modelId,
+                        'model_provider_id' => $model->provider_id,
+                        'user_provider_id' => $userProvider->provider_id,
+                        'user_id' => $userId
+                    ]);
+                    return [
+                        'success' => false,
+                        'message' => 'Model does not belong to the specified provider'
+                    ];
+                }
 
-            $userModel = UserAIModel::updateOrCreate(
-                [
-                    'user_id' => $userId,
-                    'model_id' => $modelId,
-                    'user_provider_id' => $userProviderId
-                ],
-                [
-                    'user_id' => $userId,
-                    'model_id' => $modelId,
-                    'user_provider_id' => $userProviderId,
-                    'is_active' => true,
-                    'custom_name' => $customName
-                ]
-            );
+                // Check if model is already added by this user
+                $existingUserModel = UserAIModel::where('user_id', $userId)
+                                                ->where('model_id', $modelId)
+                                                ->where('user_provider_id', $userProviderId)
+                                                ->first();
 
-            $userModel->load(['model.provider', 'userProvider']);
+                if ($existingUserModel) {
+                    // Update existing model
+                    $existingUserModel->update([
+                        'is_active' => true,
+                        'custom_name' => $customName
+                    ]);
+                    $userModel = $existingUserModel;
+                } else {
+                    // Create new user model
+                    $userModel = UserAIModel::create([
+                        'user_id' => $userId,
+                        'model_id' => $modelId,
+                        'user_provider_id' => $userProviderId,
+                        'is_active' => true,
+                        'custom_name' => $customName
+                    ]);
+                }
+
+                // Load relationships
+                $userModel->load(['model.provider', 'userProvider.provider']);
 
                 return [
-                'success' => true,
-                'message' => 'AI model added successfully',
-                'data' => $userModel
-            ];
+                    'success' => true,
+                    'message' => 'AI model added successfully',
+                    'data' => $userModel
+                ];
             } catch (\Exception $e) {
-            Log::error('Failed to add AI model', [
-                'user_id' => $userId,
-                'model_id' => $modelId,
-                'error' => $e->getMessage()
-            ]);
-            return [
-                'success' => false,
-                'message' => 'Failed to add AI model'
-            ];
+                Log::error('Failed to add AI model', [
+                    'user_id' => $userId ?? null,
+                    'model_id' => $modelId ?? null,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return [
+                    'success' => false,
+                    'message' => 'Failed to add AI model: ' . $e->getMessage()
+                ];
             }
         });
-
     }
 
 

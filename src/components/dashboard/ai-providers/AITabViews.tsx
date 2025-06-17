@@ -7,8 +7,6 @@ import { Loader2, Search, AlertCircle } from "lucide-react";
 import type { ModelsTabProps } from "@/types/ai";
 import { AIModelCard } from "./AIModelCard";
 
-
-
 export const ModelsTab = ({
   availableModels,
   userModels,
@@ -26,7 +24,9 @@ export const ModelsTab = ({
   const filteredModels = availableModels.filter((model) => {
     return (
       !modelSearchTerm ||
-      model.display_name.toLowerCase().includes(modelSearchTerm.toLowerCase()) ||
+      model.display_name
+        .toLowerCase()
+        .includes(modelSearchTerm.toLowerCase()) ||
       model.description?.toLowerCase().includes(modelSearchTerm.toLowerCase())
     );
   });
@@ -91,7 +91,15 @@ export const ModelsTab = ({
                   key={model.id}
                   model={model}
                   isAdded={isModelAdded(model.id)}
-                  onAdd={() => onAddModel(model)}
+                  onAdd={() => {
+                    // Find the first active user provider to use for adding the model
+                    const activeProvider = userProviders.find(
+                      (up) => up.is_active,
+                    );
+                    if (activeProvider) {
+                      onAddModel(model, activeProvider.id);
+                    }
+                  }}
                   isLoading={addModelLoading}
                 />
               ))}

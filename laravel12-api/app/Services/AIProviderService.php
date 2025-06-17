@@ -94,10 +94,28 @@ class AIProviderService
                 
                 $models = $this->aiModelService->fetchModels($provider, $filters['api_key']);
 
+                // Store models in database if they don't exist
+                $storedModels = [];
+                foreach ($models as $modelData) {
+                    $storedModel = AIModel::updateOrCreate(
+                        [
+                            'provider_id' => $provider->id,
+                            'name' => $modelData['name']
+                        ],
+                        [
+                            'display_name' => $modelData['display_name'],
+                            'description' => $modelData['description'] ?? null,
+                            'is_free' => $modelData['is_free'] ?? false,
+                            'is_active' => true
+                        ]
+                    );
+                    $storedModels[] = $storedModel;
+                }
+
                 return [
                     'success' => true,
                     'data' => [
-                        'models' => $models,
+                        'models' => $storedModels,
                         'provider' => $provider
                     ]
                 ];

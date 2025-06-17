@@ -88,7 +88,10 @@ export function useAIProviders() {
       ]);
       setAvailableModels(availableModels);
       setTestResult(null);
-      toastUtils.operationSuccess("Provider configured successfully!", "Available models loaded.");
+      toastUtils.operationSuccess(
+        "Provider configured successfully!",
+        "Available models loaded.",
+      );
     } catch (error) {
       toastUtils.operationError("Provider configuration");
       throw error; // Re-throw to handle in component
@@ -112,20 +115,28 @@ export function useAIProviders() {
     }
   };
 
-  const addUserModel = async (modelId: number, userProviderId: number) => {
+  const addUserModel = async (
+    model: AIModel,
+    userProviderId: number,
+    customName?: string,
+  ) => {
     addModelLoading.start("Adding model...");
     try {
       const userModel = await aiProviderService.addUserModel(
-        modelId,
+        model.id,
         userProviderId,
+        customName,
       );
       setUserModels((prev) => [
-        ...prev.filter((m) => m.model_id !== modelId),
+        ...prev.filter((m) => m.model_id !== model.id),
         userModel,
       ]);
-      toastUtils.operationSuccess("Model added to your collection!", "Available models loaded.");
-    } catch {
-      toastUtils.operationError("Adding model");
+      toastUtils.operationSuccess(
+        "Model added to your collection!",
+        `${model.display_name} is now available.`,
+      );
+    } catch (error: any) {
+      toastUtils.operationError("Adding model", error.message);
     } finally {
       addModelLoading.stop();
     }
