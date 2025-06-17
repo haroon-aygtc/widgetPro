@@ -11,19 +11,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
-import AdvancedProviderConfig from "./AdvancedProviderConfig";
 import { AIModelCard } from "./AIModelCard";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Search,
   Key,
@@ -32,20 +21,14 @@ import {
   ExternalLink,
   Grid,
   List,
-  MoreHorizontal,
   Settings,
   Zap,
   Shield,
   Globe,
   DollarSign,
-  Clock,
-  Star,
   Loader2,
   Filter,
   SortAsc,
-  Eye,
-  TestTube,
-  Link,
   Sparkles,
   Bot,
   Brain,
@@ -54,7 +37,6 @@ import {
   Plus,
   ArrowRight,
   Wand2,
-  Crown,
   Activity,
 } from "lucide-react";
 import {
@@ -65,8 +47,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { toastUtils } from "@/components/ui/use-toast";
-import { useOperationLoading } from "@/contexts/LoadingContext";
 import type {
   AIProvider,
   AIModel,
@@ -87,10 +67,6 @@ interface ProvidersTabProps {
   testResult: AIProviderTestResponse | null;
   onTestApiKey: () => void;
   onConfigure: () => void;
-  onProviderConfigured?: (
-    userProvider: UserAIProvider,
-    models: AIModel[],
-  ) => void;
   testKeyLoading?: boolean;
   configureLoading?: boolean;
   availableModels?: AIModel[];
@@ -113,7 +89,6 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
   testResult,
   onTestApiKey,
   onConfigure,
-  onProviderConfigured,
   testKeyLoading = false,
   configureLoading = false,
   availableModels = [],
@@ -127,14 +102,11 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
   const [filterType, setFilterType] = useState<
     "all" | "free" | "configured" | "unconfigured"
   >("all");
-  const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
-  const [selectedProviderForConfig, setSelectedProviderForConfig] =
-    useState<AIProvider | null>(null);
   const [configurationStep, setConfigurationStep] = useState<
-    "key" | "models" | "complete"
-  >("key");
+    "idle" | "testing" | "success" | "models"
+  >("idle");
   const [modelSearchTerm, setModelSearchTerm] = useState("");
-  const [selectedModels, setSelectedModels] = useState<number[]>([]);
+  const [showModels, setShowModels] = useState(false);
 
   // Helper functions
   const getProviderIcon = (providerName: string) => {
@@ -252,39 +224,28 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
   const isModelAdded = (modelId: number) =>
     userModels.some((m) => m.model_id === modelId);
 
-  // Handle successful API key test
+  // Handle successful API key test and auto-configure
   useEffect(() => {
-    if (
-      testResult?.success &&
-      testResult.models &&
-      testResult.models.length > 0
-    ) {
-      setConfigurationStep("models");
-      if (onLoadModels && selectedProvider) {
-        onLoadModels(selectedProvider.id);
-      }
+    if (testResult?.success && selectedProvider) {
+      setConfigurationStep("success");
+      // Auto-configure the provider
+      setTimeout(async () => {
+        await onConfigure();
+        setConfigurationStep("models");
+        setShowModels(true);
+        if (onLoadModels) {
+          onLoadModels(selectedProvider.id);
+        }
+      }, 1000);
+    } else if (testResult && !testResult.success) {
+      setConfigurationStep("idle");
     }
-  }, [testResult, selectedProvider, onLoadModels]);
+  }, [testResult, selectedProvider, onConfigure, onLoadModels]);
 
   const handleTestAndConfigure = async () => {
     if (!selectedProvider || !apiKey.trim()) return;
-
-    // First test the API key
+    setConfigurationStep("testing");
     await onTestApiKey();
-  };
-
-  const handleCompleteConfiguration = async () => {
-    if (!selectedProvider || !testResult?.success) return;
-
-    await onConfigure();
-    setConfigurationStep("complete");
-
-    // Reset state after successful configuration
-    setTimeout(() => {
-      setConfigurationStep("key");
-      setSelectedModels([]);
-      setModelSearchTerm("");
-    }, 2000);
   };
 
   const handleModelSelection = (model: AIModel) => {
@@ -293,35 +254,11 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
     }
   };
 
-  const handleProviderAction = (provider: AIProvider, action: string) => {
-    switch (action) {
-      case "configure":
-        onSelectProvider(provider);
-        break;
-      case "advanced-configure":
-        setSelectedProviderForConfig(provider);
-        setShowAdvancedConfig(true);
-        break;
-      case "documentation":
-        if (provider.documentation_url) {
-          window.open(provider.documentation_url, "_blank");
-        }
-        break;
-      case "view":
-        onSelectProvider(provider);
-        break;
-    }
-  };
-
-  const handleAdvancedConfigComplete = (
-    userProvider: UserAIProvider,
-    models: AIModel[],
-  ) => {
-    setShowAdvancedConfig(false);
-    setSelectedProviderForConfig(null);
-    if (onProviderConfigured) {
-      onProviderConfigured(userProvider, models);
-    }
+  const handleProviderSelect = (provider: AIProvider) => {
+    onSelectProvider(provider);
+    setConfigurationStep("idle");
+    setShowModels(false);
+    setModelSearchTerm("");
   };
 
   if (loading) {
@@ -337,6 +274,170 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* API Key Configuration Section - Prominently Displayed */}
+      {selectedProvider && (
+        <Card className="border-2 border-violet-200 dark:border-violet-800 bg-gradient-to-r from-violet-50/50 to-purple-50/50 dark:from-violet-950/20 dark:to-purple-950/20 shadow-lg">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg">
+                <Key className="h-6 w-6" />
+              </div>
+              <div>
+                <CardTitle className="text-xl text-violet-700 dark:text-violet-300">
+                  Configure {selectedProvider.display_name}
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Enter your API key to connect and access models
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <Label
+                htmlFor="api-key"
+                className="text-sm font-semibold text-violet-700 dark:text-violet-300 flex items-center gap-2"
+              >
+                <Key className="h-4 w-4" />
+                API Key
+              </Label>
+              <div className="flex gap-3">
+                <Input
+                  id="api-key"
+                  type="password"
+                  placeholder={`Enter your ${selectedProvider.display_name} API key`}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="flex-1 h-12 border-2 border-violet-200/60 dark:border-violet-800/60 focus:border-violet-400 dark:focus:border-violet-600"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && apiKey.trim()) {
+                      handleTestAndConfigure();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={handleTestAndConfigure}
+                  disabled={!apiKey.trim() || configurationStep === "testing"}
+                  className="h-12 px-6 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
+                >
+                  {configurationStep === "testing" ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Testing...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      Test & Configure
+                    </>
+                  )}
+                </Button>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <p className="text-muted-foreground flex items-center gap-1">
+                  <Shield className="h-3 w-3" />
+                  Your API key is encrypted and stored securely
+                </p>
+                {selectedProvider.documentation_url && (
+                  <a
+                    href={selectedProvider.documentation_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 underline inline-flex items-center gap-1 font-medium"
+                  >
+                    Get API Key
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Status Messages */}
+            {configurationStep === "success" && (
+              <Alert className="border-2 border-green-200 bg-green-50/50 dark:bg-green-950/20">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertTitle className="text-green-800 dark:text-green-300 font-semibold">
+                  🎉 Provider Connected Successfully!
+                </AlertTitle>
+                <AlertDescription className="text-green-700 dark:text-green-400 mt-1">
+                  {selectedProvider.display_name} has been configured and saved.
+                  Loading available models...
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {testResult && !testResult.success && (
+              <Alert
+                variant="destructive"
+                className="border-2 border-red-200 bg-red-50/50 dark:bg-red-950/20"
+              >
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertTitle className="text-red-800 dark:text-red-300 font-semibold">
+                  Connection Failed
+                </AlertTitle>
+                <AlertDescription className="text-red-700 dark:text-red-400 mt-1">
+                  {testResult.message}
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Models Section */}
+      {showModels && availableModels.length > 0 && (
+        <Card className="border-2 border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50/30 to-emerald-50/30 dark:from-green-950/10 dark:to-emerald-950/10">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg">
+                  <Brain className="h-6 w-6" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl text-green-700 dark:text-green-300">
+                    Available Models
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Select models to add to your collection
+                  </CardDescription>
+                </div>
+              </div>
+              <Badge
+                variant="outline"
+                className="bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
+              >
+                {sortedModels.length} models found
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Model Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search models by name or description..."
+                value={modelSearchTerm}
+                onChange={(e) => setModelSearchTerm(e.target.value)}
+                className="pl-10 border-2 border-green-200/60 dark:border-green-800/60 focus:border-green-400 dark:focus:border-green-600"
+              />
+            </div>
+
+            {/* Models Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2">
+              {sortedModels.map((model) => (
+                <AIModelCard
+                  key={model.id}
+                  model={model}
+                  isAdded={isModelAdded(model.id)}
+                  onAdd={() => handleModelSelection(model)}
+                  isLoading={addModelLoading}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header with Search and Controls */}
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Search */}
@@ -468,52 +569,22 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                         </div>
                       </div>
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleProviderAction(provider, "configure")
-                          }
-                        >
-                          <Settings className="h-4 w-4 mr-2" />
-                          {configured ? "Quick Reconfigure" : "Quick Configure"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleProviderAction(provider, "advanced-configure")
-                          }
-                        >
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          Advanced Setup
-                        </DropdownMenuItem>
-                        {provider.documentation_url && (
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleProviderAction(provider, "documentation")
-                            }
-                          >
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Documentation
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleProviderAction(provider, "view")}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button
+                      size="sm"
+                      variant={configured ? "outline" : "default"}
+                      className={cn(
+                        "opacity-0 group-hover:opacity-100 transition-all duration-200",
+                        configured &&
+                          "bg-green-100 text-green-800 border-green-200 hover:bg-green-200",
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleProviderSelect(provider);
+                      }}
+                    >
+                      <Settings className="h-4 w-4 mr-1" />
+                      {configured ? "Reconfigure" : "Configure"}
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -620,7 +691,7 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                     {provider.documentation_url && (
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         onClick={(e) => {
                           e.stopPropagation();
                           window.open(provider.documentation_url, "_blank");
@@ -632,26 +703,18 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                     )}
                     <Button
                       size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleProviderAction(provider, "advanced-configure");
-                      }}
-                      className="mr-2"
-                    >
-                      <Sparkles className="h-4 w-4 mr-1" />
-                      Advanced
-                    </Button>
-                    <Button
-                      size="sm"
                       variant={configured ? "outline" : "default"}
+                      className={cn(
+                        configured &&
+                          "bg-green-100 text-green-800 border-green-200 hover:bg-green-200",
+                      )}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onSelectProvider(provider);
+                        handleProviderSelect(provider);
                       }}
                     >
                       <Settings className="h-4 w-4 mr-1" />
-                      {configured ? "Quick" : "Configure"}
+                      {configured ? "Reconfigure" : "Configure"}
                     </Button>
                   </div>
                 </CardContent>
@@ -659,318 +722,6 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
             );
           })}
         </div>
-      )}
-
-      {/* Enhanced Configuration Panel */}
-      {selectedProvider && (
-        <Card className="mt-8 border-2 border-violet-200/60 dark:border-violet-800/60 bg-gradient-to-br from-white to-violet-50/30 dark:from-gray-900 dark:to-violet-950/30 shadow-xl">
-          <CardHeader className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-b border-violet-200/50 dark:border-violet-800/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg">
-                  <Key className="h-6 w-6" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl text-violet-700 dark:text-violet-300">
-                    Configure {selectedProvider.display_name}
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    {configurationStep === "key" &&
-                      "Enter your API credentials to connect"}
-                    {configurationStep === "models" &&
-                      "Select models to add to your collection"}
-                    {configurationStep === "complete" &&
-                      "Configuration completed successfully!"}
-                  </CardDescription>
-                </div>
-              </div>
-
-              {/* Progress Indicator */}
-              <div className="flex items-center gap-2">
-                <div
-                  className={cn(
-                    "w-3 h-3 rounded-full transition-all duration-300",
-                    configurationStep === "key"
-                      ? "bg-violet-500"
-                      : "bg-green-500",
-                  )}
-                />
-                <div
-                  className={cn(
-                    "w-8 h-0.5 transition-all duration-300",
-                    configurationStep === "models" ||
-                      configurationStep === "complete"
-                      ? "bg-green-500"
-                      : "bg-gray-300",
-                  )}
-                />
-                <div
-                  className={cn(
-                    "w-3 h-3 rounded-full transition-all duration-300",
-                    configurationStep === "models"
-                      ? "bg-violet-500"
-                      : configurationStep === "complete"
-                        ? "bg-green-500"
-                        : "bg-gray-300",
-                  )}
-                />
-                <div
-                  className={cn(
-                    "w-8 h-0.5 transition-all duration-300",
-                    configurationStep === "complete"
-                      ? "bg-green-500"
-                      : "bg-gray-300",
-                  )}
-                />
-                <div
-                  className={cn(
-                    "w-3 h-3 rounded-full transition-all duration-300",
-                    configurationStep === "complete"
-                      ? "bg-green-500"
-                      : "bg-gray-300",
-                  )}
-                />
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="p-6">
-            {/* Step 1: API Key Configuration */}
-            {configurationStep === "key" && (
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <Label
-                    htmlFor="api-key"
-                    className="text-sm font-semibold text-violet-700 dark:text-violet-300 flex items-center gap-2"
-                  >
-                    <Key className="h-4 w-4" />
-                    API Key
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="api-key"
-                      type="password"
-                      placeholder={`Enter your ${selectedProvider.display_name} API key`}
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      className="h-12 border-2 border-violet-200/60 dark:border-violet-800/60 focus:border-violet-400 dark:focus:border-violet-600 bg-white/50 dark:bg-gray-900/50 pr-32"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && apiKey.trim()) {
-                          handleTestAndConfigure();
-                        }
-                      }}
-                    />
-                    <Button
-                      onClick={handleTestAndConfigure}
-                      disabled={!apiKey.trim() || testKeyLoading}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-xs font-medium"
-                    >
-                      {testKeyLoading ? (
-                        <>
-                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                          Testing...
-                        </>
-                      ) : (
-                        <>
-                          <Wand2 className="h-3 w-3 mr-1" />
-                          Test Key
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <p className="text-muted-foreground">
-                      🔒 Your API key will be encrypted and stored securely.
-                    </p>
-                    {selectedProvider.documentation_url && (
-                      <a
-                        href={selectedProvider.documentation_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 underline inline-flex items-center gap-1 font-medium"
-                      >
-                        Get API Key
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-
-                {/* Test Result */}
-                {testResult && (
-                  <Alert
-                    variant={testResult.success ? "default" : "destructive"}
-                    className={cn(
-                      "border-2 transition-all duration-300",
-                      testResult.success
-                        ? "border-green-200 bg-green-50/50 dark:bg-green-950/20"
-                        : "border-red-200 bg-red-50/50 dark:bg-red-950/20",
-                    )}
-                  >
-                    {testResult.success ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 text-red-600" />
-                    )}
-                    <AlertTitle
-                      className={cn(
-                        "font-semibold",
-                        testResult.success
-                          ? "text-green-800 dark:text-green-300"
-                          : "text-red-800 dark:text-red-300",
-                      )}
-                    >
-                      {testResult.success
-                        ? "🎉 Connection Successful!"
-                        : "❌ Connection Failed"}
-                    </AlertTitle>
-                    <AlertDescription
-                      className={cn(
-                        "mt-1",
-                        testResult.success
-                          ? "text-green-700 dark:text-green-400"
-                          : "text-red-700 dark:text-red-400",
-                      )}
-                    >
-                      {testResult.message}
-                      {testResult.success && testResult.models && (
-                        <div className="mt-2 text-sm">
-                          ✨ Found {testResult.models.length} available models.
-                          Click continue to select them.
-                        </div>
-                      )}
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {/* Continue Button */}
-                {testResult?.success && (
-                  <div className="flex justify-end pt-4">
-                    <Button
-                      onClick={() => setConfigurationStep("models")}
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-200"
-                    >
-                      Continue to Models
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Step 2: Model Selection */}
-            {configurationStep === "models" && testResult?.success && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-violet-700 dark:text-violet-300 flex items-center gap-2">
-                      <Brain className="h-5 w-5" />
-                      Available Models
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Select models to add to your collection. Free models are
-                      highlighted.
-                    </p>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300"
-                  >
-                    {sortedModels.length} models available
-                  </Badge>
-                </div>
-
-                {/* Model Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search models by name or description..."
-                    value={modelSearchTerm}
-                    onChange={(e) => setModelSearchTerm(e.target.value)}
-                    className="pl-10 border-2 border-violet-200/60 dark:border-violet-800/60 focus:border-violet-400 dark:focus:border-violet-600"
-                  />
-                </div>
-
-                {/* Models Grid */}
-                {sortedModels.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2">
-                    {sortedModels.map((model) => (
-                      <AIModelCard
-                        key={model.id}
-                        model={model}
-                        isAdded={isModelAdded(model.id)}
-                        onAdd={() => handleModelSelection(model)}
-                        isLoading={addModelLoading}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">
-                      No models found matching your search.
-                    </p>
-                  </div>
-                )}
-
-                {/* Complete Configuration */}
-                <div className="flex justify-between pt-4 border-t border-violet-200/50 dark:border-violet-800/50">
-                  <Button
-                    variant="outline"
-                    onClick={() => setConfigurationStep("key")}
-                    className="border-2 border-violet-200 hover:border-violet-300 dark:border-violet-800 dark:hover:border-violet-700"
-                  >
-                    <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
-                    Back to API Key
-                  </Button>
-                  <Button
-                    onClick={handleCompleteConfiguration}
-                    disabled={configureLoading}
-                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-200"
-                  >
-                    {configureLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving Configuration...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Complete Setup
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Completion */}
-            {configurationStep === "complete" && (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold text-green-700 dark:text-green-300 mb-2">
-                  🎉 Configuration Complete!
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  {selectedProvider.display_name} has been successfully
-                  configured and is ready to use.
-                </p>
-                <div className="flex items-center justify-center gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>Provider Connected</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>Models Available</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       )}
 
       {/* Empty State */}
@@ -990,15 +741,6 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
           </CardContent>
         </Card>
       )}
-
-      {/* Advanced Provider Configuration Modal */}
-      <AdvancedProviderConfig
-        isOpen={showAdvancedConfig}
-        onOpenChange={setShowAdvancedConfig}
-        provider={selectedProviderForConfig}
-        onConfigured={handleAdvancedConfigComplete}
-        userProviders={userProviders}
-      />
     </div>
   );
 };

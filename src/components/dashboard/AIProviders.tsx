@@ -47,15 +47,21 @@ const AIProviders = () => {
 
   const handleTestApiKey = async () => {
     if (!selectedProvider || !apiKey.trim()) return;
-    await testApiKey(selectedProvider.id, apiKey);
+    try {
+      await testApiKey(selectedProvider.id, apiKey);
+    } catch (error) {
+      console.error("Error testing API key:", error);
+    }
   };
 
   const handleConfigure = async () => {
     if (!selectedProvider || !testResult?.success) return;
-    await configureProvider(selectedProvider.id, apiKey);
-    setApiKey("");
-    setSelectedProvider(null);
-    setActiveTab("models");
+    try {
+      await configureProvider(selectedProvider.id, apiKey);
+      // Don't reset immediately, let the UI handle the flow
+    } catch (error) {
+      console.error("Error configuring provider:", error);
+    }
   };
 
   const handleAddModel = async (model: AIModel) => {
