@@ -1,4 +1,9 @@
-import type { AIProvider, AIModel, UserAIProvider, UserAIModel } from "@/types/ai";
+import type {
+  AIProvider,
+  AIModel,
+  UserAIProvider,
+  UserAIModel,
+} from "@/types/ai";
 import { aiProviderApi } from "@/lib/api/aiproviderAPI";
 
 class AIProviderService {
@@ -10,7 +15,7 @@ class AIProviderService {
 
   async testApiKey(
     providerId: number,
-    apiKey: string
+    apiKey: string,
   ): Promise<{ success: boolean; message: string; models?: AIModel[] }> {
     try {
       const response = await aiProviderApi.testProvider({
@@ -32,7 +37,7 @@ class AIProviderService {
 
   async configureProvider(
     providerId: number,
-    apiKey: string
+    apiKey: string,
   ): Promise<{
     userProvider: UserAIProvider;
     availableModels: AIModel[];
@@ -60,9 +65,11 @@ class AIProviderService {
 
   async fetchModelsForProvider(
     providerId: number,
-    search?: string
+    apiKey: string,
+    search?: string,
   ): Promise<{ models: AIModel[]; provider: AIProvider }> {
     const response = await aiProviderApi.fetchModelsForProvider(providerId, {
+      api_key: apiKey,
       search,
     });
     return response.data!;
@@ -71,7 +78,7 @@ class AIProviderService {
   async addUserModel(
     modelId: number,
     userProviderId: number,
-    customName?: string
+    customName?: string,
   ): Promise<UserAIModel> {
     const response = await aiProviderApi.addUserModel({
       model_id: modelId,
@@ -85,22 +92,29 @@ class AIProviderService {
     await aiProviderApi.deleteUserProvider(providerId);
   }
 
-  async updateUserProvider(providerId: number, apiKey: string): Promise<UserAIProvider> {
+  async updateUserProvider(
+    providerId: number,
+    apiKey: string,
+  ): Promise<UserAIProvider> {
     const response = await aiProviderApi.updateUserProvider(providerId, apiKey);
     return response;
   }
 
-  async updateUserModel(modelId: number, customName?: string): Promise<UserAIModel> {
+  async updateUserModel(
+    modelId: number,
+    customName?: string,
+  ): Promise<UserAIModel> {
     const response = await aiProviderApi.updateUserModel(modelId, customName);
     return response;
   }
 
-  async addUserProvider(providerId: number, apiKey: string): Promise<UserAIProvider> {
+  async addUserProvider(
+    providerId: number,
+    apiKey: string,
+  ): Promise<UserAIProvider> {
     const response = await aiProviderApi.addUserProvider(providerId, apiKey);
     return response;
   }
-
-
 }
 
 export const aiProviderService = new AIProviderService();

@@ -19,12 +19,12 @@ class AIModelService
     {
         return DB::transaction(function () use ($data) {
             $model = AIModel::create($data);
+            
+            return [
+                'success' => true,
+                'data' => $model
+            ];
         });
-
-        return [
-            'success' => true,
-            'data' => $model
-        ];
     }
 
     private function fetchModelsFromProvider(AIProvider $provider, string $apiKey): array

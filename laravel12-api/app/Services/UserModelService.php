@@ -82,9 +82,7 @@ class UserModelService
                 ],
                 [
                     'user_id' => $userId,
-                    'model_id' => $modelId
-                ],
-                [
+                    'model_id' => $modelId,
                     'user_provider_id' => $userProviderId,
                     'is_active' => true,
                     'custom_name' => $customName

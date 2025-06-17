@@ -85,12 +85,28 @@ class AIProviderService
     public function fetchModels(array $filters = [], int $perPage = 15, $providerId)
     {
         return DB::transaction(function () use ($filters, $perPage, $providerId) {
-            $models = $this->aiModelService->fetchModels($provider, $filters['api_key']);
+            try {
+                $provider = AIProvider::findOrFail($providerId);
+                
+                if (!isset($filters['api_key'])) {
+                    throw new \Exception('API key is required');
+                }
+                
+                $models = $this->aiModelService->fetchModels($provider, $filters['api_key']);
 
-            return [
-                'success' => true,
-                'data' => $models
-            ];
+                return [
+                    'success' => true,
+                    'data' => [
+                        'models' => $models,
+                        'provider' => $provider
+                    ]
+                ];
+            } catch (\Exception $e) {
+                return [
+                    'success' => false,
+                    'message' => 'Failed to fetch models: ' . $e->getMessage()
+                ];
+            }
         });
     }
 

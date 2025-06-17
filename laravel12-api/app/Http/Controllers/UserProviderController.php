@@ -26,7 +26,13 @@ class UserProviderController extends Controller
     }
     public function configureProvider(Request $request)
     {
-        $result = $this->userProviderService->storeUserProvider($request->all());
+        // Validate request
+        $request->validate([
+            'provider_id' => 'required|integer|exists:ai_providers,id',
+            'api_key' => 'required|string'
+        ]);
+
+        $result = $this->userProviderService->configureProviderWithModels($request->all());
 
         return response()->json([
             'success' => $result['success'] ?? true,
