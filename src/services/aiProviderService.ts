@@ -63,7 +63,11 @@ class AIProviderService {
         throw new Error(response.message || "Failed to configure provider");
       }
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || "Failed to configure provider");
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to configure provider",
+      );
     }
   }
 
@@ -73,7 +77,11 @@ class AIProviderService {
       // Laravel controller returns: {success: boolean, message: string, data: [...]}
       return response.data || [];
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || "Failed to get user providers");
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to get user providers",
+      );
     }
   }
 
@@ -83,7 +91,11 @@ class AIProviderService {
       // Laravel controller returns: {success: boolean, message: string, data: [...]}
       return response.data || [];
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || "Failed to get user models");
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to get user models",
+      );
     }
   }
 
@@ -106,7 +118,12 @@ class AIProviderService {
         throw new Error(response.message || "Failed to fetch models");
       }
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || "Failed to fetch models");
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to fetch models";
+      console.error("Error fetching models:", errorMessage);
+      throw new Error(errorMessage);
     }
   }
 
@@ -129,7 +146,11 @@ class AIProviderService {
         throw new Error(response.message || "Failed to add user model");
       }
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || "Failed to add user model");
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to add user model",
+      );
     }
   }
 

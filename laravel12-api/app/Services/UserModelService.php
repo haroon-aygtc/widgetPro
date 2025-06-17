@@ -100,6 +100,12 @@ class UserModelService
                         'custom_name' => $customName
                     ]);
                     $userModel = $existingUserModel;
+                    
+                    Log::info('Updated existing user model', [
+                        'user_model_id' => $userModel->id,
+                        'user_id' => $userId,
+                        'model_id' => $modelId
+                    ]);
                 } else {
                     // Create new user model
                     $userModel = UserAIModel::create([
@@ -108,6 +114,12 @@ class UserModelService
                         'user_provider_id' => $userProviderId,
                         'is_active' => true,
                         'custom_name' => $customName
+                    ]);
+                    
+                    Log::info('Created new user model', [
+                        'user_model_id' => $userModel->id,
+                        'user_id' => $userId,
+                        'model_id' => $modelId
                     ]);
                 }
 

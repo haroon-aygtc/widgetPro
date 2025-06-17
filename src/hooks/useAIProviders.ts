@@ -106,37 +106,61 @@ export function useAIProviders() {
   const loadModelsForProvider = async (providerId: number, search = "") => {
     loadModelsLoading.start("Loading models...");
     try {
+      // Find the user provider for this provider ID
+      const userProvidersArray = Array.isArray(userProviders)
+        ? userProviders
+        : [];
+      const userProvider = userProvidersArray.find(
+        (p) => p.provider_id === providerId,
+      );
+
+      if (!userProvider) {
+        throw new Error(
+          "Provider not configured. Please configure the provider first.",
+        );
+      }
+
       const { models } = await aiProviderService.fetchModelsForProvider(
         providerId,
+        userProvider.api_key,
         search,
       );
       setAvailableModels(models);
-    } catch {
-      toastUtils.operationError("Loading models");
+      toastUtils.operationSuccess(
+        "Models loaded successfully!",
+        `Found ${models.length} available models.`,
+      );
+    } catch (error: any) {
+      toastUtils.operationError("Loading models", error.message);
     } finally {
       loadModelsLoading.stop();
     }
   };
 
   const addUserModel = async (
-    model: AIModel,
+    modelId: number,
     userProviderId: number,
     customName?: string,
   ) => {
     addModelLoading.start("Adding model...");
     try {
       const userModel = await aiProviderService.addUserModel(
-        model.id,
+        modelId,
         userProviderId,
         customName,
       );
       setUserModels((prev) => {
         const prevArray = Array.isArray(prev) ? prev : [];
-        return [...prevArray.filter((m) => m.model_id !== model.id), userModel];
+        return [...prevArray.filter((m) => m.model_id !== modelId), userModel];
       });
+
+      // Find the model name for the toast
+      const model = availableModels.find((m) => m.id === modelId);
+      const modelName = model?.display_name || "Model";
+
       toastUtils.operationSuccess(
         "Model added to your collection!",
-        `${model.display_name} is now available.`,
+        `${modelName} is now available.`,
       );
     } catch (error: any) {
       toastUtils.operationError("Adding model", error.message);

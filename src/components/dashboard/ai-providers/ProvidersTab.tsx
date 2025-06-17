@@ -274,6 +274,11 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
       );
       if (userProvider) {
         onAddModel(model, userProvider.id);
+      } else {
+        console.error(
+          "User provider not found for selected provider:",
+          selectedProvider.id,
+        );
       }
     }
   };
