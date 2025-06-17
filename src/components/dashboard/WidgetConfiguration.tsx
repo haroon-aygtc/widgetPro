@@ -27,6 +27,7 @@ import PositionControls from "./widget-config/PositionControls";
 import EmbedCodeGenerator from "./widget-config/EmbedCodeGenerator";
 import SaveStateIndicator from "./widget-config/SaveStateIndicator";
 import WidgetPreview from "./WidgetPreview";
+import AIModelSelection from "./widget-config/AIModelSelection";
 
 interface WidgetConfigurationProps {
   widgetId?: string;
