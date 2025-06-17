@@ -58,9 +58,13 @@ const AIProviders = () => {
     if (!selectedProvider || !testResult?.success) return;
     try {
       await configureProvider(selectedProvider.id, apiKey);
-      // Don't reset immediately, let the UI handle the flow
+      // Reset API key after successful configuration
+      setApiKey("");
+      // Refresh user providers list
+      await loadUserProviders();
     } catch (error) {
       console.error("Error configuring provider:", error);
+      throw error; // Re-throw to handle in ProvidersTab
     }
   };
 
@@ -71,8 +75,17 @@ const AIProviders = () => {
     const provider = userProvidersArray.find(
       (p) => p.provider_id === model.provider_id,
     );
-    if (!provider) return;
-    await addUserModel(model.id, provider.id);
+    if (!provider) {
+      console.error("Provider not found for model:", model);
+      return;
+    }
+    try {
+      await addUserModel(model.id, provider.id);
+      // Refresh user models list
+      await loadUserModels();
+    } catch (error) {
+      console.error("Error adding model:", error);
+    }
   };
 
   return (

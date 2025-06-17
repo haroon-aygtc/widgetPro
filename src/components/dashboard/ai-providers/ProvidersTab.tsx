@@ -39,6 +39,8 @@ import {
   Wand2,
   Activity,
   Clock,
+  Star,
+  Rocket,
 } from "lucide-react";
 import {
   Select,
@@ -104,10 +106,11 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
     "all" | "free" | "configured" | "unconfigured"
   >("all");
   const [configurationStep, setConfigurationStep] = useState<
-    "idle" | "testing" | "success" | "models"
+    "idle" | "testing" | "success" | "models" | "error"
   >("idle");
   const [modelSearchTerm, setModelSearchTerm] = useState("");
   const [showModels, setShowModels] = useState(false);
+  const [isConfiguring, setIsConfiguring] = useState(false);
 
   // Helper functions
   const getProviderIcon = (providerName: string) => {
@@ -225,28 +228,42 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
   const isModelAdded = (modelId: number) =>
     userModels.some((m) => m.model_id === modelId);
 
-  // Handle successful API key test and auto-configure
+  // Handle configuration flow
   useEffect(() => {
-    if (testResult?.success && selectedProvider) {
+    if (testResult?.success && selectedProvider && !isConfiguring) {
       setConfigurationStep("success");
-      // Auto-configure the provider
+      setIsConfiguring(true);
+
+      // Auto-configure the provider after a brief success display
       setTimeout(async () => {
-        await onConfigure();
-        setConfigurationStep("models");
-        setShowModels(true);
-        if (onLoadModels) {
-          onLoadModels(selectedProvider.id);
+        try {
+          await onConfigure();
+          setConfigurationStep("models");
+          setShowModels(true);
+          if (onLoadModels) {
+            await onLoadModels(selectedProvider.id);
+          }
+        } catch (error) {
+          setConfigurationStep("error");
+        } finally {
+          setIsConfiguring(false);
         }
-      }, 1000);
+      }, 1500);
     } else if (testResult && !testResult.success) {
-      setConfigurationStep("idle");
+      setConfigurationStep("error");
+      setIsConfiguring(false);
     }
-  }, [testResult, selectedProvider, onConfigure, onLoadModels]);
+  }, [testResult, selectedProvider, onConfigure, onLoadModels, isConfiguring]);
 
   const handleTestAndConfigure = async () => {
     if (!selectedProvider || !apiKey.trim()) return;
     setConfigurationStep("testing");
-    await onTestApiKey();
+    setIsConfiguring(false);
+    try {
+      await onTestApiKey();
+    } catch (error) {
+      setConfigurationStep("error");
+    }
   };
 
   const handleModelSelection = (model: AIModel) => {
@@ -260,6 +277,8 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
     setConfigurationStep("idle");
     setShowModels(false);
     setModelSearchTerm("");
+    setIsConfiguring(false);
+    setApiKey(""); // Reset API key when switching providers
   };
 
   if (loading) {
@@ -275,15 +294,15 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* API Key Configuration Section - Prominently Displayed */}
+      {/* API Key Configuration Section - Prominently at Top */}
       {selectedProvider && (
-        <Card className="border-2 border-violet-200 dark:border-violet-800 bg-gradient-to-r from-violet-50/50 to-purple-50/50 dark:from-violet-950/20 dark:to-purple-950/20 shadow-lg">
+        <Card className="border-2 border-violet-200 dark:border-violet-800 bg-gradient-to-r from-violet-50/50 to-purple-50/50 dark:from-violet-950/20 dark:to-purple-950/20 shadow-lg sticky top-0 z-10">
           <CardHeader className="pb-4">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg">
                 <Key className="h-6 w-6" />
               </div>
-              <div>
+              <div className="flex-1">
                 <CardTitle className="text-xl text-violet-700 dark:text-violet-300">
                   Configure {selectedProvider.display_name}
                 </CardTitle>
@@ -291,6 +310,12 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                   Enter your API key to connect and access models
                 </CardDescription>
               </div>
+              {isConfigured(selectedProvider.id) && (
+                <Badge className="bg-green-100 text-green-800 border-green-200 dark:bg-green-950/50 dark:text-green-300 dark:border-green-800">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Already Configured
+                </Badge>
+              )}
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -311,24 +336,38 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                   onChange={(e) => setApiKey(e.target.value)}
                   className="flex-1 h-12 border-2 border-violet-200/60 dark:border-violet-800/60 focus:border-violet-400 dark:focus:border-violet-600"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && apiKey.trim()) {
+                    if (
+                      e.key === "Enter" &&
+                      apiKey.trim() &&
+                      configurationStep !== "testing"
+                    ) {
                       handleTestAndConfigure();
                     }
                   }}
+                  disabled={configurationStep === "testing" || isConfiguring}
                 />
                 <Button
                   onClick={handleTestAndConfigure}
-                  disabled={!apiKey.trim() || configurationStep === "testing"}
-                  className="h-12 px-6 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
+                  disabled={
+                    !apiKey.trim() ||
+                    configurationStep === "testing" ||
+                    isConfiguring
+                  }
+                  className="h-12 px-6 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 disabled:opacity-50"
                 >
                   {configurationStep === "testing" ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Testing...
                     </>
+                  ) : isConfiguring ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Configuring...
+                    </>
                   ) : (
                     <>
-                      <Wand2 className="h-4 w-4 mr-2" />
+                      <Rocket className="h-4 w-4 mr-2" />
                       Test & Configure
                     </>
                   )}
@@ -344,7 +383,7 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                     href={selectedProvider.documentation_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 underline inline-flex items-center gap-1 font-medium"
+                    className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 underline inline-flex items-center gap-1 font-medium transition-colors"
                   >
                     Get API Key
                     <ExternalLink className="h-3 w-3" />
@@ -353,9 +392,9 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
               </div>
             </div>
 
-            {/* Status Messages */}
+            {/* Enhanced Status Messages */}
             {configurationStep === "success" && (
-              <Alert className="border-2 border-green-200 bg-green-50/50 dark:bg-green-950/20">
+              <Alert className="border-2 border-green-200 bg-green-50/50 dark:bg-green-950/20 animate-in slide-in-from-top-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                 <AlertTitle className="text-green-800 dark:text-green-300 font-semibold">
                   🎉 Provider Connected Successfully!
@@ -367,27 +406,30 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
               </Alert>
             )}
 
-            {testResult && !testResult.success && (
-              <Alert
-                variant="destructive"
-                className="border-2 border-red-200 bg-red-50/50 dark:bg-red-950/20"
-              >
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertTitle className="text-red-800 dark:text-red-300 font-semibold">
-                  Connection Failed
-                </AlertTitle>
-                <AlertDescription className="text-red-700 dark:text-red-400 mt-1">
-                  {testResult.message}
-                </AlertDescription>
-              </Alert>
-            )}
+            {configurationStep === "error" &&
+              testResult &&
+              !testResult.success && (
+                <Alert
+                  variant="destructive"
+                  className="border-2 border-red-200 bg-red-50/50 dark:bg-red-950/20 animate-in slide-in-from-top-2"
+                >
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertTitle className="text-red-800 dark:text-red-300 font-semibold">
+                    Connection Failed
+                  </AlertTitle>
+                  <AlertDescription className="text-red-700 dark:text-red-400 mt-1">
+                    {testResult.message ||
+                      "Please check your API key and try again."}
+                  </AlertDescription>
+                </Alert>
+              )}
           </CardContent>
         </Card>
       )}
 
-      {/* Models Section */}
+      {/* Enhanced Models Section */}
       {showModels && availableModels.length > 0 && (
-        <Card className="border-2 border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50/30 to-emerald-50/30 dark:from-green-950/10 dark:to-emerald-950/10">
+        <Card className="border-2 border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50/30 to-emerald-50/30 dark:from-green-950/10 dark:to-emerald-950/10 animate-in slide-in-from-bottom-4">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -399,106 +441,196 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                     Available Models
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    Select models to add to your collection
+                    Select models to add to your collection • Free models are
+                    highlighted
                   </CardDescription>
                 </div>
               </div>
-              <Badge
-                variant="outline"
-                className="bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
-              >
-                {sortedModels.length} models found
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className="bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
+                >
+                  {sortedModels.length} models
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                >
+                  <Star className="h-3 w-3 mr-1" />
+                  {sortedModels.filter((m) => m.is_free).length} free
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Model Search */}
+            {/* Enhanced Model Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search models by name or description..."
+                placeholder="Search models by name, description, or capabilities..."
                 value={modelSearchTerm}
                 onChange={(e) => setModelSearchTerm(e.target.value)}
-                className="pl-10 border-2 border-green-200/60 dark:border-green-800/60 focus:border-green-400 dark:focus:border-green-600"
+                className="pl-10 h-11 border-2 border-green-200/60 dark:border-green-800/60 focus:border-green-400 dark:focus:border-green-600 transition-colors"
               />
             </div>
 
-            {/* Models Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2">
-              {sortedModels.map((model) => (
-                <AIModelCard
-                  key={model.id}
-                  model={model}
-                  isAdded={isModelAdded(model.id)}
-                  onAdd={() => handleModelSelection(model)}
-                  isLoading={addModelLoading}
-                />
-              ))}
+            {/* Models Stats */}
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>Showing {sortedModels.length} models</span>
+              <Separator orientation="vertical" className="h-4" />
+              <span className="flex items-center gap-1">
+                <Star className="h-3 w-3 text-green-600" />
+                {sortedModels.filter((m) => m.is_free).length} free models
+                available
+              </span>
+              <Separator orientation="vertical" className="h-4" />
+              <span>
+                {
+                  userModels.filter((m) =>
+                    sortedModels.some((sm) => sm.id === m.model_id),
+                  ).length
+                }{" "}
+                already added
+              </span>
+            </div>
+
+            {/* Enhanced Models Grid with Better Scrolling */}
+            <div className="max-h-[500px] overflow-y-auto pr-2 space-y-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sortedModels.map((model) => (
+                  <AIModelCard
+                    key={model.id}
+                    model={model}
+                    isAdded={isModelAdded(model.id)}
+                    onAdd={() => handleModelSelection(model)}
+                    isLoading={addModelLoading}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Models Summary */}
+            <div className="pt-4 border-t border-green-200/50 dark:border-green-800/50">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Click on models to add them to your collection
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowModels(false);
+                    setModelSearchTerm("");
+                  }}
+                  className="border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950/50"
+                >
+                  Hide Models
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Header with Search and Controls */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search providers by name or description..."
-            value={searchTerm}
-            onChange={(e) => onSearch(e.target.value)}
-            className="pl-10 h-11 border-2 border-violet-200/60 dark:border-violet-800/60 focus:border-violet-400 dark:focus:border-violet-600"
-          />
+      {/* Enhanced Header with Search and Controls */}
+      <div className="space-y-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Enhanced Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search providers by name, description, or capabilities..."
+              value={searchTerm}
+              onChange={(e) => onSearch(e.target.value)}
+              className="pl-10 h-11 border-2 border-violet-200/60 dark:border-violet-800/60 focus:border-violet-400 dark:focus:border-violet-600 transition-colors"
+            />
+          </div>
+
+          {/* Enhanced Filters and Controls */}
+          <div className="flex gap-2">
+            <Select
+              value={filterType}
+              onValueChange={(value: any) => setFilterType(value)}
+            >
+              <SelectTrigger className="w-[140px] border-2 border-violet-200/60 dark:border-violet-800/60 transition-colors">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Providers</SelectItem>
+                <SelectItem value="free">Free Only</SelectItem>
+                <SelectItem value="configured">Configured</SelectItem>
+                <SelectItem value="unconfigured">Not Configured</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={sortBy}
+              onValueChange={(value: any) => setSortBy(value)}
+            >
+              <SelectTrigger className="w-[120px] border-2 border-violet-200/60 dark:border-violet-800/60 transition-colors">
+                <SortAsc className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="free">Free First</SelectItem>
+                <SelectItem value="configured">Configured</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {/* Filters and Controls */}
-        <div className="flex gap-2">
-          <Select
-            value={filterType}
-            onValueChange={(value: any) => setFilterType(value)}
-          >
-            <SelectTrigger className="w-[140px] border-2 border-violet-200/60 dark:border-violet-800/60">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Providers</SelectItem>
-              <SelectItem value="free">Free Only</SelectItem>
-              <SelectItem value="configured">Configured</SelectItem>
-              <SelectItem value="unconfigured">Not Configured</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={sortBy}
-            onValueChange={(value: any) => setSortBy(value)}
-          >
-            <SelectTrigger className="w-[120px] border-2 border-violet-200/60 dark:border-violet-800/60">
-              <SortAsc className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="free">Free First</SelectItem>
-              <SelectItem value="configured">Configured</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Provider Stats */}
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <span>
+            Showing {filteredAndSortedProviders.length} of {providers.length}{" "}
+            providers
+          </span>
+          <Separator orientation="vertical" className="h-4" />
+          <span className="flex items-center gap-1">
+            <Star className="h-3 w-3 text-green-600" />
+            {filteredAndSortedProviders.filter((p) => p.is_free).length} free
+            providers
+          </span>
+          <Separator orientation="vertical" className="h-4" />
+          <span className="flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3 text-blue-600" />
+            {
+              filteredAndSortedProviders.filter((p) => isConfigured(p.id))
+                .length
+            }{" "}
+            configured
+          </span>
         </div>
       </div>
 
-      {/* View Mode Toggle */}
+      {/* Enhanced View Mode Toggle */}
       <div className="flex justify-between items-center">
         <div className="text-sm text-muted-foreground">
-          Showing {filteredAndSortedProviders.length} of {providers.length}{" "}
-          providers
+          {selectedProvider ? (
+            <span className="flex items-center gap-2">
+              <span>Selected: {selectedProvider.display_name}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleProviderSelect(selectedProvider)}
+                className="h-6 px-2 text-xs"
+              >
+                Clear Selection
+              </Button>
+            </span>
+          ) : (
+            "Click on a provider to configure"
+          )}
         </div>
         <div className="flex gap-2">
           <Button
             variant={viewMode === "grid" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("grid")}
-            className="border-2"
+            className="border-2 transition-colors"
           >
             <Grid className="h-4 w-4 mr-1" /> Grid
           </Button>
@@ -506,7 +638,7 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
             variant={viewMode === "list" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("list")}
-            className="border-2"
+            className="border-2 transition-colors"
           >
             <List className="h-4 w-4 mr-1" /> List
           </Button>
