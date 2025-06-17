@@ -50,6 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { toastUtils } from "@/components/ui/use-toast";
 import type {
   AIProvider,
   AIModel,
@@ -240,10 +241,22 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
           await onConfigure();
           setConfigurationStep("models");
           setShowModels(true);
-          if (onLoadModels) {
-            await onLoadModels(selectedProvider.id);
-          }
+
+          // Wait a bit for the provider to be configured before loading models
+          setTimeout(async () => {
+            if (onLoadModels) {
+              try {
+                await onLoadModels(selectedProvider.id);
+              } catch (error) {
+                console.error(
+                  "Error loading models after configuration:",
+                  error,
+                );
+              }
+            }
+          }, 500);
         } catch (error) {
+          console.error("Error in configuration flow:", error);
           setConfigurationStep("error");
         } finally {
           setIsConfiguring(false);
@@ -269,7 +282,10 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
   const handleModelSelection = (model: AIModel) => {
     if (onAddModel && selectedProvider) {
       // Find the user provider for the selected provider
-      const userProvider = userProviders.find(
+      const userProvidersArray = Array.isArray(userProviders)
+        ? userProviders
+        : [];
+      const userProvider = userProvidersArray.find(
         (up) => up.provider_id === selectedProvider.id,
       );
       if (userProvider) {
@@ -278,6 +294,12 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
         console.error(
           "User provider not found for selected provider:",
           selectedProvider.id,
+          "Available user providers:",
+          userProvidersArray,
+        );
+        toastUtils.operationError(
+          "Adding model",
+          "Provider not configured. Please configure the provider first.",
         );
       }
     }

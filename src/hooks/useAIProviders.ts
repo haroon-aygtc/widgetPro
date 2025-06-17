@@ -82,6 +82,8 @@ export function useAIProviders() {
     try {
       const { userProvider, availableModels } =
         await aiProviderService.configureProvider(providerId, apiKey);
+
+      // Update user providers state
       setUserProviders((prev) => {
         const prevArray = Array.isArray(prev) ? prev : [];
         return [
@@ -89,13 +91,19 @@ export function useAIProviders() {
           userProvider,
         ];
       });
+
       setAvailableModels(availableModels);
       setTestResult(null);
+
       toastUtils.operationSuccess(
         "Provider configured successfully!",
         "Available models loaded.",
       );
+
+      // Return the configured provider for immediate use
+      return { userProvider, availableModels };
     } catch (error) {
+      console.error("Error configuring provider:", error);
       toastUtils.operationError("Provider configuration");
       throw error; // Re-throw to handle in component
     } finally {
@@ -131,6 +139,7 @@ export function useAIProviders() {
         `Found ${models.length} available models.`,
       );
     } catch (error: any) {
+      console.error("Error loading models:", error);
       toastUtils.operationError("Loading models", error.message);
     } finally {
       loadModelsLoading.stop();
