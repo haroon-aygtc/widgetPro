@@ -659,11 +659,11 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                 className={cn(
                   "group cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-violet-500/10 border-2",
                   selected &&
-                    "ring-2 ring-violet-500 border-violet-300 dark:border-violet-700",
+                  "ring-2 ring-violet-500 border-violet-300 dark:border-violet-700",
                   configured &&
-                    "bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800",
+                  "bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800",
                   !configured &&
-                    "hover:border-violet-200 dark:hover:border-violet-800",
+                  "hover:border-violet-200 dark:hover:border-violet-800",
                 )}
                 onClick={() => handleProviderSelect(provider)}
               >
@@ -708,7 +708,7 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                       className={cn(
                         "opacity-0 group-hover:opacity-100 transition-all duration-200",
                         configured &&
-                          "bg-green-100 text-green-800 border-green-200 hover:bg-green-200",
+                        "bg-green-100 text-green-800 border-green-200 hover:bg-green-200",
                       )}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -765,11 +765,11 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                 className={cn(
                   "group cursor-pointer transition-all duration-200 hover:shadow-md border-2",
                   selected &&
-                    "ring-2 ring-violet-500 border-violet-300 dark:border-violet-700",
+                  "ring-2 ring-violet-500 border-violet-300 dark:border-violet-700",
                   configured &&
-                    "bg-gradient-to-r from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800",
+                  "bg-gradient-to-r from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800",
                   !configured &&
-                    "hover:border-violet-200 dark:hover:border-violet-800",
+                  "hover:border-violet-200 dark:hover:border-violet-800",
                 )}
                 onClick={() => handleProviderSelect(provider)}
               >
@@ -839,7 +839,7 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                       variant={configured ? "outline" : "default"}
                       className={cn(
                         configured &&
-                          "bg-green-100 text-green-800 border-green-200 hover:bg-green-200",
+                        "bg-green-100 text-green-800 border-green-200 hover:bg-green-200",
                       )}
                       onClick={(e) => {
                         e.stopPropagation();

@@ -35,6 +35,7 @@ const AIProviders = () => {
     addUserModel,
     loading,
     loadUserProviders,
+    loadUserModels,
   } = useAIProviders();
 
   useEffect(() => {

@@ -88,9 +88,7 @@ export function useAIProviders() {
       ]);
       setAvailableModels(availableModels);
       setTestResult(null);
-      toastUtils.success(
-        "Provider configured successfully! Available models loaded.",
-      );
+      toastUtils.operationSuccess("Provider configured successfully!", "Available models loaded.");
     } catch (error) {
       toastUtils.operationError("Provider configuration");
       throw error; // Re-throw to handle in component
@@ -125,7 +123,7 @@ export function useAIProviders() {
         ...prev.filter((m) => m.model_id !== modelId),
         userModel,
       ]);
-      toastUtils.success("Model added to your collection!");
+      toastUtils.operationSuccess("Model added to your collection!", "Available models loaded.");
     } catch {
       toastUtils.operationError("Adding model");
     } finally {

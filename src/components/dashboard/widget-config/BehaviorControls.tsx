@@ -161,7 +161,7 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
               onChange={(e) => handleWelcomeMessageChange(e.target.value)}
               className={cn(
                 errors.welcomeMessage &&
-                "border-destructive focus-visible:ring-destructive",
+                  "border-destructive focus-visible:ring-destructive",
               )}
               maxLength={200}
             />
@@ -187,7 +187,7 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
               onChange={(e) => handlePlaceholderChange(e.target.value)}
               className={cn(
                 errors.placeholder &&
-                "border-destructive focus-visible:ring-destructive",
+                  "border-destructive focus-visible:ring-destructive",
               )}
               maxLength={50}
             />
@@ -224,7 +224,7 @@ const BehaviorControls: React.FC<BehaviorControlsProps> = ({
               onChange={(e) => handleBotAvatarChange(e.target.value)}
               className={cn(
                 errors.botAvatar &&
-                "border-destructive focus-visible:ring-destructive",
+                  "border-destructive focus-visible:ring-destructive",
               )}
             />
             {errors.botAvatar && (
