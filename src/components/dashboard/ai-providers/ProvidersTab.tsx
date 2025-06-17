@@ -38,6 +38,7 @@ import {
   ArrowRight,
   Wand2,
   Activity,
+  Clock,
 } from "lucide-react";
 import {
   Select,
@@ -131,9 +132,9 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
         return Globe;
       case "together":
       case "together ai":
-        return Link;
+        return Activity;
       case "replicate":
-        return TestTube;
+        return Settings;
       case "openrouter":
         return Shield;
       default:
@@ -532,7 +533,7 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                   !configured &&
                     "hover:border-violet-200 dark:hover:border-violet-800",
                 )}
-                onClick={() => onSelectProvider(provider)}
+                onClick={() => handleProviderSelect(provider)}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -638,7 +639,7 @@ export const ProvidersTab: React.FC<ProvidersTabProps> = ({
                   !configured &&
                     "hover:border-violet-200 dark:hover:border-violet-800",
                 )}
-                onClick={() => onSelectProvider(provider)}
+                onClick={() => handleProviderSelect(provider)}
               >
                 <CardContent className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-4">
