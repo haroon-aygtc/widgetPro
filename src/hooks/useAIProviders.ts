@@ -82,10 +82,13 @@ export function useAIProviders() {
     try {
       const { userProvider, availableModels } =
         await aiProviderService.configureProvider(providerId, apiKey);
-      setUserProviders((prev) => [
-        ...prev.filter((p) => p.provider_id !== providerId),
-        userProvider,
-      ]);
+      setUserProviders((prev) => {
+        const prevArray = Array.isArray(prev) ? prev : [];
+        return [
+          ...prevArray.filter((p) => p.provider_id !== providerId),
+          userProvider,
+        ];
+      });
       setAvailableModels(availableModels);
       setTestResult(null);
       toastUtils.operationSuccess(
@@ -127,10 +130,10 @@ export function useAIProviders() {
         userProviderId,
         customName,
       );
-      setUserModels((prev) => [
-        ...prev.filter((m) => m.model_id !== model.id),
-        userModel,
-      ]);
+      setUserModels((prev) => {
+        const prevArray = Array.isArray(prev) ? prev : [];
+        return [...prevArray.filter((m) => m.model_id !== model.id), userModel];
+      });
       toastUtils.operationSuccess(
         "Model added to your collection!",
         `${model.display_name} is now available.`,
@@ -149,7 +152,10 @@ export function useAIProviders() {
         providerId,
         apiKey,
       );
-      setUserProviders((prev) => [...prev, userProvider]);
+      setUserProviders((prev) => {
+        const prevArray = Array.isArray(prev) ? prev : [];
+        return [...prevArray, userProvider];
+      });
     } catch {
       toastUtils.operationError("Adding provider");
     } finally {
